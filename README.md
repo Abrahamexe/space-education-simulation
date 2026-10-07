@@ -1,44 +1,77 @@
 # Space Project
 
-Tarayıcıda çalışan, sinematik kalitede bir 3D evren keşif uygulaması. Güneş'in yüzeyinden başlayıp gezegenlere, Samanyolu'nun merkezindeki kara deliğe ve milyarlarca ışık yılı uzaktaki kuasarlara kadar kesintisiz gezinebilirsiniz. Her şey gerçek verilere ve fiziğe dayanır; görüntüler oyuncak gibi değil, belgesel gibi görünsün diye tasarlandı.
+Tarayıcıda çalışan, sinematik kalitede bir 3D evren keşif uygulaması. Güneş'in yüzeyinden başlayıp gezegenlere, Samanyolu'nun merkezindeki kara deliğe ve milyarlarca ışık yılı uzaktaki kuasarlara kadar kesintisiz gezinebilirsiniz. Güneş Sistemi'ne kara delik, pulsar ya da yıldız ekleyip sonucu gerçek fizikle izleyebilirsiniz. Her şey gerçek verilere dayanır; görüntüler oyuncak gibi değil, belgesel gibi görünsün diye tasarlandı.
 
-![Güneş Sistemi genel görünümü](docs/screenshots/gunes-sistemi.png)
+![Samanyolu](docs/screenshots/samanyolu.jpg)
 
-![M87* kara deliği](docs/screenshots/m87-kara-delik.png)
+<table>
+  <tr>
+    <td><img src="docs/screenshots/saturn.jpg" alt="Satürn ve bilgi paneli"></td>
+    <td><img src="docs/screenshots/dunya.jpg" alt="Dünya"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/sgr-a-kara-delik.jpg" alt="Sgr A* kara deliği"></td>
+    <td><img src="docs/screenshots/yaratilis-sutunlari.jpg" alt="Yaratılış Sütunları"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/gunes.jpg" alt="Güneş"></td>
+    <td><img src="docs/screenshots/andromeda.jpg" alt="Andromeda Galaksisi"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/galaktik-hareket.jpg" alt="Galaktik hareket izleri"></td>
+    <td><img src="docs/screenshots/oyun-alani.jpg" alt="Fizik oyun alanı"></td>
+  </tr>
+</table>
 
 ## Öne çıkanlar
 
 ### Güneş Sistemi
 - **Canlı Güneş**: hareketli plazma yüzeyi, diferansiyel dönme, güneş lekeleri, korona, fışkırmalar ve patlamalar. Tamamı prosedürel shader'larla üretilir.
-- **Gerçekçi gezegenler**: 4K dokular, atmosfer saçılması, Dünya'da bulutlar, gece ışıkları ve okyanus yansıması.
+- **Gerçekçi gezegenler**: 4K dokular, atmosfer saçılması, Dünya'da bulutlar, gece şehir ışıkları ve okyanus yansıması.
 - **Gölgeler**: Satürn halkaları gezegene, gezegen halkalara gölge düşürür. Uydu gölgeleri gerçek oranlardadır.
-- **Gerçek yörüngeler**: Kepler yörünge elemanlarıyla hesaplanan gezegen, uydu, cüce gezegen ve kuyruklu yıldız konumları. Zaman ileri, geri ve istenen hızda akar.
-- **Asteroit ve Kuiper kuşakları**: on binlerce bireysel kaya, GPU üzerinde ilerletilir ve akıcı kalır.
+- **Gerçek yörüngeler**: gezegen, uydu, cüce gezegen ve kuyruklu yıldız konumları JPL verileri ve Kepler elemanlarıyla hesaplanır. Zaman ileri, geri ve istenen hızda akar.
+- **Asteroit ve Kuiper kuşakları**: on binlerce bireysel kaya GPU üzerinde ilerletilir ve akıcı kalır.
 - **Kuyruklu yıldızlar**: Güneş'e yaklaştıkça uzayan toz ve iyon kuyrukları. Halley'in 1986 geçişini tek tıkla izleyebilirsiniz.
-- **Galaktik hareket**: Güneş Sistemi'nin galaksi içinde ~248 km/s ile yol alışını izler, gezegenlerin çizdiği sarmal izleri gösterir.
-- **Yaşanabilir bölgeler**: Kopparapu (2014) modeline göre hesaplanır.
+- **Galaktik hareket**: Güneş Sistemi galaksi içinde ~248 km/s ile yol alır. Gezegenlerin bu hareketle çizdiği sarmal izler gösterilir.
+- **Yaşanabilir bölgeler**: Kopparapu (2014) modeliyle hesaplanır. Güneş Sistemi'nde ve galaksideki yıldız sistemlerinde gösterilir.
+- **Bilgi kartları**: her cisim için Dünya ile kıyas, uzaklık, ışığın yol süresi, uydular ve "Biliyor muydunuz?" notları.
 
-### Galaksi ve ötesi
-- **Samanyolu**: çubuk, şişkinlik ve toz şeritleriyle 3D galaksi modeli; yakın yıldızlar, küresel kümeler ve uydu galaksiler.
-- **Kara delikler**: Schwarzschild jeodeziklerini ışın izleme ile çözen, *Interstellar* tarzı kütleçekimsel merceklenme. Sgr A*, M87*, TON 618 ve diğerleri.
-- **Derin uzay**: Yengeç Bulutsusu ve pulsarı, Orion, Yaratılış Sütunları, Halka Bulutsusu. Hubble ve Webb görüntülerinden derinlik katmanlarıyla oluşturulmuş hacimli bulutsular.
-- **Galaksiler arası**: Andromeda, Sombrero, Centaurus A, 3C 273 gibi 17 nesne gerçek uzaklıklarında.
-- **Dev yıldızlar**: UY Scuti, VY Canis Majoris, R136a1 ve WOH G64.
-- **Keşfet menüsü**: ~30 hedef, her biri için zengin bilgi kartları.
+### Samanyolu
+- **3D galaksi**: çubuk, şişkinlik, 16 katmanlı disk ve toz şeritleri. Etiketli sarmal kollar, yakın yıldızlar, 150 küresel küme, Macellan Bulutları ve Yay Cüce Gökadası.
+- **Kesintisiz geçiş**: Güneş Sistemi'nden fare tekerleğiyle uzaklaşınca galaksi görünümü açılır. Güneş'e dalınca geri dönülür.
+- **Keşfet menüsü** (`K`): galaksi içinde ve dışında toplam ~60 hedef, her biri için zengin bilgi kartı.
+  - **Kara delikler**: Sgr A* ve çevresindeki S yıldızları (gerçek yörüngeler), Cygnus X-1, Gaia BH3.
+  - **Bulutsular**: Yengeç, Orion, Yaratılış Sütunları, Kozmik Uçurumlar, Lagün, Trifid, Atbaşı, Halka, Kedi Gözü, Kelebek, Eta Karina, Cassiopeia A ve daha fazlası. Hubble ve Webb görüntülerinden derinlik katmanlarıyla oluşturulmuş hacimli modeller.
+  - **Yıldız sistemleri**: Alfa Centauri, Proxima Centauri ve gezegenleri, Sirius, TRAPPIST-1'in yedi gezegeni, Betelgeuse. Yıldızlar Güneş ile aynı canlı yüzey shader'larıyla çizilir.
+  - **Pulsarlar**: Vela, ilk keşfedilen pulsar, Çift Pulsar ve bir magnetar. Dönen ışınlarıyla.
+  - **Dev yıldızlar ve kümeler**: UY Scuti, VY Canis Majoris, Stephenson 2-18, Omega Centauri, Ülker.
 
-### Fizik oyun alanı
-Güneş Sistemi'ne kara delik, yıldız, pulsar ya da gezegen ekleyip ne olacağını izleyin.
-- **N-cisim simülasyonu**: Web Worker içinde uyarlanabilir adımlı leapfrog integratörü.
-- **Işık hızında kütleçekim**: yeni bir cismin çekimi ve ışığı her gezegene ancak d/c süre sonra ulaşır.
-- **Olaylar**: çarpışma ve birleşme, Roche sınırında parçalanma, spagettileşme, sistemden fırlama, yörünge yakalama.
-- **Dünya iklim paneli**: sıcaklık, X-ışını dozu, gelgit kuvvetleri ve atmosfer kaybı canlı olarak hesaplanır.
-- **Hazır senaryolar**: Dünya'nın yanından geçen kara delik, TON 618, yakın pulsar ve daha fazlası.
+### Samanyolu'nun ötesi
+- **Gerçek uzaklıklarda 17 nesne**: Andromeda, Üçgen, Girdap, Fırıldak, Sombrero, M87, Erboğa A, Puro, NGC 1300, Antenler, Stephan Beşlisi, Araba Tekerleği, Hoag Nesnesi, 3C 273 kuasarı ve Webb'in İlk Derin Alanı.
+- **Dev kara delikler**: M87*, M31*, Sombrero*, Erboğa A*, 3C 273, Holmberg 15A* ve 5,6 milyar parsek uzaktaki TON 618.
+- **Interstellar tarzı kara delikler**: Schwarzschild jeodeziklerini ışın izleme ile çözen kütleçekimsel merceklenme, ince yığılma diski ve foton halkası.
+
+### Fizik oyun alanı (`P`)
+Güneş Sistemi'ne yeni cisimler ekleyip ne olacağını gerçek fizikle izleyin.
+- **Eklenebilen cisimler**: kara delik, kuasar, pulsar, beyaz cüce, kırmızı cüce, Güneş benzeri yıldız, mavi dev, Jüpiter ve Dünya benzeri gezegen, haydut gezegen, Ay boyutunda cisim. Sgr A*, M87* ve TON 618 kütleleri tek tıkla seçilir.
+- **Yerleştirme**: sahneye tıklayıp hız okunu sürükleyin ya da konum, hız ve kütleyi sayısal formla girin.
+- **N-cisim simülasyonu**: Web Worker içinde uyarlanabilir adımlı leapfrog integratörü. Sıkı yörüngeler için evrensel değişkenli Kepler çözücüsü.
+- **Işık hızında kütleçekim**: yeni bir cismin çekimi ve ışığı her gezegene ancak d/c süre sonra ulaşır. Yok olan bir cisim, haberi ulaşana kadar çekmeye devam eder.
+- **Olaylar**: çarpışma ve birleşme, Roche sınırında parçalanma, gelgitle uzama ve spagettileşme, sistemden fırlama, yörünge yakalama. Parçalanma anında zaman otomatik yavaşlar.
+- **Dünya iklim paneli**: sıcaklık, ısıl eylemsizlik, X-ışını dozu, gelgit kuvveti, atmosfer kaybı ve çarpışma enerjisi canlı hesaplanır.
+- **Beklenen etki**: her eklemeden sonra çekimin ne zaman ulaşacağı, hangi gezegenlerin koparılacağı ve en yakın geçiş tahmin edilir.
+- **11 hazır senaryo**: Dünya'nın dibinden geçen kara delik, 4 ışık yılı uzaktaki TON 618, Kuiper Kuşağı'nda pulsar, Güneş yok olsaydı, Dünya'ya Ay büyüklüğünde çarpma ve daha fazlası.
+- **Zaman kontrolü**: 1 gün/s ile 100 yıl/s arası hız, +1, +5 ve +100 yıl atlama, "Bugüne dön".
+
+![Keşfet menüsü](docs/screenshots/kesfet-menusu.jpg)
 
 ### Kamera ve arayüz
-- Tıkla ve uç: van Wijk–Nuij yolu ile yumuşak yakınlaşma ve kaydırma.
-- Fare tekerleğiyle gezegenden galaksiye kesintisiz zoom.
-- Harita tarzı serbest kamera: imlecin altındaki cismin etrafında döner.
-- Arama, klavye kısayolları, katman açma/kapama, uyarlanabilir grafik kalitesi.
+- **Tıkla ve uç**: van Wijk–Nuij yolu ile yumuşak yakınlaşma ve kaydırma. Varışta kamera hedefin gök kuzeyine hizalanır.
+- **Kesintisiz ölçek**: fare tekerleğiyle kilometreden gigaparseke kadar zoom.
+- **Serbest kamera** (`M`): imlecin altındaki cismin etrafında döner, boşlukta etrafına bakar, sağ tuşla kaydırır, savrulma momentumu vardır.
+- **Serbest uçuş**: `W` `A` `S` `D` ile uzayda uçun.
+- **Sinematik ve gerçek ölçek**: gezegen boyutları ile uzaklıklar arasında tek tıkla geçiş.
+- **Diğer**: arama, katman açma/kapama, uyarlanabilir grafik kalitesi (Düşük, Orta, Yüksek, Ultra), dokunmatik destek.
 
 ## Kurulum
 
@@ -49,7 +82,7 @@ npm install
 npm run dev
 ```
 
-Ardından tarayıcıda `http://localhost:5173` adresini açın.
+Ardından tarayıcıda `http://localhost:5173` adresini açın. En iyi sonuç için ekran kartı hızlandırması açık bir Chromium tabanlı tarayıcı önerilir.
 
 ### Diğer komutlar
 
@@ -71,23 +104,25 @@ Ham kaynak dosyaları (`assets-src/`) depoya dahil değildir. Uygulamanın çal�
 | `←` `→` | Önceki, sonraki cisim |
 | `/` veya `Ctrl+K` | Ara |
 | `Boşluk` | Zamanı durdur, başlat |
-| `W` `A` `S` `D`, `R` `F` | Serbest uçuş |
+| `W` `A` `S` `D`, `R` `F` | Serbest uçuş (`Shift` ile hızlı) |
 | `M` | Serbest kamera |
 | `H` | Genel görünüm |
 | `Y` `E` `K` | Yörüngeler, etiketler, kuşaklar |
 | `G` | Galaktik hareket |
 | `B` | Yaşanabilir bölgeler |
 | `P` | Fizik oyun alanı |
+| `K` (galakside) | Keşfet menüsü |
 | `?` | Yardım |
 | `Esc` | Geri |
 
 ## Teknolojiler
 
-- [Three.js](https://threejs.org/) (WebGL2) ve özel GLSL shader'lar
-- [postprocessing](https://github.com/pmndrs/postprocessing): bloom, tone mapping, SMAA, özel kara delik geçişi
+- [Three.js](https://threejs.org/) (WebGL2) ve 70'ten fazla özel GLSL shader
+- [postprocessing](https://github.com/pmndrs/postprocessing): bloom, tone mapping, SMAA, kara delik merceklenme geçişi
 - [GSAP](https://gsap.com/): arayüz animasyonları
 - [Vite](https://vitejs.dev/) ve TypeScript
-- Logaritmik derinlik tamponu ve kayan orijin ile kilometreden gigaparseke kadar ölçek
+- Logaritmik derinlik tamponu ve kayan orijin ile gigaparsek ölçeğinde hassasiyet
+- Fizik simülasyonu için Web Worker
 
 ## Kaynaklar ve lisanslar
 
