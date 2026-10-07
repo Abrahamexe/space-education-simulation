@@ -1,0 +1,83 @@
+/*
+ * Design tokens (PLAN §7). Direction: austere aerospace (condensed DIN-style
+ * uppercase, wide tracking, hairlines on black, ghost pills) with one
+ * functional frosted-glass surface for the info panel. A single sun-gold
+ * accent marks state (active, selected, playing), never decoration.
+ * Theme is locked dark: the scene is space.
+ */
+
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Colour ------------------------------------------------------------ */
+  --c-bg: #050608;
+  --c-ink: #eceef2;              /* primary text, off-white */
+  --c-ink-2: rgba(236, 238, 242, 0.68); /* secondary text (≥ 7:1 on bg) */
+  --c-ink-3: rgba(236, 238, 242, 0.56); /* muted labels, ~5.7:1 on the glass (AA for small caps) */
+  --c-hairline: rgba(236, 238, 242, 0.14);
+  --c-hairline-strong: rgba(236, 238, 242, 0.28);
+  --c-accent: #f2b35e;           /* sun gold */
+  --c-accent-ink: #1a1206;       /* text on accent fills */
+  --c-glass: rgba(14, 16, 22, 0.58);
+  --c-glass-solid: rgba(12, 14, 19, 0.96);
+  --c-chip: rgba(236, 238, 242, 0.06);
+  --c-chip-hover: rgba(236, 238, 242, 0.12);
+  --c-focus: #f2b35e;
+
+  /* ---- Type ---------------------------------------------------------------- */
+  --f-display: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  --f-ui: 'Barlow', system-ui, sans-serif;
+  --f-num: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  --t-cap-xs: 500 11px/1.2 var(--f-display);   /* micro caps */
+  --t-cap-sm: 600 12px/1.2 var(--f-display);   /* buttons, nav */
+  --t-cap-md: 600 14px/1.2 var(--f-display);
+  --t-title: 600 44px/0.95 var(--f-display);   /* panel title */
+  --t-body: 400 15px/1.6 var(--f-ui);
+  --t-body-sm: 400 13px/1.5 var(--f-ui);
+  --t-num: 400 13px/1.3 var(--f-num);
+
+  --track-caps: 0.14em;
+  --track-title: 0.04em;
+
+  /* ---- Space & shape --------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --gutter: max(16px, env(safe-area-inset-left));
+  /* One radius rule: interactive controls are pills, surfaces 14px. */
+  --r-pill: 999px;
+  --r-surface: 14px;
+  --hit: 40px;
+
+  /* ---- Motion (animate / emil skills) ------------------------------------------ */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --d-press: 140ms;
+  --d-hover: 180ms;
+  --d-panel-in: 420ms;
+  --d-panel-out: 260ms;
+  --d-fade: 240ms;
+  --stagger: 45ms;
+
+  /* ---- Layers ------------------------------------------------------------------- */
+  --z-labels: 10;
+  /* Desktop panel sits under the HUD so top-bar popovers (search, help,
+     settings) open over it; the mobile bottom sheet covers the HUD. */
+  --z-panel: 15;
+  --z-hud: 20;
+  --z-sheet: 30;
+  --z-popover: 40;
+  --z-loading: 100;
+}

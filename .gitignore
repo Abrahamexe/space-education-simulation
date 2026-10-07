@@ -1,0 +1,33 @@
+# Dependencies and build output
+node_modules
+dist
+
+# Private planning notes
+PLAN.md
+*.plan.md
+notes/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+secrets/
+credentials*.json
+
+# Raw source assets (large, re-downloadable via scripts/)
+assets-src/
+
+# Tooling and editor state
+.claude/
+.playwright-mcp/
+.vscode/
+.idea/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

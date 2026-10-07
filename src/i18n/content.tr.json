@@ -1,0 +1,284 @@
+{
+  "_note": "Türkçe içerik. Sayılar NASA ve JPL kaynaklıdır (docs/CREDITS.md); metinler özgün olarak yazılmıştır.",
+  "types": {
+    "star": "Yıldız",
+    "terrestrial": "Kayalık gezegen",
+    "gas-giant": "Gaz devi",
+    "ice-giant": "Buz devi",
+    "dwarf": "Cüce gezegen",
+    "moon": "Uydu",
+    "comet": "Kuyruklu yıldız"
+  },
+  "bodies": {
+    "sun": {
+      "subtitle": "G2V tipi sarı cüce",
+      "text": [
+        "Güneş Sistemi'ndeki tüm kütlenin yüzde 99,8'i bu tek yıldızda toplanmıştır. Merkezinde her saniye yaklaşık 600 milyon ton hidrojen helyuma dönüşür ve açığa çıkan enerjinin yüzeye ulaşması on binlerce yıl sürer.",
+        "Gördüğümüz parlak yüzey, yani fotosfer, sürekli kaynayan konveksiyon hücreleriyle kaplıdır. Her biri yaklaşık bin kilometre çapındaki bu granüller birkaç dakika içinde doğup kaybolur. Koyu güneş lekeleri, güçlü manyetik alanın ısı akışını bastırdığı ve çevresinden yaklaşık 1.500 derece daha soğuk bölgelerdir."
+      ],
+      "fact": "Güneş ışığı Dünya'ya yaklaşık 8 dakika 20 saniyede ulaşır. Gökyüzünde gördüğünüz Güneş, aslında 8 dakika önceki Güneş'tir."
+    },
+    "mercury": {
+      "text": [
+        "Güneş'e en yakın ve en küçük gezegen. Neredeyse hiç atmosferi olmadığı için ısıyı tutamaz: gündüz yüzey 430 °C'yi aşarken gece −180 °C'ye kadar düşer.",
+        "Merkür, Güneş çevresindeki her iki turunda kendi ekseni etrafında tam üç kez döner. Bu ritim yüzünden bir güneş günü 176 Dünya günü sürer. MESSENGER aracı, Güneş ışığının hiç ulaşmadığı kutup kraterlerinin dibinde su buzu buldu."
+      ],
+      "fact": "Merkür'de gün doğumundan bir sonraki gün doğumuna kadar geçen süre, iki Merkür yılına eşittir."
+    },
+    "venus": {
+      "text": [
+        "Boyutu ve kütlesiyle Dünya'nın ikizi sayılır, ama yüzeyi tam bir cehennemdir. Karbondioksitten oluşan kalın atmosferin basıncı Dünya'nınkinin 92 katıdır ve sera etkisi yüzeyi 464 °C'ye kadar ısıtır. Bu yüzden Venüs, Güneş'e daha yakın olan Merkür'den bile sıcaktır.",
+        "Sülfürik asit bulutları gezegeni tamamen örter. Gezegen kendi ekseni etrafında çok yavaş ve ters yönde döner: bir dönüşü 243 Dünya günü sürer ve bu, Venüs yılından uzundur. Bulut tepeleri ise gezegeni yalnızca dört günde turlar."
+      ],
+      "fact": "Venüs ters yönde döndüğü için orada Güneş batıdan doğar, doğudan batar."
+    },
+    "earth": {
+      "text": [
+        "Bildiğimiz kadarıyla yaşam barındıran tek gezegen. Yüzeyinin yaklaşık yüzde 71'i okyanuslarla kaplıdır. Atmosferi büyük ölçüde azot ve oksijenden oluşur; manyetik alanı ise Güneş rüzgârının yüklü parçacıklarına karşı bir kalkan görevi görür.",
+        "Ekseninin 23,4 derecelik eğikliği mevsimleri yaratır. Gece tarafında görünen şehir ışıkları, gezegenin uzaydan bakınca da fark edilen tek yapay işaretidir."
+      ],
+      "fact": "Dünya tam bir küre değildir: dönüşü yüzünden ekvator çapı, kutuplar arası çapından yaklaşık 43 km daha büyüktür."
+    },
+    "mars": {
+      "text": [
+        "Kızıl rengini yüzeyindeki demir oksitten, yani pastan alır. Güneş Sistemi'nin en yüksek yanardağı Olympus Mons yaklaşık 22 km yüksekliğindedir. Valles Marineris kanyon sistemi ise 4.000 km uzunluğa ve 7 km derinliğe ulaşır.",
+        "Atmosferi Dünya'nınkinin yüzde birinden bile incedir. Kutup başlıkları su buzu ve donmuş karbondioksitten oluşur. Kurumuş nehir yatakları ve göl tortuları, Mars'ın bir zamanlar sıvı suya ev sahipliği yaptığını gösterir."
+      ],
+      "fact": "Mars'ta gün batımı mavidir: havadaki ince toz, mavi ışığı Güneş'in hemen çevresine saçar."
+    },
+    "jupiter": {
+      "text": [
+        "Güneş Sistemi'nin en büyük gezegeni. Kütlesi, diğer tüm gezegenlerin toplamının iki buçuk katıdır. Bantlı bulutları amonyak buzlarından oluşur ve farklı enlemlerde zıt yönlere esen rüzgârlarla akar.",
+        "Büyük Kırmızı Leke, Dünya'dan daha geniş bir fırtınadır ve en az 1830'lardan beri kesintisiz gözlenmektedir. Gezegen bir dönüşünü 10 saatten kısa sürede tamamlar. En büyük dört uydusunu 1610'da Galileo Galilei keşfetti."
+      ],
+      "fact": "Jüpiter o kadar hızlı döner ki ekvatoru dışa taşar: kutuplar arası çapı, ekvator çapından yaklaşık 9.300 km kısadır."
+    },
+    "saturn": {
+      "text": [
+        "Halkalarıyla Güneş Sistemi'nin en tanınan gezegeni. Ortalama yoğunluğu sudan düşüktür; yeterince büyük bir okyanus olsaydı Satürn onda yüzerdi.",
+        "Halkalar çoğunlukla su buzu parçalarından oluşur. Ana halkalar yüz binlerce kilometre genişliğe yayılır ama kalınlıkları çoğu yerde birkaç on metreyi geçmez. Kuzey kutbunda, her bir kenarı Dünya'dan geniş, altıgen biçimli kalıcı bir jet akımı bulunur."
+      ],
+      "fact": "Satürn, bilinen uydu sayısında açık ara öndedir: NASA'nın güncel listesinde 274 uydu var."
+    },
+    "uranus": {
+      "text": [
+        "Ekseni yaklaşık 98 derece eğik olduğu için Güneş çevresinde yan yatmış bir top gibi yuvarlanır. 1781'de William Herschel tarafından teleskopla keşfedilen ilk gezegendir.",
+        "Soluk camgöbeği rengi, atmosferindeki metanın kırmızı ışığı soğurmasından gelir. İnce ve koyu renkli halkaları 1977'de bir yıldızın gezegenin arkasından geçişi izlenirken fark edildi. Atmosferi, gezegenler arasında ölçülen en soğuk atmosferdir."
+      ],
+      "fact": "84 yıllık yörüngesi boyunca Uranüs'ün her kutbu yaklaşık 42 yıl kesintisiz Güneş görür, ardından 42 yıl karanlıkta kalır."
+    },
+    "neptune": {
+      "text": [
+        "Güneş'e en uzak gezegen. 1846'da önce kâğıt üzerinde, Uranüs'ün yörüngesindeki sapmalardan hesaplanarak bulundu ve aynı yıl teleskopla gözlendi.",
+        "Güneş Sistemi'nin en şiddetli rüzgârları burada eser: hız saatte 2.000 km'yi aşar. Bugüne kadar onu yakından inceleyen tek araç, 1989'da yanından geçen Voyager 2'dir."
+      ],
+      "fact": "Neptün'ün bir yılı 165 Dünya yılı sürer. Keşfinden sonraki ilk tam turunu ancak 2011'de tamamladı."
+    },
+    "moon": {
+      "text": [
+        "Dünya'nın tek doğal uydusu, büyük olasılıkla genç Dünya'ya Mars büyüklüğünde bir cismin çarpmasıyla saçılan malzemeden oluştu. Kütleçekimsel kilitlenme yüzünden bize hep aynı yüzünü gösterir.",
+        "Koyu renkli 'denizler', eski volkanik bazalt düzlükleridir. 1969 ile 1972 arasında Apollo görevleriyle 12 astronot Ay yüzeyinde yürüdü."
+      ],
+      "fact": "Ay her yıl Dünya'dan yaklaşık 3,8 santimetre uzaklaşıyor."
+    },
+    "phobos": {
+      "text": [
+        "Mars'ın iki küçük ve düzensiz biçimli uydusundan büyüğü. Mars'a o kadar yakın döner ki gezegenin kendi dönüşünden hızlıdır; Mars yüzeyinden bakınca batıdan doğar, doğudan batar.",
+        "Yüzeyindeki en büyük çukur olan Stickney krateri, uydunun neredeyse yarısı kadar geniştir."
+      ],
+      "fact": "Phobos her yüzyılda Mars'a yaklaşık 1,8 metre yaklaşıyor. On milyonlarca yıl içinde ya parçalanıp bir halka oluşturacak ya da gezegene düşecek."
+    },
+    "deimos": {
+      "text": [
+        "Mars'ın küçük ve dış uydusu. Yüzeyi, krater diplerini dolduran ince toz katmanı yüzünden Phobos'unkinden daha pürüzsüz görünür."
+      ],
+      "fact": "Mars yüzeyinden bakan biri için Deimos, gökyüzünde parlak bir yıldız gibi görünür."
+    },
+    "io": {
+      "text": [
+        "Güneş Sistemi'nin volkanik olarak en etkin cismi; yüzlerce etkin yanardağı vardır. Jüpiter ile komşu uydular Europa ve Ganymede'nin kütleçekimi iç kısmını sürekli esnetip ısıtır.",
+        "Sarı, turuncu ve kırmızı tonları kükürt ve kükürt bileşiklerinden gelir. Yüzeyi lavlarla öyle hızlı yenilenir ki hiç çarpma krateri görülmez."
+      ],
+      "fact": "Io'nun bazı yanardağları malzemeyi 300 kilometreden yükseğe fırlatır."
+    },
+    "europa": {
+      "text": [
+        "Buzdan kabuğunun altında küresel, tuzlu bir okyanus saklayan uydu. Bu okyanusun, Dünya'daki tüm okyanuslardan daha fazla su barındırdığı düşünülüyor.",
+        "Yüzeyi kesişen kırmızımsı çatlaklarla kaplıdır ve çok az krater taşır; bu da genç bir yüzey olduğunu gösterir. NASA'nın Europa Clipper aracı 2024'te yola çıktı ve uyduyu yakından incelemek üzere yolda."
+      ],
+      "fact": "Europa, Güneş Sistemi'nde Dünya dışında yaşam aramak için en umut verici yerlerden biri sayılıyor."
+    },
+    "ganymede": {
+      "text": [
+        "Güneş Sistemi'nin en büyük uydusu; Merkür gezegeninden bile büyüktür. Kendi manyetik alanı olduğu bilinen tek uydudur.",
+        "Yüzeyinde koyu renkli, eski ve kraterli bölgelerle daha açık renkli, oluklu bölgeler yan yana durur. ESA'nın JUICE aracı ana hedefi olarak Ganymede'ye gidiyor."
+      ],
+      "fact": "Ganymede'nin buz kabuğunun derinlerinde de bir okyanus bulunduğu düşünülüyor."
+    },
+    "callisto": {
+      "text": [
+        "Güneş Sistemi'nin en yoğun kraterli yüzeylerinden birine sahiptir. Yüzeyi milyarlarca yıldır pek değişmemiş, eski bir arşiv gibidir.",
+        "Jüpiter'in güçlü radyasyon kuşaklarının büyük ölçüde dışında kaldığı için gelecekteki keşif görevleri için olası bir üs olarak da anılır."
+      ],
+      "fact": "Callisto boyut olarak Merkür'e çok yakındır ama kütlesi onun yarısından azdır."
+    },
+    "amalthea": {
+      "text": [
+        "Jüpiter'e çok yakın dönen küçük ve düzensiz biçimli bir uydu. Yoğunluğu düşüktür; gevşek bir moloz yığını olabilir."
+      ],
+      "fact": "Amalthea, Güneş Sistemi'nin en kırmızı cisimlerinden biridir."
+    },
+    "mimas": {
+      "text": [
+        "Satürn'ün büyük uydularının en içteki ve en küçüğü. Yüzeyine hâkim olan dev Herschel krateri, uydunun çapının yaklaşık üçte biri genişliğindedir.",
+        "Yörüngesindeki ince sapmalar, buz kabuğunun altında jeolojik olarak genç bir okyanus bulunabileceğine işaret ediyor."
+      ],
+      "fact": "Herschel kraterini oluşturan çarpma, Mimas'ı neredeyse parçalayacak kadar güçlüydü."
+    },
+    "enceladus": {
+      "text": [
+        "Güneş Sistemi'nin en parlak, ışığı en iyi yansıtan cisimlerinden biri. Güney kutbundaki 'kaplan çizgileri' adı verilen çatlaklardan uzaya su buharı ve buz fışkırır.",
+        "Bu fışkırmalar Satürn'ün geniş E halkasını besler. Cassini aracı içlerinden geçerek tuz, organik moleküller ve fosfor tespit etti."
+      ],
+      "fact": "Enceladus'un buz kabuğunun altında küresel bir okyanus vardır ve fışkırmalar bu okyanustan örnek taşır."
+    },
+    "tethys": {
+      "text": [
+        "Yoğunluğu çok düşük olduğu için neredeyse tamamen su buzundan oluştuğu düşünülür. Yüzeyinde dev Odysseus krateri ve binlerce kilometre uzanan Ithaca kanyonu bulunur."
+      ],
+      "fact": "Ithaca kanyonu, Tethys'in çevresinin yaklaşık dörtte üçünü dolaşır."
+    },
+    "dione": {
+      "text": [
+        "Bir yüzü yoğun kraterli, diğer yüzü ise ince beyaz çizgilerle kaplıdır. Uzaktan tüy gibi görünen bu çizgilerin aslında yüzlerce metre yüksekliğinde buz yarları olduğu Cassini görüntüleriyle anlaşıldı."
+      ],
+      "fact": "Dione, Satürn çevresindeki yörüngesini Tethys ve Rhea arasında, yaklaşık 2,7 günde tamamlar."
+    },
+    "rhea": {
+      "text": [
+        "Satürn'ün ikinci büyük uydusu. Buz ve kayadan oluşan, eski ve yoğun kraterli bir yüzeye sahiptir."
+      ],
+      "fact": "Cassini aracı, Rhea'nın çevresinde oksijen ve karbondioksitten oluşan son derece seyrek bir atmosfer tespit etti."
+    },
+    "titan": {
+      "text": [
+        "Kalın bir atmosfere sahip tek uydu: yüzeydeki basınç Dünya'dakinin yaklaşık bir buçuk katıdır. Turuncu pus, yüzeyi görünür ışıkta tamamen gizler.",
+        "Yüzeyinde sıvı metan ve etandan oluşan göller ve denizler bulunur. Huygens sondası 2005'te buraya indi; NASA'nın Dragonfly helikopteri ise Titan'ın gökyüzünde uçmak üzere hazırlanıyor."
+      ],
+      "fact": "Titan, Merkür gezegeninden daha büyüktür."
+    },
+    "iapetus": {
+      "text": [
+        "İki renkli uydu: yörüngede öne bakan yüzü kömür kadar koyu, arkada kalan yüzü ise kar gibi parlaktır.",
+        "Ekvatoru boyunca uzanan ve yer yer 20 km yüksekliğe ulaşan bir sırt, ona ceviz benzeri bir görünüm verir."
+      ],
+      "fact": "Iapetus'un koyu yüzünün, Satürn'ün daha dıştaki uydularından saçılan tozun birikmesiyle karardığı düşünülüyor."
+    },
+    "miranda": {
+      "text": [
+        "Uranüs'ün büyük uydularının en küçüğü ve en tuhafı. Yüzeyi, farklı jeolojik parçaların birbirine eklendiği bir yama işi gibi görünür.",
+        "Verona Rupes uçurumu 5 ila 10 km yüksekliğiyle Güneş Sistemi'nin en yüksek uçurumlarından biridir."
+      ],
+      "fact": "Miranda'nın düşük kütleçekimi yüzünden Verona Rupes'ten düşen bir taş yere ulaşmak için birkaç dakika boyunca düşerdi."
+    },
+    "ariel": {
+      "text": [
+        "Uranüs'ün büyük uyduları arasında yüzeyi en parlak ve görece en genç olanı. Geniş vadiler ve fay sistemleri, geçmişte iç ısının yüzeyi şekillendirdiğini gösterir."
+      ],
+      "fact": "Ariel ve Umbriel neredeyse aynı büyüklüktedir ama Ariel çok daha parlaktır."
+    },
+    "umbriel": {
+      "text": [
+        "Uranüs'ün büyük uydularının en karanlığı. Eski ve yoğun kraterli yüzeyinde, ekvator yakınında parlak bir halka biçiminde Wunda krateri dikkat çeker."
+      ],
+      "fact": "Umbriel, adını Alexander Pope'un bir şiirindeki kasvetli, karanlık bir ruhtan alır."
+    },
+    "titania": {
+      "text": [
+        "Uranüs'ün en büyük uydusu. Yüzeyi, yaklaşık 1.500 km uzunluğundaki Messina kanyonu gibi dev faylarla yarılmıştır."
+      ],
+      "fact": "Titania ve Oberon, 1787'de Uranüs'ü keşfeden William Herschel tarafından bulundu."
+    },
+    "oberon": {
+      "text": [
+        "Uranüs'ün büyük uydularının en dıştaki. Yoğun kraterli yüzeyi, bazı kraterlerin dibini dolduran koyu malzemeyle beneklidir."
+      ],
+      "fact": "Oberon'un adı, Shakespeare'in Bir Yaz Gecesi Rüyası oyunundaki peri kralından gelir."
+    },
+    "triton": {
+      "text": [
+        "Neptün'ün en büyük uydusu, gezegenin dönüşüne ters yönde dolanır. Bu yüzden Kuiper kuşağından yakalanmış bir cisim olduğu düşünülür.",
+        "Voyager 2, yüzeyinden yükselen azot gazı fışkırmalarını görüntüledi. Ölçülen en soğuk yüzeylerden birine sahiptir."
+      ],
+      "fact": "Triton yavaşça Neptün'e yaklaşıyor. Çok uzak bir gelecekte parçalanıp gezegenin çevresinde bir halka oluşturabilir."
+    },
+    "nereid": {
+      "text": [
+        "Neptün'ün çok basık bir yörüngede dolanan küçük uydusu. Gezegene uzaklığı, bir turu boyunca yaklaşık yedi kat değişir."
+      ],
+      "fact": "Nereid'in yörüngesi, bilinen uydular arasında en basık olanlardan biridir."
+    },
+    "charon": {
+      "text": [
+        "Plüton'un en büyük uydusu; çapı Plüton'unkinin yarısı kadardır. İki cisim de birbirine hep aynı yüzünü gösterir.",
+        "Kuzey kutbundaki kızıl bölge, Plüton'dan kaçan gazların Charon'un soğuk kutbunda donup güneş ışığıyla dönüşmesiyle oluşmuş olabilir."
+      ],
+      "fact": "Plüton ve Charon, aralarındaki boşlukta bulunan ortak bir ağırlık merkezi çevresinde dans eder."
+    },
+    "ceres": {
+      "text": [
+        "Asteroit kuşağının en büyük cismi ve iç Güneş Sistemi'ndeki tek cüce gezegen. Dawn aracı 2015 ile 2018 arasında yörüngesinde kaldı.",
+        "Occator kraterindeki parlak lekelerin, yüzeye sızıp buharlaşan tuzlu suyun geride bıraktığı tuz birikintileri olduğu anlaşıldı."
+      ],
+      "fact": "Ceres, 1801'de keşfedildiğinde bir gezegen olarak ilan edilmişti."
+    },
+    "pluto": {
+      "text": [
+        "Uzun yıllar dokuzuncu gezegen olarak bilinen Plüton, 2006'da cüce gezegen olarak sınıflandırıldı. Kuiper kuşağının en büyük ve en ünlü cisimlerinden biridir.",
+        "2015'te yanından geçen New Horizons, azot buzlarından oluşan kalp biçimli Tombaugh bölgesini ve buzdan dağları ortaya çıkardı."
+      ],
+      "fact": "Plüton'un yörüngesi o kadar basıktır ki bir turunun yaklaşık 20 yılında Neptün'den daha yakın olur."
+    },
+    "haumea": {
+      "text": [
+        "Dört saatten kısa sürede dönen ve bu hızlı dönüş yüzünden yumurta biçimi almış bir cüce gezegen. İki uydusu vardır.",
+        "2017'de bir yıldızın önünden geçişi izlenirken çevresinde bir halka keşfedildi."
+      ],
+      "fact": "Haumea, Güneş Sistemi'nin en hızlı dönen büyük cisimlerinden biridir."
+    },
+    "makemake": {
+      "text": [
+        "Kuiper kuşağında, Plüton'dan biraz küçük ve kırmızımsı bir cüce gezegen. 2005'te keşfedildi ve adını Paskalya Adası halkının yaratıcı tanrısından aldı."
+      ],
+      "fact": "Makemake'nin bir uydusu olduğu 2016'da Hubble görüntüleriyle anlaşıldı."
+    },
+    "eris": {
+      "text": [
+        "Plüton ile neredeyse aynı büyüklükte ama ondan daha ağır bir cüce gezegen. 2005'teki keşfi, gezegen tanımının yeniden yazılmasına yol açtı.",
+        "Güneş'ten uzaklığı yörüngesi boyunca yaklaşık 38 ile 98 AU arasında değişir."
+      ],
+      "fact": "Eris'in tek uydusunun adı Dysnomia'dır; bu, Eris'in kızı olan kanunsuzluk tanrıçasının adıdır."
+    },
+    "halley": {
+      "text": [
+        "Her 75 ila 76 yılda bir iç Güneş Sistemi'ne dönen en ünlü kuyruklu yıldız. Son kez 1986'da göründü; Giotto aracı çekirdeğini yakından görüntüledi.",
+        "Güneş'e yaklaştıkça buzları buharlaşır: mavimsi iyon kuyruğu Güneş rüzgârıyla dümdüz geriye savrulur, toz kuyruğu ise yörünge boyunca kıvrılır."
+      ],
+      "fact": "Halley bir sonraki ziyaretinde 2061'de görülecek. Her yıl gözlenen Orionid ve Eta Aquariid meteor yağmurları onun bıraktığı tozdan gelir."
+    }
+  },
+  "dwarfMoons": {
+    "ceres": 0,
+    "pluto": 5,
+    "haumea": 2,
+    "makemake": 1,
+    "eris": 1
+  },
+  "cometPerihelia": {
+    "_source": "NASA/JPL: last perihelion 1986-02-09 (TT 9.46); next perihelion predicted 2061-07-28 (JPL Horizons).",
+    "halley": {
+      "last": "1986-02-09",
+      "next": "2061-07-28"
+    }
+  }
+}

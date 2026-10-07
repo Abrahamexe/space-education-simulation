@@ -1,0 +1,18 @@
+{
+  "_sources": {
+    "orbit": "Osculating elements from the JPL Small-Body Database (src/data/generated/small-bodies.json, 1P/Halley).",
+    "nucleus": "Nucleus ~15 x 8 km (Giotto/Vega; JPL SBDB extent 14.9 x 8.2 km), very dark (albedo ~0.04). Its spin is complex (~2.2 d and ~7.4 d periods); a simple 52.8 h rotation is used (approximation)."
+  },
+  "comets": [
+    {
+      "id": "halley", "name": "Halley Kuyruklu Yıldızı", "type": "comet",
+      "radiusKm": { "equatorial": 7.45, "polar": 4.1 }, "triaxialKm": [7.45, 4.1, 4.1],
+      "rotation": { "kind": "period", "periodHours": 52.8 },
+      "render": {
+        "shader": "procedural", "style": "cratered", "orbitColor": [0.55, 0.75, 1.0], "markerColor": [0.75, 0.88, 1.0],
+        "colorA": [0.035, 0.032, 0.03], "colorB": [0.05, 0.045, 0.04],
+        "craterDensity": 0.3, "craterScale": 2.0, "relief": 1.2, "irregularity": 0.18, "seed": 71, "lommel": 0.8
+      }
+    }
+  ]
+}

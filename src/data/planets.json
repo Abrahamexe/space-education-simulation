@@ -1,0 +1,936 @@
+{
+  "_sources": {
+    "orbit": "JPL SSD, 'Keplerian Elements for Approximate Positions of the Major Planets' (E. M. Standish), Table 1, valid 1800-2050. Each element is [value at J2000, rate per Julian century]. a in AU, angles in degrees. The Earth entry is the Earth-Moon barycentre.",
+    "rotation": "IAU WGCCRE (Archinal et al. 2011/2018). poleRa/poleDec are [value at J2000, rate per Julian century]; W = w0 + wDot * d (d = days since J2000). Periodic terms omitted.",
+    "physical": "NASA GSFC Planetary Fact Sheet (equatorial/polar radius, obliquity to orbit).",
+    "render": "Art direction only (not scientific data): colours, shader parameters, visual atmosphere thickness."
+  },
+  "planets": [
+    {
+      "id": "mercury",
+      "name": "Merkür",
+      "type": "terrestrial",
+      "radiusKm": {
+        "equatorial": 2440.5,
+        "polar": 2438.3
+      },
+      "obliquityDeg": 0.034,
+      "orbit": {
+        "a": [
+          0.38709927,
+          3.7e-7
+        ],
+        "e": [
+          0.20563593,
+          0.00001906
+        ],
+        "I": [
+          7.00497902,
+          -0.00594749
+        ],
+        "L": [
+          252.2503235,
+          149472.67411175
+        ],
+        "varpi": [
+          77.45779628,
+          0.16047689
+        ],
+        "Omega": [
+          48.33076593,
+          -0.12534081
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          281.0103,
+          -0.0328
+        ],
+        "poleDecDeg": [
+          61.4155,
+          -0.0049
+        ],
+        "w0Deg": 329.5988,
+        "wDotDegPerDay": 6.1385108
+      },
+      "render": {
+        "shader": "rocky",
+        "orbitColor": [
+          0.62,
+          0.6,
+          0.58
+        ],
+        "markerColor": [
+          0.85,
+          0.82,
+          0.78
+        ],
+        "textures": {
+          "map": "textures/mercury/2k_mercury.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/mercury/4k_mercury.jpg"
+        },
+        "bumpStrength": 2.2,
+        "lommel": 0.75
+      }
+    },
+    {
+      "id": "venus",
+      "name": "Venüs",
+      "type": "terrestrial",
+      "radiusKm": {
+        "equatorial": 6051.8,
+        "polar": 6051.8
+      },
+      "obliquityDeg": 177.36,
+      "orbit": {
+        "a": [
+          0.72333566,
+          0.0000039
+        ],
+        "e": [
+          0.00677672,
+          -0.00004107
+        ],
+        "I": [
+          3.39467605,
+          -0.0007889
+        ],
+        "L": [
+          181.9790995,
+          58517.81538729
+        ],
+        "varpi": [
+          131.60246718,
+          0.00268329
+        ],
+        "Omega": [
+          76.67984255,
+          -0.27769418
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          272.76,
+          0
+        ],
+        "poleDecDeg": [
+          67.16,
+          0
+        ],
+        "w0Deg": 160.2,
+        "wDotDegPerDay": -1.4813688
+      },
+      "render": {
+        "shader": "gas",
+        "_comment": "Only the cloud deck is visible. It super-rotates (retrograde, ~4 days) far faster than the solid surface (243 days).",
+        "cloudRotationDays": -4,
+        "orbitColor": [
+          0.86,
+          0.74,
+          0.5
+        ],
+        "markerColor": [
+          1,
+          0.95,
+          0.82
+        ],
+        "textures": {
+          "map": "textures/venus/2k_venus_atmosphere.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/venus/4k_venus_atmosphere.jpg"
+        },
+        "tint": [
+          1,
+          0.94,
+          0.8
+        ],
+        "flow": {
+          "amplitudes": [
+            6,
+            0,
+            0,
+            0
+          ],
+          "frequencies": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "phases": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "turbulence": 0.012
+        },
+        "limbDarkening": 0.25,
+        "atmosphere": {
+          "thickness": 0.035,
+          "rayleigh": [
+            0.14,
+            0.13,
+            0.09
+          ],
+          "mie": 0.18,
+          "mieTint": [
+            1,
+            0.86,
+            0.6
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.7,
+          "intensity": 3
+        }
+      }
+    },
+    {
+      "id": "earth",
+      "name": "Dünya",
+      "type": "terrestrial",
+      "radiusKm": {
+        "equatorial": 6378.137,
+        "polar": 6356.752
+      },
+      "obliquityDeg": 23.44,
+      "orbit": {
+        "a": [
+          1.00000261,
+          0.00000562
+        ],
+        "e": [
+          0.01671123,
+          -0.00004392
+        ],
+        "I": [
+          -0.00001531,
+          -0.01294668
+        ],
+        "L": [
+          100.46457166,
+          35999.37244981
+        ],
+        "varpi": [
+          102.93768193,
+          0.32327364
+        ],
+        "Omega": [
+          0,
+          0
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          0,
+          -0.641
+        ],
+        "poleDecDeg": [
+          90,
+          -0.557
+        ],
+        "w0Deg": 190.147,
+        "wDotDegPerDay": 360.9856235
+      },
+      "render": {
+        "shader": "earth",
+        "orbitColor": [
+          0.38,
+          0.62,
+          1
+        ],
+        "markerColor": [
+          0.7,
+          0.85,
+          1
+        ],
+        "textures": {
+          "day": "textures/earth/2k_earth_daymap.jpg",
+          "night": "textures/earth/2k_earth_nightmap.jpg",
+          "clouds": "textures/earth/2k_earth_clouds.jpg",
+          "normal": "textures/earth/2k_earth_normal_map.png",
+          "specular": "textures/earth/2k_earth_specular_map.jpg"
+        },
+        "texturesHigh": {
+          "day": "textures/earth/4k_earth_daymap.jpg",
+          "night": "textures/earth/4k_earth_nightmap.jpg",
+          "clouds": "textures/earth/4k_earth_clouds.jpg",
+          "normal": "textures/earth/4k_earth_normal_map.png",
+          "specular": "textures/earth/4k_earth_specular_map.jpg"
+        },
+        "highResWithinRadii": 40,
+        "cloudAltitude": 0.008,
+        "cloudDriftDegPerDay": 4,
+        "atmosphere": {
+          "_comment": "Earth's sea-level Rayleigh/Mie coefficients (per km) and scale heights (km) are physical (Bruneton & Neyret 2008); 'thickness' exaggerates the shell for visibility and the solver rescales density to keep the optical depth.",
+          "physical": true,
+          "rayleighPerKm": [
+            0.0058,
+            0.0135,
+            0.0331
+          ],
+          "miePerKm": 0.021,
+          "rayleighHeightKm": 8,
+          "mieHeightKm": 1.2,
+          "topKm": 100,
+          "visualScale": 2.6,
+          "g": 0.76,
+          "intensity": 5
+        }
+      }
+    },
+    {
+      "id": "mars",
+      "name": "Mars",
+      "type": "terrestrial",
+      "radiusKm": {
+        "equatorial": 3396.2,
+        "polar": 3376.2
+      },
+      "obliquityDeg": 25.19,
+      "orbit": {
+        "a": [
+          1.52371034,
+          0.00001847
+        ],
+        "e": [
+          0.0933941,
+          0.00007882
+        ],
+        "I": [
+          1.84969142,
+          -0.00813131
+        ],
+        "L": [
+          -4.55343205,
+          19140.30268499
+        ],
+        "varpi": [
+          -23.94362959,
+          0.44441088
+        ],
+        "Omega": [
+          49.55953891,
+          -0.29257343
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          317.68143,
+          -0.1061
+        ],
+        "poleDecDeg": [
+          52.8865,
+          -0.0609
+        ],
+        "w0Deg": 176.63,
+        "wDotDegPerDay": 350.89198226
+      },
+      "render": {
+        "shader": "rocky",
+        "orbitColor": [
+          0.95,
+          0.5,
+          0.32
+        ],
+        "markerColor": [
+          1,
+          0.7,
+          0.55
+        ],
+        "textures": {
+          "map": "textures/mars/2k_mars.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/mars/4k_mars.jpg"
+        },
+        "bumpStrength": 1.6,
+        "lommel": 0.2,
+        "atmosphere": {
+          "_comment": "Dust-dominated: butterscotch by day, bluish limb at sunset. Coefficients are visual (inverse-Rayleigh dust colour).",
+          "thickness": 0.022,
+          "rayleigh": [
+            0.14,
+            0.1,
+            0.05
+          ],
+          "mie": 0.08,
+          "mieTint": [
+            1,
+            0.8,
+            0.62
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.65,
+          "intensity": 2.5
+        }
+      }
+    },
+    {
+      "id": "jupiter",
+      "name": "Jüpiter",
+      "type": "gas-giant",
+      "radiusKm": {
+        "equatorial": 71492,
+        "polar": 66854
+      },
+      "obliquityDeg": 3.13,
+      "orbit": {
+        "a": [
+          5.202887,
+          -0.00011607
+        ],
+        "e": [
+          0.04838624,
+          -0.00013253
+        ],
+        "I": [
+          1.30439695,
+          -0.00183714
+        ],
+        "L": [
+          34.39644051,
+          3034.74612775
+        ],
+        "varpi": [
+          14.72847983,
+          0.21252668
+        ],
+        "Omega": [
+          100.47390909,
+          0.20469106
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          268.056595,
+          -0.006499
+        ],
+        "poleDecDeg": [
+          64.495303,
+          0.002413
+        ],
+        "w0Deg": 284.95,
+        "wDotDegPerDay": 870.536
+      },
+      "render": {
+        "shader": "gas",
+        "orbitColor": [
+          0.92,
+          0.76,
+          0.6
+        ],
+        "markerColor": [
+          1,
+          0.9,
+          0.78
+        ],
+        "textures": {
+          "map": "textures/jupiter/2k_jupiter.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/jupiter/4k_jupiter.jpg"
+        },
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "_flow": "Zonal wind proxy (deg/day vs System III) as a sum of cosines in latitude. Shaped so the Great Red Spot latitude (~22 deg S) is nearly still.",
+        "flow": {
+          "amplitudes": [
+            5,
+            3,
+            1.6,
+            0
+          ],
+          "frequencies": [
+            6,
+            11,
+            17,
+            0
+          ],
+          "phases": [
+            0,
+            1.7,
+            0.6,
+            0
+          ],
+          "turbulence": 0.004
+        },
+        "flowCalm": {
+          "latitudeDeg": -22,
+          "widthDeg": 7
+        },
+        "limbDarkening": 0.45,
+        "atmosphere": {
+          "thickness": 0.02,
+          "rayleigh": [
+            0.25,
+            0.35,
+            0.6
+          ],
+          "mie": 0.12,
+          "mieTint": [
+            1,
+            0.92,
+            0.8
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.6,
+          "intensity": 1.5
+        }
+      }
+    },
+    {
+      "id": "saturn",
+      "name": "Satürn",
+      "type": "gas-giant",
+      "radiusKm": {
+        "equatorial": 60268,
+        "polar": 54364
+      },
+      "obliquityDeg": 26.73,
+      "orbit": {
+        "a": [
+          9.53667594,
+          -0.0012506
+        ],
+        "e": [
+          0.05386179,
+          -0.00050991
+        ],
+        "I": [
+          2.48599187,
+          0.00193609
+        ],
+        "L": [
+          49.95424423,
+          1222.49362201
+        ],
+        "varpi": [
+          92.59887831,
+          -0.41897216
+        ],
+        "Omega": [
+          113.66242448,
+          -0.28867794
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          40.589,
+          -0.036
+        ],
+        "poleDecDeg": [
+          83.537,
+          -0.004
+        ],
+        "w0Deg": 38.9,
+        "wDotDegPerDay": 810.7939024
+      },
+      "render": {
+        "shader": "gas",
+        "orbitColor": [
+          0.95,
+          0.82,
+          0.58
+        ],
+        "markerColor": [
+          1,
+          0.93,
+          0.76
+        ],
+        "textures": {
+          "map": "textures/saturn/2k_saturn.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/saturn/4k_saturn.jpg"
+        },
+        "tint": [
+          1,
+          0.98,
+          0.94
+        ],
+        "flow": {
+          "amplitudes": [
+            4,
+            1.6,
+            0,
+            0
+          ],
+          "frequencies": [
+            5,
+            12,
+            0,
+            0
+          ],
+          "phases": [
+            0,
+            0.9,
+            0,
+            0
+          ],
+          "turbulence": 0.003
+        },
+        "limbDarkening": 0.4,
+        "rings": {
+          "texture": "textures/saturn/2k_saturn_ring_alpha.png",
+          "_radii": "Texture span fitted to its features: B-ring outer edge 117,580 km, A-ring outer edge 136,775 km, Encke Gap 133,589 km, C-ring inner edge 74,658 km all land on the image.",
+          "innerKm": 70800,
+          "outerKm": 140830,
+          "opacity": 1,
+          "brightness": 1.5
+        },
+        "atmosphere": {
+          "thickness": 0.02,
+          "rayleigh": [
+            0.3,
+            0.36,
+            0.55
+          ],
+          "mie": 0.12,
+          "mieTint": [
+            1,
+            0.92,
+            0.75
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.6,
+          "intensity": 1.5
+        }
+      }
+    },
+    {
+      "id": "uranus",
+      "name": "Uranüs",
+      "type": "ice-giant",
+      "radiusKm": {
+        "equatorial": 25559,
+        "polar": 24973
+      },
+      "obliquityDeg": 97.77,
+      "orbit": {
+        "a": [
+          19.18916464,
+          -0.00196176
+        ],
+        "e": [
+          0.04725744,
+          -0.00004397
+        ],
+        "I": [
+          0.77263783,
+          -0.00242939
+        ],
+        "L": [
+          313.23810451,
+          428.48202785
+        ],
+        "varpi": [
+          170.9542763,
+          0.40805281
+        ],
+        "Omega": [
+          74.01692503,
+          0.04240589
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          257.311,
+          0
+        ],
+        "poleDecDeg": [
+          -15.175,
+          0
+        ],
+        "w0Deg": 203.81,
+        "wDotDegPerDay": -501.1600928
+      },
+      "render": {
+        "shader": "gas",
+        "orbitColor": [
+          0.55,
+          0.85,
+          0.88
+        ],
+        "markerColor": [
+          0.75,
+          0.95,
+          0.97
+        ],
+        "textures": {
+          "map": "textures/uranus/2k_uranus.jpg"
+        },
+        "tint": [
+          0.96,
+          1.02,
+          1.04
+        ],
+        "flow": {
+          "amplitudes": [
+            2,
+            0,
+            0,
+            0
+          ],
+          "frequencies": [
+            3,
+            0,
+            0,
+            0
+          ],
+          "phases": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "turbulence": 0.002
+        },
+        "bands": 0.035,
+        "limbDarkening": 0.55,
+        "rings": {
+          "_radii": "Main rings (km, approx. widths): 6, 5, 4, alpha, beta, eta, gamma, delta, lambda, epsilon. Narrow and very dark (albedo ~0.05).",
+          "innerKm": 41000,
+          "outerKm": 52000,
+          "procedural": [
+            [
+              41837,
+              1.5,
+              0.35
+            ],
+            [
+              42234,
+              2,
+              0.35
+            ],
+            [
+              42571,
+              2,
+              0.35
+            ],
+            [
+              44718,
+              7,
+              0.45
+            ],
+            [
+              45661,
+              8,
+              0.45
+            ],
+            [
+              47176,
+              2,
+              0.25
+            ],
+            [
+              47627,
+              3,
+              0.45
+            ],
+            [
+              48300,
+              5,
+              0.5
+            ],
+            [
+              50024,
+              2,
+              0.2
+            ],
+            [
+              51149,
+              58,
+              0.7
+            ]
+          ],
+          "color": [
+            0.62,
+            0.64,
+            0.66
+          ],
+          "opacity": 0.85,
+          "brightness": 0.45
+        },
+        "atmosphere": {
+          "thickness": 0.03,
+          "rayleigh": [
+            0.04,
+            0.12,
+            0.16
+          ],
+          "mie": 0.04,
+          "mieTint": [
+            0.85,
+            1,
+            1
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.6,
+          "intensity": 4
+        }
+      }
+    },
+    {
+      "id": "neptune",
+      "name": "Neptün",
+      "type": "ice-giant",
+      "radiusKm": {
+        "equatorial": 24764,
+        "polar": 24341
+      },
+      "obliquityDeg": 28.32,
+      "orbit": {
+        "a": [
+          30.06992276,
+          0.00026291
+        ],
+        "e": [
+          0.00859048,
+          0.00005105
+        ],
+        "I": [
+          1.77004347,
+          0.00035372
+        ],
+        "L": [
+          -55.12002969,
+          218.45945325
+        ],
+        "varpi": [
+          44.96476227,
+          -0.32241464
+        ],
+        "Omega": [
+          131.78422574,
+          -0.01262724
+        ]
+      },
+      "rotation": {
+        "poleRaDeg": [
+          299.36,
+          0
+        ],
+        "poleDecDeg": [
+          43.46,
+          0
+        ],
+        "w0Deg": 249.978,
+        "wDotDegPerDay": 541.1397757
+      },
+      "render": {
+        "shader": "gas",
+        "orbitColor": [
+          0.42,
+          0.55,
+          1
+        ],
+        "markerColor": [
+          0.62,
+          0.72,
+          1
+        ],
+        "textures": {
+          "map": "textures/neptune/2k_neptune.jpg"
+        },
+        "tint": [
+          0.95,
+          1,
+          1.08
+        ],
+        "flow": {
+          "amplitudes": [
+            -9,
+            3,
+            0,
+            0
+          ],
+          "frequencies": [
+            2,
+            7,
+            0,
+            0
+          ],
+          "phases": [
+            0,
+            0.4,
+            0,
+            0
+          ],
+          "turbulence": 0.004
+        },
+        "bands": 0.05,
+        "storms": 0.85,
+        "limbDarkening": 0.55,
+        "rings": {
+          "_radii": "Galle (~41,900 km, broad), Le Verrier (53,200 km), Lassell (53,200-57,200 km, faint sheet), Arago (57,200 km), Adams (62,932 km).",
+          "innerKm": 40000,
+          "outerKm": 64000,
+          "procedural": [
+            [
+              41900,
+              2000,
+              0.06
+            ],
+            [
+              53200,
+              113,
+              0.35
+            ],
+            [
+              55200,
+              4000,
+              0.04
+            ],
+            [
+              57200,
+              100,
+              0.12
+            ],
+            [
+              62932,
+              50,
+              0.45
+            ]
+          ],
+          "color": [
+            0.6,
+            0.6,
+            0.62
+          ],
+          "opacity": 0.8,
+          "brightness": 0.4
+        },
+        "atmosphere": {
+          "thickness": 0.03,
+          "rayleigh": [
+            0.03,
+            0.08,
+            0.22
+          ],
+          "mie": 0.04,
+          "mieTint": [
+            0.85,
+            0.9,
+            1
+          ],
+          "rayleighHeight": 0.18,
+          "mieHeight": 0.12,
+          "g": 0.6,
+          "intensity": 4
+        }
+      }
+    }
+  ]
+}

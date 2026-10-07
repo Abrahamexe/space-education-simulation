@@ -1,0 +1,28 @@
+{
+  "id": "sun",
+  "name": "Güneş",
+  "radiusKm": 695700,
+  "massKg": 1.9884e30,
+  "siderealRotationDays": 25.38,
+  "axialTiltToEclipticDeg": 7.25,
+  "effectiveTemperatureK": 5772,
+  "orientation": {
+    "_comment": "IAU WGCCRE: north pole (ICRF J2000) and prime meridian W = W0 + Wdot * d, d = days since J2000",
+    "poleRaDeg": 286.13,
+    "poleDecDeg": 63.87,
+    "w0Deg": 84.176,
+    "wDotDegPerDay": 14.1844
+  },
+  "differentialRotationDegPerDay": {
+    "_comment": "omega(lat) = A + B sin^2(lat) + C sin^4(lat); sidereal",
+    "A": 14.713,
+    "B": -2.396,
+    "C": -1.787
+  },
+  "activeLatitudeBandDeg": [5, 35],
+  "sources": [
+    "NASA GSFC Sun Fact Sheet — nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html",
+    "Archinal et al. 2018, Celest. Mech. Dyn. Astr. 130:22 (IAU WGCCRE 2015)",
+    "Snodgrass, H. B. & Ulrich, R. K. 1990, ApJ 351, 309"
+  ]
+}

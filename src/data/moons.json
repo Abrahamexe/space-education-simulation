@@ -1,0 +1,1127 @@
+{
+  "_sources": {
+    "orbit_and_radius": "Orbital elements and mean radii come from src/data/generated/satellites.json (JPL SSD, fetched by scripts/fetch-data.mjs); radiusKm below repeats the JPL mean radius.",
+    "shapes": "Tri-axial radii: Phobos 13.0 x 11.39 x 9.07 km, Deimos 7.8 x 6.0 x 5.1 km (Thomas 1989), Amalthea 125 x 73 x 64 km (Thomas et al. 1998).",
+    "features": "Herschel (Mimas) 1.7 S 111.8 W, ~139 km; Stickney (Phobos) 1 S 49 W, ~9 km; Mordor Macula at Charon's north pole.",
+    "render": "Colours and surface styles are art direction (no licensed global maps exist for most moons); the Moon uses the Solar System Scope map."
+  },
+  "moons": [
+    {
+      "id": "moon",
+      "name": "Ay",
+      "jplName": "Moon",
+      "parent": "earth",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 1737.4,
+        "polar": 1737.4
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "rocky",
+        "orbitColor": [
+          0.7,
+          0.7,
+          0.72
+        ],
+        "markerColor": [
+          0.9,
+          0.9,
+          0.88
+        ],
+        "textures": {
+          "map": "textures/moon/2k_moon.jpg"
+        },
+        "texturesHigh": {
+          "map": "textures/moon/4k_moon.jpg"
+        },
+        "highResWithinRadii": 30,
+        "bumpStrength": 2.4,
+        "lommel": 0.85
+      }
+    },
+    {
+      "id": "phobos",
+      "name": "Phobos",
+      "jplName": "Phobos",
+      "parent": "mars",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 13,
+        "polar": 13
+      },
+      "triaxialKm": [
+        13,
+        11.39,
+        9.07
+      ],
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.55,
+          0.45
+        ],
+        "markerColor": [
+          0.8,
+          0.7,
+          0.6
+        ],
+        "colorA": [
+          0.075,
+          0.068,
+          0.06
+        ],
+        "colorB": [
+          0.1,
+          0.085,
+          0.07
+        ],
+        "colorC": [
+          0.05,
+          0.045,
+          0.04
+        ],
+        "craterDensity": 0.65,
+        "craterScale": 2.6,
+        "relief": 1.4,
+        "rimBrightness": 0.25,
+        "bigCrater": {
+          "latDeg": -1,
+          "lonDeg": -49,
+          "radiusDeg": 23,
+          "strength": 0.9
+        },
+        "irregularity": 0.12,
+        "seed": 4,
+        "lommel": 0.8
+      }
+    },
+    {
+      "id": "deimos",
+      "name": "Deimos",
+      "jplName": "Deimos",
+      "parent": "mars",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 7.8,
+        "polar": 7.8
+      },
+      "triaxialKm": [
+        7.8,
+        6,
+        5.1
+      ],
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.55,
+          0.45
+        ],
+        "markerColor": [
+          0.8,
+          0.7,
+          0.6
+        ],
+        "colorA": [
+          0.09,
+          0.08,
+          0.07
+        ],
+        "colorB": [
+          0.11,
+          0.095,
+          0.08
+        ],
+        "craterDensity": 0.3,
+        "craterScale": 2,
+        "relief": 0.8,
+        "rimBrightness": 0.15,
+        "irregularity": 0.1,
+        "seed": 5,
+        "lommel": 0.8
+      }
+    },
+    {
+      "id": "io",
+      "name": "Io",
+      "jplName": "Io",
+      "parent": "jupiter",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 1821.49,
+        "polar": 1821.49
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "io",
+        "orbitColor": [
+          0.9,
+          0.8,
+          0.45
+        ],
+        "markerColor": [
+          1,
+          0.92,
+          0.6
+        ],
+        "colorA": [
+          0.36,
+          0.29,
+          0.07
+        ],
+        "colorB": [
+          0.45,
+          0.4,
+          0.19
+        ],
+        "colorC": [
+          0.45,
+          0.11,
+          0.03
+        ],
+        "regionScale": 2.5,
+        "regionContrast": 0.25,
+        "craterDensity": 0,
+        "relief": 0.3,
+        "seed": 11,
+        "lommel": 0.3
+      }
+    },
+    {
+      "id": "europa",
+      "name": "Europa",
+      "jplName": "Europa",
+      "parent": "jupiter",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 1560.8,
+        "polar": 1560.8
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "europa",
+        "orbitColor": [
+          0.8,
+          0.75,
+          0.65
+        ],
+        "markerColor": [
+          0.95,
+          0.92,
+          0.85
+        ],
+        "colorA": [
+          0.6,
+          0.55,
+          0.46
+        ],
+        "colorB": [
+          0.5,
+          0.45,
+          0.36
+        ],
+        "colorC": [
+          0.32,
+          0.15,
+          0.07
+        ],
+        "regionScale": 3,
+        "regionContrast": 0.35,
+        "craterDensity": 0.015,
+        "relief": 0.4,
+        "seed": 12,
+        "lommel": 0.2
+      }
+    },
+    {
+      "id": "ganymede",
+      "name": "Ganymede",
+      "jplName": "Ganymede",
+      "parent": "jupiter",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 2631.2,
+        "polar": 2631.2
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "ganymede",
+        "orbitColor": [
+          0.7,
+          0.68,
+          0.64
+        ],
+        "markerColor": [
+          0.9,
+          0.88,
+          0.82
+        ],
+        "colorA": [
+          0.15,
+          0.12,
+          0.09
+        ],
+        "colorB": [
+          0.44,
+          0.42,
+          0.39
+        ],
+        "craterDensity": 0.25,
+        "craterScale": 3,
+        "relief": 0.6,
+        "rimBrightness": 0.6,
+        "seed": 13,
+        "lommel": 0.4
+      }
+    },
+    {
+      "id": "callisto",
+      "name": "Callisto",
+      "jplName": "Callisto",
+      "parent": "jupiter",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 2410.3,
+        "polar": 2410.3
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.6,
+          0.58,
+          0.55
+        ],
+        "markerColor": [
+          0.8,
+          0.78,
+          0.74
+        ],
+        "colorA": [
+          0.11,
+          0.1,
+          0.09
+        ],
+        "colorB": [
+          0.17,
+          0.15,
+          0.13
+        ],
+        "regionScale": 2,
+        "regionContrast": 0.3,
+        "craterDensity": 0.85,
+        "craterScale": 4,
+        "relief": 1,
+        "rimBrightness": 1.2,
+        "seed": 14,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "amalthea",
+      "name": "Amalthea",
+      "jplName": "Amalthea",
+      "parent": "jupiter",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 125,
+        "polar": 125
+      },
+      "triaxialKm": [
+        125,
+        73,
+        64
+      ],
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.8,
+          0.45,
+          0.35
+        ],
+        "markerColor": [
+          0.9,
+          0.55,
+          0.45
+        ],
+        "colorA": [
+          0.3,
+          0.1,
+          0.05
+        ],
+        "colorB": [
+          0.4,
+          0.17,
+          0.08
+        ],
+        "craterDensity": 0.5,
+        "craterScale": 2,
+        "relief": 1,
+        "irregularity": 0.14,
+        "seed": 15,
+        "lommel": 0.6
+      }
+    },
+    {
+      "id": "mimas",
+      "name": "Mimas",
+      "jplName": "Mimas",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 198.2,
+        "polar": 198.2
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.7,
+          0.7
+        ],
+        "markerColor": [
+          0.85,
+          0.85,
+          0.85
+        ],
+        "colorA": [
+          0.5,
+          0.5,
+          0.49
+        ],
+        "colorB": [
+          0.56,
+          0.56,
+          0.55
+        ],
+        "craterDensity": 0.85,
+        "craterScale": 3.5,
+        "relief": 1.2,
+        "rimBrightness": 0.2,
+        "bigCrater": {
+          "latDeg": -1.7,
+          "lonDeg": -111.8,
+          "radiusDeg": 20,
+          "strength": 1.1
+        },
+        "seed": 21,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "enceladus",
+      "name": "Enceladus",
+      "jplName": "Enceladus",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 252.1,
+        "polar": 252.1
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "enceladus",
+        "orbitColor": [
+          0.75,
+          0.82,
+          0.88
+        ],
+        "markerColor": [
+          0.95,
+          0.98,
+          1
+        ],
+        "colorA": [
+          0.9,
+          0.92,
+          0.94
+        ],
+        "colorB": [
+          0.82,
+          0.85,
+          0.88
+        ],
+        "colorC": [
+          0.45,
+          0.62,
+          0.72
+        ],
+        "craterDensity": 0.1,
+        "craterScale": 3,
+        "relief": 0.5,
+        "seed": 22,
+        "lommel": 0.2
+      }
+    },
+    {
+      "id": "tethys",
+      "name": "Tethys",
+      "jplName": "Tethys",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 531.1,
+        "polar": 531.1
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.72,
+          0.72,
+          0.72
+        ],
+        "markerColor": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "colorA": [
+          0.76,
+          0.76,
+          0.74
+        ],
+        "colorB": [
+          0.68,
+          0.68,
+          0.66
+        ],
+        "craterDensity": 0.65,
+        "craterScale": 3.2,
+        "relief": 1,
+        "rimBrightness": 0.15,
+        "seed": 23,
+        "lommel": 0.4
+      }
+    },
+    {
+      "id": "dione",
+      "name": "Dione",
+      "jplName": "Dione",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 561.4,
+        "polar": 561.4
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.7,
+          0.7
+        ],
+        "markerColor": [
+          0.88,
+          0.88,
+          0.88
+        ],
+        "colorA": [
+          0.56,
+          0.56,
+          0.55
+        ],
+        "colorB": [
+          0.5,
+          0.5,
+          0.49
+        ],
+        "colorC": [
+          0.85,
+          0.86,
+          0.87
+        ],
+        "craterDensity": 0.6,
+        "craterScale": 3,
+        "relief": 0.9,
+        "lineae": 0.6,
+        "seed": 24,
+        "lommel": 0.4
+      }
+    },
+    {
+      "id": "rhea",
+      "name": "Rhea",
+      "jplName": "Rhea",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 763.5,
+        "polar": 763.5
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.7,
+          0.7
+        ],
+        "markerColor": [
+          0.88,
+          0.88,
+          0.88
+        ],
+        "colorA": [
+          0.52,
+          0.51,
+          0.49
+        ],
+        "colorB": [
+          0.6,
+          0.59,
+          0.57
+        ],
+        "colorC": [
+          0.8,
+          0.8,
+          0.8
+        ],
+        "craterDensity": 0.8,
+        "craterScale": 3.6,
+        "relief": 1.1,
+        "lineae": 0.25,
+        "seed": 25,
+        "lommel": 0.45
+      }
+    },
+    {
+      "id": "titan",
+      "name": "Titan",
+      "jplName": "Titan",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 2574.76,
+        "polar": 2574.76
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "titan",
+        "orbitColor": [
+          0.9,
+          0.65,
+          0.35
+        ],
+        "markerColor": [
+          1,
+          0.75,
+          0.42
+        ],
+        "colorA": [
+          0.42,
+          0.26,
+          0.09
+        ],
+        "colorB": [
+          0.3,
+          0.18,
+          0.06
+        ],
+        "regionScale": 2,
+        "regionContrast": 0.25,
+        "craterDensity": 0,
+        "relief": 0.2,
+        "seed": 26,
+        "lommel": 0,
+        "atmosphere": {
+          "_comment": "Thick nitrogen/methane haze: orange, opaque, extends far above the surface.",
+          "thickness": 0.1,
+          "rayleigh": [
+            0.08,
+            0.1,
+            0.16
+          ],
+          "mie": 2.6,
+          "mieTint": [
+            1,
+            0.58,
+            0.22
+          ],
+          "rayleighHeight": 0.15,
+          "mieHeight": 0.15,
+          "g": 0.55,
+          "intensity": 8
+        }
+      }
+    },
+    {
+      "id": "iapetus",
+      "name": "Iapetus",
+      "jplName": "Iapetus",
+      "parent": "saturn",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 734.3,
+        "polar": 734.3
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "iapetus",
+        "orbitColor": [
+          0.65,
+          0.62,
+          0.58
+        ],
+        "markerColor": [
+          0.85,
+          0.82,
+          0.78
+        ],
+        "colorA": [
+          0.6,
+          0.58,
+          0.55
+        ],
+        "colorB": [
+          0.66,
+          0.64,
+          0.6
+        ],
+        "colorC": [
+          0.04,
+          0.03,
+          0.025
+        ],
+        "craterDensity": 0.6,
+        "craterScale": 3,
+        "relief": 1,
+        "seed": 27,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "miranda",
+      "name": "Miranda",
+      "jplName": "Miranda",
+      "parent": "uranus",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 235.8,
+        "polar": 235.8
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "miranda",
+        "orbitColor": [
+          0.6,
+          0.75,
+          0.78
+        ],
+        "markerColor": [
+          0.82,
+          0.9,
+          0.92
+        ],
+        "colorA": [
+          0.33,
+          0.33,
+          0.34
+        ],
+        "colorB": [
+          0.45,
+          0.45,
+          0.46
+        ],
+        "colorC": [
+          0.22,
+          0.22,
+          0.23
+        ],
+        "craterDensity": 0.5,
+        "craterScale": 3,
+        "relief": 1,
+        "seed": 31,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "ariel",
+      "name": "Ariel",
+      "jplName": "Ariel",
+      "parent": "uranus",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 578.9,
+        "polar": 578.9
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.6,
+          0.75,
+          0.78
+        ],
+        "markerColor": [
+          0.82,
+          0.9,
+          0.92
+        ],
+        "colorA": [
+          0.42,
+          0.42,
+          0.43
+        ],
+        "colorB": [
+          0.47,
+          0.47,
+          0.48
+        ],
+        "colorC": [
+          0.25,
+          0.25,
+          0.26
+        ],
+        "craterDensity": 0.45,
+        "craterScale": 3,
+        "relief": 0.9,
+        "lineae": 0.6,
+        "seed": 32,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "umbriel",
+      "name": "Umbriel",
+      "jplName": "Umbriel",
+      "parent": "uranus",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 584.7,
+        "polar": 584.7
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.55,
+          0.65,
+          0.68
+        ],
+        "markerColor": [
+          0.7,
+          0.78,
+          0.8
+        ],
+        "colorA": [
+          0.14,
+          0.14,
+          0.15
+        ],
+        "colorB": [
+          0.17,
+          0.17,
+          0.18
+        ],
+        "craterDensity": 0.8,
+        "craterScale": 3.4,
+        "relief": 1,
+        "rimBrightness": 0.15,
+        "seed": 33,
+        "lommel": 0.6
+      }
+    },
+    {
+      "id": "titania",
+      "name": "Titania",
+      "jplName": "Titania",
+      "parent": "uranus",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 788.9,
+        "polar": 788.9
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.6,
+          0.72,
+          0.75
+        ],
+        "markerColor": [
+          0.82,
+          0.88,
+          0.9
+        ],
+        "colorA": [
+          0.3,
+          0.29,
+          0.28
+        ],
+        "colorB": [
+          0.35,
+          0.33,
+          0.31
+        ],
+        "colorC": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "craterDensity": 0.6,
+        "craterScale": 3.2,
+        "relief": 1,
+        "lineae": 0.3,
+        "seed": 34,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "oberon",
+      "name": "Oberon",
+      "jplName": "Oberon",
+      "parent": "uranus",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 761.4,
+        "polar": 761.4
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.6,
+          0.68,
+          0.7
+        ],
+        "markerColor": [
+          0.8,
+          0.84,
+          0.85
+        ],
+        "colorA": [
+          0.24,
+          0.22,
+          0.21
+        ],
+        "colorB": [
+          0.3,
+          0.26,
+          0.24
+        ],
+        "craterDensity": 0.8,
+        "craterScale": 3.4,
+        "relief": 1.1,
+        "rimBrightness": 0.5,
+        "seed": 35,
+        "lommel": 0.5
+      }
+    },
+    {
+      "id": "triton",
+      "name": "Triton",
+      "jplName": "Triton",
+      "parent": "neptune",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 1352.6,
+        "polar": 1352.6
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "triton",
+        "orbitColor": [
+          0.65,
+          0.68,
+          0.9
+        ],
+        "markerColor": [
+          0.9,
+          0.85,
+          0.85
+        ],
+        "colorA": [
+          0.58,
+          0.48,
+          0.43
+        ],
+        "colorB": [
+          0.74,
+          0.67,
+          0.64
+        ],
+        "colorC": [
+          0.32,
+          0.27,
+          0.25
+        ],
+        "craterDensity": 0.08,
+        "craterScale": 3,
+        "relief": 0.6,
+        "seed": 41,
+        "lommel": 0.3
+      }
+    },
+    {
+      "id": "nereid",
+      "name": "Nereid",
+      "jplName": "Nereid",
+      "parent": "neptune",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 170,
+        "polar": 170
+      },
+      "rotation": {
+        "kind": "period",
+        "periodHours": 11.594,
+        "_note": "Kepler/K2 light-curve period (Kiss et al. 2016); pole unknown, spin about the orbit normal."
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.55,
+          0.6,
+          0.85
+        ],
+        "markerColor": [
+          0.75,
+          0.75,
+          0.78
+        ],
+        "colorA": [
+          0.18,
+          0.18,
+          0.19
+        ],
+        "colorB": [
+          0.22,
+          0.22,
+          0.23
+        ],
+        "craterDensity": 0.7,
+        "craterScale": 3,
+        "relief": 1,
+        "seed": 42,
+        "lommel": 0.6
+      }
+    },
+    {
+      "id": "charon",
+      "name": "Charon",
+      "jplName": "Charon",
+      "parent": "pluto",
+      "type": "moon",
+      "radiusKm": {
+        "equatorial": 606,
+        "polar": 606
+      },
+      "rotation": {
+        "kind": "synchronous"
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.7,
+          0.62,
+          0.58
+        ],
+        "markerColor": [
+          0.82,
+          0.8,
+          0.78
+        ],
+        "colorA": [
+          0.36,
+          0.35,
+          0.34
+        ],
+        "colorB": [
+          0.42,
+          0.41,
+          0.4
+        ],
+        "colorC": [
+          0.3,
+          0.11,
+          0.06
+        ],
+        "craterDensity": 0.5,
+        "craterScale": 3,
+        "relief": 0.9,
+        "lineae": 0.2,
+        "spot": {
+          "latDeg": 88,
+          "lonDeg": 0,
+          "radiusDeg": 20,
+          "strength": 0.85
+        },
+        "seed": 51,
+        "lommel": 0.5
+      }
+    }
+  ]
+}

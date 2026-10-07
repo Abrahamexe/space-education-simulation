@@ -1,0 +1,301 @@
+{
+  "_sources": {
+    "orbit": "Osculating heliocentric elements from the JPL Small-Body Database (src/data/generated/small-bodies.json).",
+    "ceres": "Shape 964.4 x 964.2 x 891.8 km (JPL SBDB, Dawn); IAU pole RA 291.418, Dec 66.764, W = 170.650 + 952.1532 d (Archinal et al. 2018); Occator faculae at 19.8 N 239.3 E.",
+    "pluto": "Mean radius 1188.3 km (Nimmo et al. 2017, New Horizons); IAU pole RA 132.993, Dec -6.163, W = 302.695 + 56.3625225 d (Archinal et al. 2018).",
+    "haumea": "Tri-axial 1161 x 852 x 513 km and ring at 2287 km radius, ~70 km wide (Ortiz et al. 2017, Nature 550, 219); rotation 3.9154 h (JPL SBDB). Pole not measured: spin about the orbit normal (approximation).",
+    "makemake": "Diameter ~1430 km (Ortiz et al. 2012, Nature 491, 566); rotation 22.83 h (JPL SBDB). Pole unknown (approximation).",
+    "eris": "Diameter 2326 km (Sicardy et al. 2011, Nature 478, 493); rotation 25.9 h (JPL SBDB). Pole unknown (approximation).",
+    "render": "Surface colours/styles are art direction based on published colour descriptions; no licensed global maps exist."
+  },
+  "bodies": [
+    {
+      "id": "ceres",
+      "name": "Ceres",
+      "type": "dwarf",
+      "radiusKm": {
+        "equatorial": 482.2,
+        "polar": 445.9
+      },
+      "triaxialKm": [
+        482.2,
+        482.1,
+        445.9
+      ],
+      "rotation": {
+        "poleRaDeg": [
+          291.418,
+          0
+        ],
+        "poleDecDeg": [
+          66.764,
+          0
+        ],
+        "w0Deg": 170.65,
+        "wDotDegPerDay": 952.1532
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.62,
+          0.6,
+          0.58
+        ],
+        "markerColor": [
+          0.82,
+          0.8,
+          0.78
+        ],
+        "colorA": [
+          0.1,
+          0.095,
+          0.09
+        ],
+        "colorB": [
+          0.13,
+          0.12,
+          0.11
+        ],
+        "colorC": [
+          0.85,
+          0.85,
+          0.83
+        ],
+        "craterDensity": 0.8,
+        "craterScale": 3.5,
+        "relief": 1,
+        "rimBrightness": 0.3,
+        "spot": {
+          "latDeg": 19.8,
+          "lonDeg": 239.3,
+          "radiusDeg": 2,
+          "strength": 1
+        },
+        "seed": 61,
+        "lommel": 0.6
+      }
+    },
+    {
+      "id": "pluto",
+      "name": "Plüton",
+      "type": "dwarf",
+      "radiusKm": {
+        "equatorial": 1188.3,
+        "polar": 1188.3
+      },
+      "rotation": {
+        "poleRaDeg": [
+          132.993,
+          0
+        ],
+        "poleDecDeg": [
+          -6.163,
+          0
+        ],
+        "w0Deg": 302.695,
+        "wDotDegPerDay": 56.3625225
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "pluto",
+        "orbitColor": [
+          0.8,
+          0.68,
+          0.58
+        ],
+        "markerColor": [
+          0.95,
+          0.85,
+          0.75
+        ],
+        "colorA": [
+          0.5,
+          0.42,
+          0.34
+        ],
+        "colorB": [
+          0.86,
+          0.8,
+          0.74
+        ],
+        "colorC": [
+          0.22,
+          0.07,
+          0.03
+        ],
+        "regionScale": 2.5,
+        "regionContrast": 0.3,
+        "craterDensity": 0.08,
+        "craterScale": 3,
+        "relief": 0.7,
+        "seed": 62,
+        "lommel": 0.3
+      }
+    },
+    {
+      "id": "haumea",
+      "name": "Haumea",
+      "type": "dwarf",
+      "radiusKm": {
+        "equatorial": 1161,
+        "polar": 513
+      },
+      "triaxialKm": [
+        1161,
+        852,
+        513
+      ],
+      "rotation": {
+        "kind": "period",
+        "periodHours": 3.9154
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.75,
+          0.78,
+          0.82
+        ],
+        "markerColor": [
+          0.92,
+          0.94,
+          0.97
+        ],
+        "colorA": [
+          0.82,
+          0.83,
+          0.86
+        ],
+        "colorB": [
+          0.74,
+          0.75,
+          0.78
+        ],
+        "colorC": [
+          0.42,
+          0.18,
+          0.12
+        ],
+        "craterDensity": 0.2,
+        "craterScale": 3,
+        "relief": 0.6,
+        "spot": {
+          "latDeg": 0,
+          "lonDeg": 60,
+          "radiusDeg": 22,
+          "strength": 0.6
+        },
+        "seed": 63,
+        "lommel": 0.2,
+        "rings": {
+          "innerKm": 2150,
+          "outerKm": 2420,
+          "procedural": [
+            [
+              2287,
+              70,
+              0.5
+            ]
+          ],
+          "color": [
+            0.7,
+            0.7,
+            0.72
+          ],
+          "opacity": 0.8,
+          "brightness": 0.6
+        }
+      }
+    },
+    {
+      "id": "makemake",
+      "name": "Makemake",
+      "type": "dwarf",
+      "radiusKm": {
+        "equatorial": 715,
+        "polar": 715
+      },
+      "rotation": {
+        "kind": "period",
+        "periodHours": 22.8266
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.8,
+          0.62,
+          0.5
+        ],
+        "markerColor": [
+          0.95,
+          0.78,
+          0.65
+        ],
+        "colorA": [
+          0.52,
+          0.36,
+          0.24
+        ],
+        "colorB": [
+          0.62,
+          0.46,
+          0.33
+        ],
+        "regionScale": 2,
+        "regionContrast": 0.35,
+        "craterDensity": 0.15,
+        "craterScale": 3,
+        "relief": 0.5,
+        "seed": 64,
+        "lommel": 0.3
+      }
+    },
+    {
+      "id": "eris",
+      "name": "Eris",
+      "type": "dwarf",
+      "radiusKm": {
+        "equatorial": 1163,
+        "polar": 1163
+      },
+      "rotation": {
+        "kind": "period",
+        "periodHours": 25.9
+      },
+      "render": {
+        "shader": "procedural",
+        "style": "cratered",
+        "orbitColor": [
+          0.72,
+          0.72,
+          0.75
+        ],
+        "markerColor": [
+          0.92,
+          0.92,
+          0.94
+        ],
+        "colorA": [
+          0.8,
+          0.8,
+          0.8
+        ],
+        "colorB": [
+          0.72,
+          0.72,
+          0.73
+        ],
+        "regionScale": 2,
+        "regionContrast": 0.25,
+        "craterDensity": 0.15,
+        "craterScale": 3,
+        "relief": 0.5,
+        "seed": 65,
+        "lommel": 0.25
+      }
+    }
+  ]
+}
