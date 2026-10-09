@@ -94,7 +94,7 @@ Ardından tarayıcıda `http://localhost:5173` adresini açın. En iyi sonuç i�
 | `npm run typecheck` | Sadece TypeScript kontrolü |
 | `npm run data` | Yörünge ve fiziksel verileri JPL'den yeniden indirir |
 | `npm run textures` | Yüksek çözünürlüklü kaynak dokulardan 4K sürümleri üretir |
-| `npm run hires` | Bulutsu ve galaksilerin orijinal (16K'ya kadar) görüntülerini indirip karolara böler (`public/tiles/`, ~150 MB, git dışı). Çalıştırılmazsa uygulama 4K ile çalışır |
+| `npm run hires` | Bulutsu ve galaksilerin orijinal (16K'ya kadar) görüntülerini indirip karolara böler (`public/tiles/`, ~170 MB, repoda hazır gelir; yalnız yeniden üretmek için) |
 | `npm run spacecraft` | Teleskop ve sondaların yörüngelerini JPL Horizons'tan yeniden indirir |
 | `npm run spacecraft:models` | NASA 3D modellerini sadeleştirip `public/models/spacecraft/` altına yazar |
 

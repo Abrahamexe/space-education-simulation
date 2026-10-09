@@ -4,7 +4,7 @@
 // of 1024 px WebP tiles into public/tiles/<id>/, keeping only the levels
 // sharper than the 4K base texture. public/tiles/index.json lists them; the
 // app streams the tiles it needs up close (SlicedNebula's detail window).
-// The tiles are large (~0.5 GB), so they stay out of git: run once with
+// The tiles (~170 MB) are committed; rebuild them with
 //   npm run hires            (all)       npm run hires -- orion m51  (some)
 import sharp from 'sharp';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync, createWriteStream } from 'node:fs';
