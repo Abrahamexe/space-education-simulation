@@ -9,10 +9,10 @@ export interface ToggleTarget {
   set: (v: boolean) => void;
 }
 
-/** Keyboard shortcuts for the layer toggles (Turkish mnemonics: Yörünge, Etiket, Kuşak, Galaksi). */
-const LAYER_KEYS = { orbits: 'KeyY', labels: 'KeyE', belts: 'KeyK', galaxy: 'KeyG', habitable: 'KeyB' } as const;
-const LAYER_KEY_LABEL = { orbits: 'Y', labels: 'E', belts: 'K', galaxy: 'G', habitable: 'B' } as const;
-const LAYER_ICON = { orbits: 'orbits', labels: 'labels', belts: 'belts', galaxy: 'galaxy', habitable: 'habitable' } as const;
+/** Keyboard shortcuts for the layer toggles (Turkish mnemonics: Yörünge, Etiket, Kuşak, Galaksi, Uzay araçları). */
+const LAYER_KEYS = { orbits: 'KeyY', labels: 'KeyE', belts: 'KeyK', galaxy: 'KeyG', habitable: 'KeyB', craft: 'KeyU' } as const;
+const LAYER_KEY_LABEL = { orbits: 'Y', labels: 'E', belts: 'K', galaxy: 'G', habitable: 'B', craft: 'U' } as const;
+const LAYER_ICON = { orbits: 'orbits', labels: 'labels', belts: 'belts', galaxy: 'galaxy', habitable: 'habitable', craft: 'craft' } as const;
 type LayerName = keyof typeof LAYER_KEYS;
 
 /** Typing in a field, or a modifier chord: not a shortcut. */
@@ -40,11 +40,11 @@ export class Layers {
     el.setAttribute('aria-label', t.layers);
     el.dataset.reveal = '';
     el.style.setProperty('--i', '1');
-    (['galaxy', 'habitable', 'orbits', 'labels', 'belts'] as const).forEach((name) => {
+    (['galaxy', 'habitable', 'craft', 'orbits', 'labels', 'belts'] as const).forEach((name) => {
       const target = toggles[name];
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = `layer${name === 'belts' ? ' tool-optional' : ''}`;
+      b.className = `layer${name === 'belts' || name === 'craft' ? ' tool-optional' : ''}`;
       b.title = `${t[name]} (${LAYER_KEY_LABEL[name]})`;
       b.setAttribute('aria-keyshortcuts', LAYER_KEY_LABEL[name]);
       b.innerHTML = `${icon(LAYER_ICON[name])}<span class="layer-label">${t[name]}</span>`;

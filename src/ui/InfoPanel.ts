@@ -178,6 +178,9 @@ export class InfoPanel {
     if (info.id !== 'sun') {
       parts.push(`<div class="panel-live"><span class="k">${p.toSun}</span><span class="v" data-live="d"></span><span class="v2" data-live="t"></span></div>`);
     }
+    if (info.craft) {
+      parts.push(`<div class="panel-live"><span class="k">${p.toEarth}</span><span class="v" data-live="e"></span><span class="v2" data-live="et"></span></div>`);
+    }
     if (info.stats.length) {
       parts.push(
         `<dl class="stats">${info.stats.map((s) => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd></div>`).join('')}</dl>`,
@@ -197,7 +200,7 @@ export class InfoPanel {
     if (info.fact) {
       parts.push(`<aside class="fact"><h3>${p.fact}</h3><p>${esc(info.fact)}</p></aside>`);
     }
-    parts.push(`<p class="panel-src">${p.sources}</p>`);
+    parts.push(`<p class="panel-src">${info.source ?? p.sources}</p>`);
     this.scroll.innerHTML = parts.join('');
     [...this.scroll.children].forEach((c, i) => (c as HTMLElement).style.setProperty('--i', String(i)));
     this.el.setAttribute('aria-labelledby', 'panel-title');
@@ -212,9 +215,18 @@ export class InfoPanel {
     const now = performance.now();
     if (now - this.lastLive < LIVE_REFRESH_MS) return;
     this.lastLive = now;
-    const body = this.current.body;
-    if (!(body instanceof CelestialBody)) return;
+    const body = this.current.body as Partial<CelestialBody> & { earthDistanceKm?: number };
     const d = body.heliocentricDistanceKm;
+    if (typeof d !== 'number') return;
+    if (typeof body.earthDistanceKm === 'number') {
+      const e = body.earthDistanceKm;
+      const el = this.scroll.querySelector('[data-live="e"]');
+      if (el) {
+        el.textContent = e < KM_PER_AU * 0.01 ? km(e) : au(e / KM_PER_AU);
+        const s = e / 299792.458;
+        (this.scroll.querySelector('[data-live="et"]') as HTMLElement).textContent = `${strings().panel.signal} ${s < 1 ? `${Math.max(1, Math.round(s * 1000))} ms` : lightTime(e)}`;
+      }
+    }
     (this.liveEl.querySelector('[data-live="d"]') as HTMLElement).textContent = `${au(d / KM_PER_AU)}`;
     (this.liveEl.querySelector('[data-live="t"]') as HTMLElement).textContent =
       `${km(d)} · ${strings().panel.byLight} ${lightTime(d)}`;

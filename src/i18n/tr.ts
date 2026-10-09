@@ -47,6 +47,7 @@ export const tr = {
     belts: 'Kuşaklar',
     galaxy: 'Galaktik',
     habitable: 'Yaşanabilir bölge',
+    craft: 'Uzay araçları',
     habitableNotice:
       'Yaşanabilir bölge (Kopparapu ve ark. 2014): yeşil bant, Dünya benzeri bir gezegende yüzeyde sıvı suyun kalabileceği uzaklıklar (sera kaçağı → en büyük sera). Soluk kenarlar iyimser sınırlar (erken Venüs, erken Mars).',
     galaxyNotice:
@@ -56,7 +57,7 @@ export const tr = {
     cameraOrbit: 'Yörünge',
     cameraFree: 'Serbest',
     cameraFreeNotice:
-      'Serbest kamera: sol tuşla sürükleyip kaydır, sağ tuşla döndür, tekerlekle imlecin gösterdiği yere uç. Bir cisme tek tık bilgisini açar, çift tık oraya uçar.',
+      'Serbest kamera: sol tuşla sürükleyip hedefin etrafında döndür, sağ tuşla yörünge düzleminde kaydır, tekerlekle hedefe yaklaş. Bir cisme tek tık bilgisini açar, çift tık oraya uçar.',
     galaxyView: 'Galaksiye çık',
     settings: 'Ayarlar',
     quality: 'Görüntü kalitesi',
@@ -72,7 +73,7 @@ export const tr = {
     focus: 'Odak',
     free: 'Serbest kamera',
     freeKeys: 'tekerlek: imlecin gösterdiği yere uç · bir cisme tıklayınca kilitlenir',
-    mapKeys: 'sürükle: döndür · sağ tuş: kaydır · tekerlek: yaklaş · çift tık: uç',
+    mapKeys: 'sürükle: döndür · sağ tuş: düzlemde kaydır · tekerlek: hedefe yaklaş · çift tık: uç',
   },
   panel: {
     label: 'Gök cismi bilgileri',
@@ -113,7 +114,14 @@ export const tr = {
       aphelion: 'Günöte',
       lastPerihelion: 'Son günberi geçişi',
       nextPerihelion: 'Sonraki günberi geçişi',
+      agency: 'Ajans',
+      launch: 'Fırlatma',
     },
+    craftTypes: { telescope: 'Uzay teleskobu', probe: 'Uzay sondası', station: 'Uzay istasyonu' },
+    toEarth: "Dünya'ya",
+    signal: 'sinyal',
+    craftSources: 'Konum: JPL Horizons · Model: NASA 3D Resources',
+    craftSourcesSchematic: 'Konum: JPL Horizons · Şematik model',
     ratio: {
       times: (v: string) => `Dünya'nın ${v} katı`,
       same: 'Dünya ile aynı',
@@ -146,7 +154,7 @@ export const tr = {
   search: {
     open: 'Ara',
     label: 'Gök cismi ara',
-    placeholder: 'Gezegen, uydu, cüce gezegen…',
+    placeholder: 'Gezegen, uydu, teleskop, sonda…',
     empty: 'Eşleşen gök cismi yok',
     groups: {
       star: 'Yıldız',
@@ -154,6 +162,7 @@ export const tr = {
       dwarf: 'Cüce gezegenler',
       comet: 'Kuyruklu yıldız',
       moon: 'Uydular',
+      craft: 'Uzay araçları',
     },
   },
   help: {
@@ -164,10 +173,9 @@ export const tr = {
       ['Sürükle', 'Etrafında döndür'],
       ['Tekerlek', 'Yaklaş, uzaklaş; serbestken imlecin gösterdiği yere uç'],
       ['Sağ tık + sürükle', 'Görüntüyü kaydır'],
-      ['Serbest: cismin üstünde sürükle', 'O cismin etrafında dön'],
-      ['Serbest: boşlukta sürükle', 'Etrafına bak'],
-      ['Serbest: sağ tuşla sürükle', 'Kaydır'],
-      ['Serbest: tekerlek', 'İmlecin altındaki cisme yaklaş'],
+      ['Serbest: sürükle', 'Hedefin etrafında dön'],
+      ['Serbest: sağ tuşla sürükle', 'Yörünge düzleminde kaydır'],
+      ['Serbest: tekerlek', 'Hedefe yaklaş, uzaklaş'],
       ['Serbest: çift tık', 'Cisme uç'],
       ['En uzağa uzaklaş', 'Galaksi görünümüne geç'],
     ],
@@ -188,10 +196,11 @@ export const tr = {
       ['Shift', 'Daha hızlı uç'],
       ['Esc', 'Geri'],
       ['H', 'Genel görünüm'],
-      ['M', 'Serbest kamera (harita gibi kaydır)'],
+      ['M', 'Serbest kamera'],
       ['Y · E · K', 'Yörüngeler, etiketler, kuşaklar'],
       ['G', 'Galaktik hareket (Güneş ile birlikte yol al)'],
       ['B', 'Yaşanabilir bölgeler'],
+      ['U', 'Teleskoplar ve uzay sondaları'],
     ],
   },
 } as const;

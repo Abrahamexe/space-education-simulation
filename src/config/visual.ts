@@ -230,9 +230,11 @@ export const CAMERA = {
     maxPendingLog: 6,
   },
 
-  /** Map mode (grab and slide): glide decay rate after a throw (1/s). */
+  /** Free camera (map mode): TheSkyLive 3D viewer's orbit-controls settings. */
   map: {
-    glideDecay: 4.5,
+    dampingFactor: 0.5,
+    rotateSpeed: 1,
+    panSpeed: 1,
   },
 
   /** Opening shot: distances in solar radii, angles in degrees. */
@@ -414,7 +416,7 @@ export const INTERACTION = {
     liftMax: 0.3,
     fovKickDeg: 5,
     /** End framing, in body radii, by kind. */
-    framingRadii: { star: 6, planet: 4.2, dwarf: 4.2, moon: 4.5, comet: 5 },
+    framingRadii: { star: 6, planet: 4.2, dwarf: 4.2, moon: 4.5, comet: 5, craft: 3.2 },
     /** An active comet is framed by its coma and tail (multiples of the half tail length). */
     cometTailFraming: 2.4,
     /** Ringed planets need room for the rings. */

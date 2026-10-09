@@ -54,8 +54,14 @@ export class BlackHoleEffect extends Effect {
         ['uSkyGain', new Uniform(1)],
         ['uSkyMat', new Uniform(new Matrix3())],
         ['uLens', new Uniform(1)],
+        ['uStep', new Uniform(0.07)],
       ]),
     });
+  }
+
+  /** Ray-march step as a fraction of the radius (quality presets: smaller = finer). */
+  set stepScale(v: number) {
+    this.u<number>('uStep').value = v;
   }
 
   private u<T>(name: string): Uniform<T> {

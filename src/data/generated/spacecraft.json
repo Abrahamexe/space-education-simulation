@@ -1,0 +1,560 @@
+{
+ "craft": {
+  "voyager1": {
+   "horizons": "-31",
+   "startJd": 2443392.5,
+   "endJd": 2473457.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2443392.5,
+     "step": 3,
+     "n": 167,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2443890.5,
+     "step": 0.041666666666666664,
+     "n": 2281,
+     "offset": 167,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2443985.5,
+     "step": 3,
+     "n": 177,
+     "offset": 2448,
+     "interp": "kepler"
+    },
+    {
+     "center": "saturn",
+     "gm": 37931206.2,
+     "t0": 2444515.5,
+     "step": 0.041666666666666664,
+     "n": 1969,
+     "offset": 2625,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2444597.5,
+     "step": 3,
+     "n": 9621,
+     "offset": 4594,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "hubble": {
+   "horizons": "-48",
+   "startJd": 2448006.625,
+   "endJd": 2461391.375,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2448006.625,
+     "step": 0.25,
+     "n": 53540,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "iss": {
+   "horizons": "-125544",
+   "startJd": 2451137.5,
+   "endJd": 2461351.5,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2451137.5,
+     "step": 0.25,
+     "n": 40857,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "chandra": {
+   "horizons": "-151",
+   "startJd": 2451398.5,
+   "endJd": 2461494.5,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2451398.5,
+     "step": 0.25,
+     "n": 40385,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "tess": {
+   "horizons": "-95",
+   "startJd": 2458227.5,
+   "endJd": 2461859.5,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2458227.5,
+     "step": 0.25,
+     "n": 14529,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "jwst": {
+   "horizons": "-170",
+   "startJd": 2459574.083333,
+   "endJd": 2463143.083333,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2459574.083333,
+     "step": 1,
+     "n": 3570,
+     "offset": 0,
+     "interp": "hermite"
+    }
+   ]
+  },
+  "euclid": {
+   "horizons": "-680",
+   "startJd": 2460127.5,
+   "endJd": 2463143.5,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2460127.5,
+     "step": 1,
+     "n": 3017,
+     "offset": 0,
+     "interp": "hermite"
+    }
+   ]
+  },
+  "gaia": {
+   "horizons": "-139479",
+   "startJd": 2456646.5,
+   "endJd": 2473456.5,
+   "segments": [
+    {
+     "center": "earth",
+     "gm": 398600.435,
+     "t0": 2456646.5,
+     "step": 1,
+     "n": 4121,
+     "offset": 0,
+     "interp": "hermite"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2460766.5,
+     "step": 5,
+     "n": 2539,
+     "offset": 4121,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "spitzer": {
+   "horizons": "-79",
+   "startJd": 2452877.5,
+   "endJd": 2473457.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2452877.5,
+     "step": 5,
+     "n": 4117,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "kepler": {
+   "horizons": "-227",
+   "startJd": 2454898.5,
+   "endJd": 2473458.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2454898.5,
+     "step": 5,
+     "n": 3713,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "voyager2": {
+   "horizons": "-32",
+   "startJd": 2443376.5,
+   "endJd": 2473458.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2443376.5,
+     "step": 3,
+     "n": 209,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2444000.5,
+     "step": 0.041666666666666664,
+     "n": 3073,
+     "offset": 209,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2444128.5,
+     "step": 3,
+     "n": 220,
+     "offset": 3282,
+     "interp": "kepler"
+    },
+    {
+     "center": "saturn",
+     "gm": 37931206.2,
+     "t0": 2444785.5,
+     "step": 0.041666666666666664,
+     "n": 2737,
+     "offset": 3502,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2444899.5,
+     "step": 3,
+     "n": 506,
+     "offset": 6239,
+     "interp": "kepler"
+    },
+    {
+     "center": "uranus",
+     "gm": 5793951.3,
+     "t0": 2446415.5,
+     "step": 0.041666666666666664,
+     "n": 1921,
+     "offset": 6745,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2446495.5,
+     "step": 3,
+     "n": 404,
+     "offset": 8666,
+     "interp": "kepler"
+    },
+    {
+     "center": "neptune",
+     "gm": 6835099.5,
+     "t0": 2447704.5,
+     "step": 0.041666666666666664,
+     "n": 2857,
+     "offset": 9070,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2447823.5,
+     "step": 3,
+     "n": 8546,
+     "offset": 11927,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "pioneer10": {
+   "horizons": "-23",
+   "startJd": 2441380.5,
+   "endJd": 2469804.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2441380.5,
+     "step": 3,
+     "n": 195,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2441962.5,
+     "step": 0.041666666666666664,
+     "n": 2785,
+     "offset": 195,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2442078.5,
+     "step": 3,
+     "n": 9243,
+     "offset": 2980,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "pioneer11": {
+   "horizons": "-24",
+   "startJd": 2441779.5,
+   "endJd": 2469804.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2441779.5,
+     "step": 3,
+     "n": 184,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2442329.5,
+     "step": 0.041666666666666664,
+     "n": 2665,
+     "offset": 184,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2442440.5,
+     "step": 3,
+     "n": 536,
+     "offset": 2849,
+     "interp": "kepler"
+    },
+    {
+     "center": "saturn",
+     "gm": 37931206.2,
+     "t0": 2444046.5,
+     "step": 0.041666666666666664,
+     "n": 3457,
+     "offset": 3385,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2444190.5,
+     "step": 3,
+     "n": 8539,
+     "offset": 6842,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "newhorizons": {
+   "horizons": "-98",
+   "startJd": 2453755.5,
+   "endJd": 2469805.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2453755.5,
+     "step": 3,
+     "n": 126,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2454130.5,
+     "step": 0.041666666666666664,
+     "n": 1393,
+     "offset": 126,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2454188.5,
+     "step": 3,
+     "n": 1010,
+     "offset": 1519,
+     "interp": "kepler"
+    },
+    {
+     "center": "pluto",
+     "gm": 975.5,
+     "t0": 2457215.5,
+     "step": 0.041666666666666664,
+     "n": 121,
+     "offset": 2529,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2457220.5,
+     "step": 3,
+     "n": 4196,
+     "offset": 2650,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "parker": {
+   "horizons": "-96",
+   "startJd": 2458343.5,
+   "endJd": 2462501.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2458343.5,
+     "step": 0.5,
+     "n": 8317,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "juno": {
+   "horizons": "-61",
+   "startJd": 2455779.5,
+   "endJd": 2462015.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2455779.5,
+     "step": 2,
+     "n": 857,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2457491.5,
+     "step": 0.125,
+     "n": 36193,
+     "offset": 857,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "cassini": {
+   "horizons": "-82",
+   "startJd": 2450737.5,
+   "endJd": 2458011.875,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2450737.5,
+     "step": 2,
+     "n": 561,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2451858.5,
+     "step": 0.041666666666666664,
+     "n": 2425,
+     "offset": 561,
+     "interp": "kepler"
+    },
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2451959.5,
+     "step": 2,
+     "n": 559,
+     "offset": 2986,
+     "interp": "kepler"
+    },
+    {
+     "center": "saturn",
+     "gm": 37931206.2,
+     "t0": 2453076.5,
+     "step": 0.125,
+     "n": 39484,
+     "offset": 3545,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "clipper": {
+   "horizons": "-159",
+   "startJd": 2460598.5,
+   "endJd": 2464207.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2460598.5,
+     "step": 2,
+     "n": 964,
+     "offset": 0,
+     "interp": "kepler"
+    },
+    {
+     "center": "jupiter",
+     "gm": 126686531.9,
+     "t0": 2462524.5,
+     "step": 0.125,
+     "n": 13465,
+     "offset": 964,
+     "interp": "kepler"
+    }
+   ]
+  },
+  "juice": {
+   "horizons": "-28",
+   "startJd": 2460049.5,
+   "endJd": 2463067.5,
+   "segments": [
+    {
+     "center": "sun",
+     "gm": 132712440041.9,
+     "t0": 2460049.5,
+     "step": 2,
+     "n": 1510,
+     "offset": 0,
+     "interp": "kepler"
+    }
+   ]
+  }
+ }
+}

@@ -32,7 +32,7 @@ export class Loader {
   private readonly pending: Promise<unknown>[] = [];
   private readonly progressFns = new Set<ProgressFn>();
 
-  constructor(renderer: WebGLRenderer) {
+  constructor(readonly renderer: WebGLRenderer) {
     this.maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
   }
 

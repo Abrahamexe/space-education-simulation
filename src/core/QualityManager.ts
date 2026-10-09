@@ -81,6 +81,7 @@ export class QualityManager {
     this.engine.setResolution(q.pixelRatio, q.renderScale);
     this.engine.postfx.setBloomLevels(q.bloomLevels);
     this.engine.postfx.setAntialias(q.antialias);
+    this.engine.postfx.blackHole.stepScale = q.lensStep;
     this.system.applyQuality(level);
     this.starfield.setStarCount(q.stars);
     runtime.highResTextures = q.highResTextures;

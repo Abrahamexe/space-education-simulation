@@ -10,7 +10,7 @@ const CHAR_PX = 8.2;
 const LABEL_H = 18;
 const PAD = 6;
 
-const PRIORITY: Record<FocusEntry['kind'], number> = { star: 0, planet: 1, dwarf: 2, comet: 3, moon: 4 };
+const PRIORITY: Record<FocusEntry['kind'], number> = { star: 0, planet: 1, dwarf: 2, comet: 3, moon: 4, craft: 5 };
 
 interface Item {
   entry: FocusEntry;
@@ -106,6 +106,9 @@ export class Labels {
       const body = it.entry.body;
       // Destroyed in the playground: no label.
       if ((body as { simGone?: boolean }).simGone) continue;
+      // Spacecraft without data for the date, or Earth orbiters seen from afar.
+      const craft = body as { hidden?: boolean; labelHidden?: boolean };
+      if (craft.hidden || (craft.labelHidden && it.entry.id !== sel)) continue;
       engine.origin.toRender(body.getAbsolutePosition(this.p), this.p);
       this.q.copy(this.p).applyMatrix4(cam.matrixWorldInverse);
       const depth = -this.q.z;

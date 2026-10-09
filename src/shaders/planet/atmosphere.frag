@@ -30,8 +30,20 @@ uniform vec3 uMieTint;
 varying vec3 vLocal;
 
 #define PRIMARY_STEPS 12
-#define LIGHT_STEPS 5
 const float MIE_EXTINCTION = 1.1; // Mie extinction / scattering ratio
+
+// Optical depth from a point towards the Sun, in scale heights, for an
+// exponential atmosphere: Schüler's approximation of the Chapman function
+// (GPU Pro 3, 2012). X = planet radius / H, h = height / H, mu = cos of the
+// Sun's zenith angle there. Replaces a 5-step march per sample.
+float chapman(float X, float h, float mu) {
+  float c = sqrt(X + h);
+  if (mu >= 0.0) return c / (c * mu + 1.0) * exp(-h);
+  float x0 = sqrt(1.0 - mu * mu) * (X + h);
+  float c0 = sqrt(x0);
+  // Grazing rays below the horizon: huge depth (fully extinguished anyway).
+  return 2.0 * c0 * exp(min(X - x0, 60.0)) - c / (1.0 - c * mu) * exp(-h);
+}
 
 // Soft planet shadow along the light ray: 0 = fully in shadow.
 float sunVisibility(vec3 p, vec3 L) {
@@ -73,16 +85,10 @@ void main() {
     float vis = sunVisibility(p, L);
     if (vis <= 0.0) continue;
 
-    float tl = raySphere(p, L, uTop).y;
-    float dl = tl / float(LIGHT_STEPS);
-    float lR = 0.0;
-    float lM = 0.0;
-    for (int j = 0; j < LIGHT_STEPS; j++) {
-      vec3 q = p + L * ((float(j) + 0.5) * dl);
-      float hq = max(length(q) - 1.0, 0.0);
-      lR += exp(-hq / uHR) * dl;
-      lM += exp(-hq / uHM) * dl;
-    }
+    float r = length(p);
+    float mu = dot(p, L) / r;
+    float lR = uHR * chapman(1.0 / uHR, h / uHR, mu);
+    float lM = uHM * chapman(1.0 / uHM, h / uHM, mu);
     vec3 tau = uBetaR * (odR + lR) + uBetaM * MIE_EXTINCTION * (odM + lM);
     vec3 att = exp(-tau) * vis;
     sumR += dR * att;

@@ -44,6 +44,12 @@ export class Planet extends CelestialBody {
     world.add(this.orbit.line);
   }
 
+  /** True heliocentric ecliptic position (km), before any scale mapping. */
+  trueHelioKm(out: Vector3): Vector3 {
+    if (this.simPositionAu) return out.copy(this.simPositionAu).multiplyScalar(KM_PER_AU);
+    return positionFromEccentricAnomaly(this.elements, solveKepler(this.elements.M, this.elements.e), out).multiplyScalar(KM_PER_AU);
+  }
+
   get orbitPhase(): number {
     return meanAnomalyPhase(this.elements.M);
   }

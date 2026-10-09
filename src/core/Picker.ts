@@ -44,6 +44,8 @@ export class Picker {
       if (body instanceof Moon && !body.isRelevant) continue;
       // Destroyed in the playground.
       if ((body as { simGone?: boolean }).simGone) continue;
+      // A spacecraft with no data for the date.
+      if ((body as { hidden?: boolean }).hidden) continue;
       const c = this.origin.toRender(body.getAbsolutePosition(this.p), this.p);
       const r = body.getRadius();
       this.oc.subVectors(c, ro);

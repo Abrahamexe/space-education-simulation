@@ -30,6 +30,7 @@ uniform float uSkyOn;
 uniform float uSkyGain;
 uniform mat3 uSkyMat;      // hole frame -> galactic
 uniform float uLens;       // 1 = bent light, 0 = straight rays (no lensing)
+uniform float uStep;       // step as a fraction of r (quality)
 
 // Without lensing the hole is still drawn as it would look: a shadow of the
 // true apparent size (2.6 Rs) rimmed by a thin bright photon ring and a soft
@@ -128,7 +129,7 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
       break;
     }
     if (r > uR0 * 1.02 && dot(p, v) > 0.0) break;
-    float dt = clamp(0.07 * r * min(r / 1.5, 1.0), 0.012, 2.5);
+    float dt = clamp(uStep * r * min(r / 1.5, 1.0), 0.012, 2.5);
     float r2 = r * r;
     vec3 a = (-1.5 * uLens * h2 / (r2 * r2 * r)) * p;
     vec3 vn = v + a * dt;

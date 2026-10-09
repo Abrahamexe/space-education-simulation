@@ -110,6 +110,24 @@ class Trail {
     }
     pos.needsUpdate = true;
     this.line.position.copy(this.head);
+    this.builtAt = now;
+  }
+
+  private builtAt = Number.NaN;
+
+  /**
+   * Per frame: the full rebuild only once time has moved a tenth of the
+   * sample spacing (the shape behind the body changes slowly); in between the
+   * line just follows the body.
+   */
+  follow(now: number, force: boolean): void {
+    const step = G.trailDays / (this.samples - 1);
+    if (force || !(Math.abs(now - this.builtAt) < step * 0.1)) {
+      this.rebuild(now);
+      return;
+    }
+    // Offsets are relative to the head: move the whole line with the body.
+    this.line.position.copy(mapKm(this.sample(now, now, this.head)));
   }
 
   set opacity(v: number) {
@@ -239,6 +257,7 @@ export class GalacticMotion implements Updatable {
   private enabledFlag = false;
   private builtJd = Number.NaN;
   private builtBlend = Number.NaN;
+  private builtVersion = 0;
   private readonly listeners = new Set<(on: boolean) => void>();
 
   constructor(
@@ -301,10 +320,12 @@ export class GalacticMotion implements Updatable {
   update(ctx: FrameContext): void {
     if (!this.enabledFlag) return;
     const now = ctx.time.daysSinceJ2000;
-    if (now !== this.builtJd || scale.blend !== this.builtBlend) {
-      for (const t of this.trails) t.rebuild(now);
+    if (now !== this.builtJd || scale.blend !== this.builtBlend || scale.version !== this.builtVersion) {
+      const force = scale.blend !== this.builtBlend || scale.version !== this.builtVersion;
+      for (const t of this.trails) t.follow(now, force);
       this.builtJd = now;
       this.builtBlend = scale.blend;
+      this.builtVersion = scale.version;
     }
     const rig = this.engine.rig;
     const focus = rig.focusTarget;

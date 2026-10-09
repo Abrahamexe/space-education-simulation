@@ -72,6 +72,12 @@ void main() {
   float r = length(vOffset);
   // The disk itself is drawn by the photosphere; skip pixels it will cover.
   if (r < 0.985) discard;
+  float h0 = max(r - 1.0, 0.0);
+  // Upper bound of everything below without the noise: skip pixels that
+  // cannot reach a visible level (the outskirts of the billboard).
+  float edge0 = 1.0 - smoothstep(uExtent * 0.55, uExtent * 0.98, r);
+  float bound = (exp(-h0 * 9.0) * 1.2 + pow(r, -uFalloff) * (0.18 + uStreamerStrength)) * uIntensity * uBreath * edge0;
+  if (bound < 2e-4 && h0 >= 0.03) discard;
 
   vec3 dir = rotateAbout(vOffset / r, uAxis, uSwirl);
   float h = max(r - 1.0, 0.0);           // height above the limb (radii)
@@ -81,7 +87,10 @@ void main() {
   // ---- Streamers -----------------------------------------------------------
   float eq = 1.0 - abs(dot(dir, uAxis));  // 1 at equator, 0 at poles
   float n1 = snoise(vec4(dir * 2.6, logR * 1.4 - flow));
-  float n2 = snoise(vec4(dir * 7.5 + 3.1, logR * 2.6 - flow * 1.7));
+  // The middle octave fades out far from the limb, where the streamers are
+  // faint and broad (each 4-D lookup is costly over a screen-sized corona).
+  float w2 = 1.0 - smoothstep(3.5, 4.5, r);
+  float n2 = w2 > 0.0 ? snoise(vec4(dir * 7.5 + 3.1, logR * 2.6 - flow * 1.7)) * w2 : 0.0;
   // Finest octave only near the limb, where it is resolvable.
   float n3 = r < 2.5 ? snoise(vec4(dir * 21.0 - 1.7, logR * 4.0 - flow * 2.3)) : 0.0;
   float streamNoise = 0.55 * n1 + 0.3 * n2 + 0.15 * n3;

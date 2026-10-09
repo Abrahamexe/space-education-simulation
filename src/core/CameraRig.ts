@@ -1,4 +1,4 @@
-import { MathUtils, MOUSE, PerspectiveCamera, Plane, Quaternion, Ray, TOUCH, Vector3 } from 'three';
+import { MathUtils, PerspectiveCamera, Vector3 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import gsap from 'gsap';
 import { CAMERA, INTERACTION, RENDER } from '../config/visual';
@@ -91,7 +91,6 @@ export interface FlyOptions {
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const FREE = CAMERA.free;
-const GRAB_VELOCITY_WINDOW_MS = 100;
 /** Free flight keys (physical positions) → camera-space directions. R/F: up/down (E is the labels toggle). */
 const FLY_KEYS: Record<string, readonly [number, number, number]> = {
   KeyW: [0, 0, -1],
@@ -120,12 +119,11 @@ function isTyping(e: KeyboardEvent): boolean {
  * under the cursor and W A S D / R F move the camera; both are scaled by the
  * distance to the nearest body surface. Clicking a body focuses it again.
  *
- * Free camera ("Serbest", map mode) is mouse-only and works on what is under
- * the cursor, as 3D viewers like Sketchfab and SketchUp do: left drag on a
- * body turns the view round that body, left drag on empty sky turns the view
- * itself (the sky stays under the cursor), right drag slides the scene, the
- * wheel flies towards the cursor in steps of the distance left to the body
- * there, a click selects and a double click flies. Turns keep their momentum.
+ * Free camera ("Serbest", map mode) uses the controls of TheSkyLive's 3D
+ * solar system viewer: plain orbit controls with short damping. Left drag
+ * orbits the target (the selected body, followed), right drag slides the
+ * target over the ecliptic plane (letting go of the body), the wheel dollies
+ * towards the target. A click selects and a double click flies.
  */
 export class CameraRig {
   readonly controls: OrbitControls;
@@ -135,7 +133,7 @@ export class CameraRig {
   private anim: Animation | null = null;
   private zoomTargetLog: number | null = null;
   private lastUpdate = performance.now();
-  private readonly baseFov: number;
+  private baseFov: number;
   private readonly tmpA = new Vector3();
   private readonly tmpB = new Vector3();
   private readonly tmpC = new Vector3();
@@ -152,23 +150,14 @@ export class CameraRig {
   private readonly flyKeys = new Set<string>();
   private flyBoost = false;
   private readonly releaseFns = new Set<() => void>();
-  /** Map mode: left drag grabs the scene and slides it, nothing is followed. */
   private mapModeFlag = false;
   private readonly mapModeFns = new Set<(on: boolean) => void>();
-  private grab: { id: number; plane: Plane; point: Vector3; lastT: number } | null = null;
-  /** Free camera left drag: turning round `pivot` (a body), or the view itself (null). */
-  private turn: { id: number; x: number; y: number; pivot: Focusable | null; lastT: number; samples: { t: number; yaw: number; pitch: number }[] } | null = null;
-  /** Turn momentum after letting go (rad/s). */
-  private readonly spin = { yaw: 0, pitch: 0, pivot: null as Focusable | null };
+  /** Free camera right drag in progress: start point, until it lets go of the body. */
+  private panDown: { id: number; x: number; y: number } | null = null;
   /** Body the wheel is flying towards (its surface sets the step). */
   private zoomBody: Focusable | null = null;
   /** Body under a screen point (set by the app). */
   private pickQuery: ((clientX: number, clientY: number) => Focusable | null) | null = null;
-  /** Recent grab steps (time, translation), for the release velocity. */
-  private grabSamples: { t: number; d: Vector3 }[] = [];
-  /** Map pan inertia (render units per second). */
-  private readonly panVelocity = new Vector3();
-  private readonly ray = new Ray();
   /** False while another view (the galaxy) owns the screen and the input. */
   private activeFlag = true;
   /** Farthest the camera may go from the Sun (playground raises it to light-years). */
@@ -194,10 +183,10 @@ export class CameraRig {
     c.addEventListener('start', () => this.interrupt());
     dom.addEventListener('wheel', this.onWheel, { passive: false });
     dom.addEventListener('pointerdown', this.onPointerDown);
-    dom.addEventListener('pointerdown', this.onGrabStart);
-    dom.addEventListener('pointermove', this.onGrabMove);
-    dom.addEventListener('pointerup', this.onGrabEnd);
-    dom.addEventListener('pointercancel', this.onGrabEnd);
+    dom.addEventListener('pointerdown', this.onPanStart);
+    dom.addEventListener('pointermove', this.onPanMove);
+    dom.addEventListener('pointerup', this.onPanEnd);
+    dom.addEventListener('pointercancel', this.onPanEnd);
     dom.addEventListener('pointermove', this.onPointerMove);
     dom.addEventListener('pointerup', this.onPointerUp);
     dom.addEventListener('pointercancel', this.onPointerUp);
@@ -212,11 +201,6 @@ export class CameraRig {
       // Keep the cached focus in the same (shifted) frame, or the near plane
       // is computed against a stale point right after a rebase.
       this.focusRender.sub(delta);
-      // A drag in progress keeps hold of the same absolute point.
-      if (this.grab) {
-        this.grab.point.sub(delta);
-        this.grab.plane.translate(this.tmpC.copy(delta).negate());
-      }
     });
   }
 
@@ -251,12 +235,9 @@ export class CameraRig {
     this.controls.enabled = v;
     if (!v) {
       this.flyKeys.clear();
-      this.grab = null;
-      this.panVelocity.set(0, 0, 0);
+      this.panDown = null;
       this.freeZoomLog = 0;
       this.zoomTargetLog = null;
-      this.turn = null;
-      this.spin.yaw = this.spin.pitch = 0;
     }
   }
 
@@ -265,28 +246,22 @@ export class CameraRig {
   }
 
   /**
-   * Map mode (free camera, PLAN follow-up): left drag grabs the point under
-   * the cursor and slides the view like a map; right drag turns the view;
-   * the wheel flies towards the cursor. Nothing is followed until a flight
-   * (search, navigation bar, "Yaklaş") picks a body again.
+   * Map mode (free camera): TheSkyLive-style orbit controls. The followed
+   * body stays the target; a right drag slides the target along the
+   * ecliptic plane and lets go of it.
    */
   set mapMode(on: boolean) {
     if (on === this.mapModeFlag) return;
     this.mapModeFlag = on;
     const c = this.controls;
-    // The free camera handles the mouse itself (touch stays with the controls).
-    c.mouseButtons = on ? { LEFT: null, MIDDLE: null, RIGHT: null } : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-    c.touches = on ? { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE } : { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
-    c.screenSpacePanning = true;
-    if (on) {
-      this.interrupt();
-      this.release();
-    }
-    this.grab = null;
-    this.turn = null;
-    this.spin.yaw = this.spin.pitch = 0;
-    this.panVelocity.set(0, 0, 0);
-    this.dom.style.cursor = '';
+    c.dampingFactor = on ? CAMERA.map.dampingFactor : CAMERA.dampingFactor;
+    c.rotateSpeed = on ? CAMERA.map.rotateSpeed : CAMERA.rotateSpeed;
+    c.panSpeed = on ? CAMERA.map.panSpeed : CAMERA.panSpeed;
+    // Off: slide over the ecliptic plane (up/down on screen moves forward/back on it).
+    c.screenSpacePanning = !on;
+    if (on) this.interrupt();
+    this.panDown = null;
+    this.freeZoomLog = 0;
     this.mapModeFns.forEach((fn) => fn(on));
   }
 
@@ -318,8 +293,8 @@ export class CameraRig {
   /** Stop following the focus; the orbit pivot stays where it is. */
   release(): void {
     if (!this.focus) return;
-    // An ongoing zoom-out carries on as free motion, straight back.
-    if (this.zoomTargetLog !== null) {
+    // An ongoing zoom-out carries on as free motion, straight back (map mode keeps dollying to the target).
+    if (this.zoomTargetLog !== null && !this.mapModeFlag) {
       this.freeZoomLog = this.zoomTargetLog - Math.log(Math.max(this.distance, 1e-9));
       this.camera.getWorldDirection(this.freeZoomDir);
       this.zoomTargetLog = null;
@@ -341,6 +316,19 @@ export class CameraRig {
       this.camera.updateProjectionMatrix();
       this.lastFocusRender.copy(this.focusRender);
       this.interruptFns.forEach((fn) => fn());
+    }
+  }
+
+  /** Field of view (vertical, degrees) the camera returns to after flights. */
+  get fov(): number {
+    return this.baseFov;
+  }
+
+  setFov(deg: number): void {
+    this.baseFov = deg;
+    if (!this.anim) {
+      this.camera.fov = deg;
+      this.camera.updateProjectionMatrix();
     }
   }
 
@@ -469,28 +457,10 @@ export class CameraRig {
     return Math.max(this.controls.minDistance, RENDER.minNear * 10);
   }
 
-  /** Is the screen point on (or close to) the followed body's disc? */
-  private cursorOverFocus(clientX: number, clientY: number): boolean {
-    if (!this.focus) return false;
-    const toBody = this.tmpA.subVectors(this.focusRender, this.camera.position);
-    const dist = toBody.length();
-    const r = this.focus.getViewRadius?.() ?? this.focus.getRadius();
-    if (dist <= r) return true;
-    const ray = this.cursorDirection(clientX, clientY, this.tmpB);
-    const sep = Math.acos(MathUtils.clamp(ray.dot(toBody.divideScalar(dist)), -1, 1));
-    // Angular radius plus ~24 px of slack.
-    const pxAngle = MathUtils.degToRad(this.camera.fov) / this.dom.clientHeight;
-    return sep < Math.asin(r / dist) * 1.3 + 24 * pxAngle;
-  }
-
   private zoomBy(logDelta: number, clientX?: number, clientY?: number): void {
     this.interrupt();
-    // Map mode zooms towards the cursor: off the followed body, let go of it.
-    if (this.focus && this.mapModeFlag && clientX !== undefined && clientY !== undefined && !this.cursorOverFocus(clientX, clientY)) {
-      this.release();
-      this.freeZoomLog = 0;
-    }
-    if (!this.focus) {
+    // Map mode dollies towards the orbit target, followed body or not.
+    if (!this.focus && !this.mapModeFlag) {
       const m = FREE.maxPendingLog;
       this.freeZoomLog = MathUtils.clamp(this.freeZoomLog + logDelta, -m, m);
       if (clientX !== undefined && clientY !== undefined) {
@@ -514,186 +484,24 @@ export class CameraRig {
     this.zoomBy((MathUtils.clamp(px, -250, 250) / 100) * INTERACTION.zoomStep, e.clientX, e.clientY);
   };
 
-  // ---- Map mode: grab and slide ---------------------------------------------------------
+  // ---- Map mode: a right drag lets go of the followed body ---------------------------------
 
-  /** Render-space ray under a screen point. */
-  private rayAt(clientX: number, clientY: number): Ray {
-    this.ray.origin.copy(this.camera.position);
-    this.cursorDirection(clientX, clientY, this.ray.direction);
-    return this.ray;
-  }
-
-  /**
-   * The surface the cursor grabs: a plane facing the camera through the
-   * pivot. Dragging up and down slides the view up and down; it never
-   * pulls the camera forward (an ecliptic "table" plane did, seen obliquely).
-   */
-  private grabPlane(): Plane {
-    const normal = this.camera.getWorldDirection(this.tmpA).negate();
-    return new Plane().setFromNormalAndCoplanarPoint(normal.clone(), this.controls.target);
-  }
-
-  private readonly onGrabStart = (e: PointerEvent) => {
-    if (!this.activeFlag || !this.mapModeFlag || e.pointerType === 'touch') return;
-    const body = this.pickQuery?.(e.clientX, e.clientY) ?? null;
-    if (e.button === 0) {
-      this.interrupt();
-      this.spin.yaw = this.spin.pitch = 0;
-      this.panVelocity.set(0, 0, 0);
-      this.turn = { id: e.pointerId, x: e.clientX, y: e.clientY, pivot: body, lastT: performance.now(), samples: [] };
-      return;
-    }
-    if (e.button !== 2) return;
-    // Right drag grabs the point under the cursor, at the depth of the body there.
-    let plane = this.grabPlane();
-    if (body) {
-      const c = this.origin.toRender(body.getAbsolutePosition(this.tmpA), this.tmpA);
-      plane = new Plane().setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(this.tmpB).negate().clone(), c);
-    }
-    const point = this.rayAt(e.clientX, e.clientY).intersectPlane(plane, new Vector3());
-    if (!point) return;
-    this.interrupt();
-    this.grab = { id: e.pointerId, plane, point, lastT: performance.now() };
-    this.grabSamples = [];
-    this.panVelocity.set(0, 0, 0);
-    this.dom.style.cursor = 'grabbing';
+  private readonly onPanStart = (e: PointerEvent) => {
+    if (!this.activeFlag || !this.mapModeFlag || e.button !== 2) return;
+    this.panDown = { id: e.pointerId, x: e.clientX, y: e.clientY };
   };
 
-  private readonly onGrabMove = (e: PointerEvent) => {
-    const tr = this.turn;
-    if (tr && e.pointerId === tr.id) {
-      const dx = e.clientX - tr.x;
-      const dy = e.clientY - tr.y;
-      if (dx === 0 && dy === 0) return;
-      // A press that has not moved yet may still be a click.
-      if (!tr.samples.length && Math.hypot(dx, dy) < 3) return;
-      tr.x = e.clientX;
-      tr.y = e.clientY;
-      this.dom.style.cursor = 'grabbing';
-      // Round a body: half a turn per screen height. The view itself: the sky sticks to the cursor.
-      const k = tr.pivot ? Math.PI / this.dom.clientHeight : MathUtils.degToRad(this.camera.fov) / this.dom.clientHeight;
-      const yaw = dx * k;
-      const pitch = dy * k;
-      this.turnBy(yaw, pitch, tr.pivot);
-      const now = performance.now();
-      tr.lastT = now;
-      tr.samples.push({ t: now, yaw, pitch });
-      while (tr.samples.length > 1 && now - tr.samples[0].t > GRAB_VELOCITY_WINDOW_MS) tr.samples.shift();
-      return;
-    }
-    const g = this.grab;
-    if (!g || e.pointerId !== g.id) return;
-    const hit = this.rayAt(e.clientX, e.clientY).intersectPlane(g.plane, this.tmpC);
-    if (!hit) return;
-    // The first real move lets go of a followed body.
-    if (this.focus) this.release();
-    const delta = this.tmpA.subVectors(g.point, hit);
-    // Never jump to the horizon on a grazing ray.
-    const maxStep = this.camera.position.distanceTo(this.controls.target) * 0.5;
-    if (delta.length() > maxStep) delta.setLength(maxStep);
-    this.translate(delta, 1);
-    const now = performance.now();
-    g.lastT = now;
-    this.grabSamples.push({ t: now, d: delta.clone() });
-    while (this.grabSamples.length > 1 && now - this.grabSamples[0].t > GRAB_VELOCITY_WINDOW_MS) this.grabSamples.shift();
+  private readonly onPanMove = (e: PointerEvent) => {
+    const p = this.panDown;
+    if (!p || e.pointerId !== p.id) return;
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < INTERACTION.clickMaxMovePx) return;
+    this.panDown = null;
+    this.release();
   };
 
-  private readonly onGrabEnd = (e: PointerEvent) => {
-    const tr = this.turn;
-    if (tr && e.pointerId === tr.id) {
-      this.turn = null;
-      const now = performance.now();
-      const recent = tr.samples.filter((s) => now - s.t <= GRAB_VELOCITY_WINDOW_MS);
-      this.spin.yaw = this.spin.pitch = 0;
-      if (recent.length > 1 && now - tr.lastT < 80) {
-        const span = Math.max((now - recent[0].t) / 1000, 0.016);
-        for (const s of recent.slice(1)) {
-          this.spin.yaw += s.yaw / span;
-          this.spin.pitch += s.pitch / span;
-        }
-        this.spin.pivot = tr.pivot;
-      }
-      this.dom.style.cursor = '';
-      return;
-    }
-    const g = this.grab;
-    if (!g || e.pointerId !== g.id) return;
-    this.grab = null;
-    // Release velocity: travel over the last ~100 ms (robust to any mouse
-    // polling rate). A pause before letting go means "stop here".
-    const now = performance.now();
-    const recent = this.grabSamples.filter((s) => now - s.t <= GRAB_VELOCITY_WINDOW_MS);
-    this.panVelocity.set(0, 0, 0);
-    if (recent.length > 1 && now - g.lastT < 80) {
-      const span = Math.max((now - recent[0].t) / 1000, 0.016);
-      for (const s of recent.slice(1)) this.panVelocity.add(s.d);
-      this.panVelocity.divideScalar(span);
-    }
-    this.grabSamples = [];
-    this.dom.style.cursor = '';
+  private readonly onPanEnd = (e: PointerEvent) => {
+    if (this.panDown?.id === e.pointerId) this.panDown = null;
   };
-
-  /**
-   * Turn the free camera by a drag. With a pivot body the camera swings
-   * round it (the body stays where it is on screen, its far side comes
-   * into view); without one the camera turns where it stands. Up stays up
-   * (the ecliptic north) and the view never tips over the poles.
-   */
-  private turnBy(yaw: number, pitch: number, pivot: Focusable | null): void {
-    const up = this.camera.up;
-    const fwd = this.camera.getWorldDirection(this.tmpA);
-    const right = this.tmpB.crossVectors(fwd, up);
-    if (right.lengthSq() < 1e-12) right.set(1, 0, 0).applyQuaternion(this.camera.quaternion);
-    right.normalize();
-    const LIMIT = 1.5;
-    const q = new Quaternion();
-    const qp = new Quaternion();
-    if (pivot) {
-      // A body other than the followed one: stop following.
-      if (this.focus && this.focus !== pivot) this.release();
-      const p = this.origin.toRender(pivot.getAbsolutePosition(this.tmpC), this.tmpC);
-      const off = this.camera.position.clone().sub(p);
-      const elev = Math.asin(MathUtils.clamp(off.clone().normalize().dot(up), -1, 1));
-      const b = MathUtils.clamp(pitch, -LIMIT - elev, LIMIT - elev);
-      q.setFromAxisAngle(up, -yaw).multiply(qp.setFromAxisAngle(right, -b));
-      off.applyQuaternion(q);
-      this.camera.position.copy(p).add(off);
-      fwd.applyQuaternion(q);
-    } else {
-      if (this.focus) this.release();
-      const elev = Math.asin(MathUtils.clamp(fwd.dot(up), -1, 1));
-      const b = MathUtils.clamp(pitch, -LIMIT - elev, LIMIT - elev);
-      q.setFromAxisAngle(up, yaw).multiply(qp.setFromAxisAngle(right, b));
-      fwd.applyQuaternion(q);
-    }
-    if (pivot && pivot === this.focus) {
-      // The followed body stays the orbit target (wherever it sits on screen).
-      this.controls.target.copy(this.tmpC);
-      this.camera.quaternion.premultiply(q);
-      return;
-    }
-    const reach = pivot ? this.camera.position.distanceTo(this.tmpC) : Math.max(this.distance, RENDER.minNear * 100);
-    this.controls.target.copy(this.camera.position).addScaledVector(fwd, reach);
-    this.camera.lookAt(this.controls.target);
-  }
-
-  /** Turn momentum after a flick, decaying. */
-  private applySpin(dt: number): void {
-    if (this.turn || (this.spin.yaw === 0 && this.spin.pitch === 0)) return;
-    this.turnBy(this.spin.yaw * dt, this.spin.pitch * dt, this.spin.pivot);
-    const k = Math.exp(-dt * CAMERA.map.glideDecay);
-    this.spin.yaw *= k;
-    this.spin.pitch *= k;
-    if (Math.abs(this.spin.yaw) + Math.abs(this.spin.pitch) < 1e-3) this.spin.yaw = this.spin.pitch = 0;
-  }
-
-  /** Glide after a throw, decaying like a map. */
-  private applyPanInertia(dt: number): void {
-    if (this.grab || this.panVelocity.lengthSq() === 0) return;
-    this.translate(this.tmpA.copy(this.panVelocity), dt);
-    this.panVelocity.multiplyScalar(Math.exp(-dt * CAMERA.map.glideDecay));
-    if (this.panVelocity.length() * 0.05 < RENDER.minNear) this.panVelocity.set(0, 0, 0);
-  }
 
   private readonly onPointerDown = (e: PointerEvent) => {
     if (e.pointerType !== 'touch') return;
@@ -876,10 +684,8 @@ export class CameraRig {
       this.keepFraming();
       this.applyZoom(dt);
       this.applyFly(dt);
-      this.applySpin(dt);
-      this.applyPanInertia(dt);
       this.controls.update();
-      this.checkRelease();
+      if (!this.mapModeFlag) this.checkRelease();
     }
 
     // Rebase the floating origin around the orbit target if it drifted.
@@ -905,7 +711,7 @@ export class CameraRig {
   }
 
   private applyZoom(dt: number): void {
-    if (!this.focus) {
+    if (!this.focus && !this.mapModeFlag) {
       this.applyFreeZoom(dt);
       return;
     }
@@ -947,10 +753,10 @@ export class CameraRig {
     this.dom.removeEventListener('pointermove', this.onPointerMove);
     this.dom.removeEventListener('pointerup', this.onPointerUp);
     this.dom.removeEventListener('pointercancel', this.onPointerUp);
-    this.dom.removeEventListener('pointerdown', this.onGrabStart);
-    this.dom.removeEventListener('pointermove', this.onGrabMove);
-    this.dom.removeEventListener('pointerup', this.onGrabEnd);
-    this.dom.removeEventListener('pointercancel', this.onGrabEnd);
+    this.dom.removeEventListener('pointerdown', this.onPanStart);
+    this.dom.removeEventListener('pointermove', this.onPanMove);
+    this.dom.removeEventListener('pointerup', this.onPanEnd);
+    this.dom.removeEventListener('pointercancel', this.onPanEnd);
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('blur', this.onBlur);

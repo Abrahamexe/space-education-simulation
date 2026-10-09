@@ -7,6 +7,7 @@ import type { SolarSystem } from '../bodies/SolarSystem';
 import type { GalacticMotion } from '../bodies/GalacticMotion';
 import type { ViewSwitch } from '../core/ViewSwitch';
 import type { Playground } from '../playground/Playground';
+import type { SpacecraftLayer } from '../spacecraft/SpacecraftLayer';
 
 /** What UI components may talk to. */
 export interface UiContext {
@@ -19,4 +20,5 @@ export interface UiContext {
   scaleTransition: ScaleTransition;
   quality: QualityManager;
   playground?: Playground;
+  spacecraft?: SpacecraftLayer;
 }

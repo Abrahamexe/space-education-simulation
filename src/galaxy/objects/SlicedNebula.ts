@@ -1,7 +1,6 @@
 import {
   AdditiveBlending,
   DataTexture,
-  DataUtils,
   DoubleSide,
   Group,
   HalfFloatType,
@@ -18,135 +17,18 @@ import {
 } from 'three';
 import sliceVert from '../../shaders/deepsky/slice.vert?raw';
 import sliceFrag from '../../shaders/deepsky/slice.frag?raw';
-import type { DepthSpec, NebulaDef } from '../../config/deepsky';
+import type { NebulaDef } from '../../config/deepsky';
 import type { Loader } from '../../core/Loader';
 import { equatorialToScene } from '../../physics/frames';
-import { Random } from '../../utils/random';
 import { makePoints } from '../GalaxyModel';
 import { DEG, skyFrame, type BlackHoleInfo, type DeepContext, type DeepObject, type DeepTarget, type StarPoints } from './common';
 import { makeGlow } from './StarGlow';
 import { PulsarBeams } from './PulsarBeams';
+import { DetailWindow } from './DetailWindow';
+import { buildNebula, type NebulaBuildInput, type NebulaBuildOutput } from './nebulaBuild';
 
 const SLICES = 16;
-const DEPTH_N = 256;
-
-/** Image pixel as the depth models see it. */
-interface Px {
-  /** Centred, y up, in image widths. */
-  x: number;
-  y: number;
-  r: number;
-  g: number;
-  b: number;
-  /** Luminance, normalised to the image maximum. */
-  l: number;
-}
-
-/**
- * Up to two depth layers and a thickness (image widths, + towards the Sun)
- * for a pixel, following the object's published structure (see DepthSpec).
- */
-function layers(d: DepthSpec, p: Px, ax: number, ay: number): [number, number, number] {
-  // Galaxy models work about the anchor (the nucleus).
-  const x = p.x - ax;
-  const y = p.y - ay;
-  switch (d.model) {
-    case 'disc': {
-      const a = d.majorDeg * DEG;
-      const u = x * Math.cos(a) + y * Math.sin(a);
-      const v = (-x * Math.sin(a) + y * Math.cos(a)) / Math.cos(d.incDeg * DEG);
-      const r2 = (u * u + v * v) / (d.bulge * d.bulge);
-      return [0, 0, d.thick + d.bulge * 0.25 * Math.exp(-r2)];
-    }
-    case 'edge': {
-      const a = d.majorDeg * DEG;
-      const u = x * Math.cos(a) + y * Math.sin(a);
-      const v = -x * Math.sin(a) + y * Math.cos(a);
-      // Depth of the disc along the line of sight at this point of the major axis.
-      const D = d.length * Math.sqrt(Math.max(0, 1 - (u * u) / (d.length * d.length)));
-      const B = d.bulge * Math.sqrt(Math.max(0, 1 - (u * u + v * v) / (d.bulge * d.bulge)));
-      return [D * 0.45, -D * 0.45, Math.max(0.01, D * 0.35, B * 0.6)];
-    }
-    case 'ellipsoid': {
-      const q = (x * x + y * y) / (d.radius * d.radius);
-      return [0, 0, Math.max(0.01, d.depth * d.radius * Math.sqrt(Math.max(0, 1 - q)) * 0.6)];
-    }
-    case 'flat':
-      return [0, 0, d.depth * (0.3 + 0.7 * p.l)];
-    case 'shell': {
-      const c = Math.cos(d.angleDeg * DEG);
-      const s = Math.sin(d.angleDeg * DEG);
-      const u = (p.x * c - p.y * s) / d.a;
-      const v = (p.x * s + p.y * c) / d.b;
-      const q = u * u + v * v;
-      if (q >= 1) return [0, 0, 0.03];
-      const z = Math.sqrt(1 - q) * d.depth;
-      if (d.interiorBlue && p.b > p.r * 1.05) return [0, 0, z * 0.55 + 0.01];
-      return [z, -z, 0.012 + 0.12 * z];
-    }
-    case 'bowl': {
-      const dx = p.x - d.cx;
-      const dy = p.y - d.cy;
-      const z = Math.min(-d.deep + (dx * dx + dy * dy) / (2 * d.curvature), 0.25);
-      return [z, z, 0.018];
-    }
-    case 'pillars': {
-      const background = p.b > p.r * 0.95 || p.l < 0.12;
-      return background ? [-0.3, -0.3, 0.06] : [0.02, 0.02, 0.025];
-    }
-    case 'barrel': {
-      const c = Math.cos(d.angleDeg * DEG);
-      const s = Math.sin(d.angleDeg * DEG);
-      const u = (p.x * c - p.y * s) / d.a;
-      const v = (p.x * s + p.y * c) / d.b;
-      const rn = Math.sqrt(u * u + v * v);
-      if (p.b > p.r && rn < 0.9) {
-        const L = d.lobe * Math.sqrt(Math.max(0, 1 - rn * rn)) * d.a + 0.02;
-        return [L * 0.6, -L * 0.6, L * 0.45];
-      }
-      return [0, 0, rn > 1.15 ? 0.07 : 0.03];
-    }
-    case 'bipolar': {
-      const c = Math.cos(d.axisDeg * DEG);
-      const s = Math.sin(d.axisDeg * DEG);
-      const along = p.x * c + p.y * s;
-      const across = -p.x * s + p.y * c;
-      const R = d.waist + d.flare * Math.abs(along);
-      if (Math.abs(across) >= R) return [0, 0, 0.03];
-      const z = Math.sqrt(R * R - across * across);
-      return [z * 0.85, -z * 0.85, 0.02 + 0.15 * z];
-    }
-    case 'sheet': {
-      const dust = p.r > p.b * 1.02;
-      return dust ? [0.04 + (0.5 - p.l) * 0.05, 0.04 + (0.5 - p.l) * 0.05, 0.035] : [-0.18 - p.l * 0.05, -0.18 - p.l * 0.05, 0.05];
-    }
-  }
-}
-
-/** 0..1: is this pixel part of the galaxy (1) or foreground stars / sky (0)? */
-function galaxyMask(d: DepthSpec, p: Px, ax: number, ay: number): number {
-  const x = p.x - ax;
-  const y = p.y - ay;
-  const fade = (q: number) => 1 - MathUtils.smoothstep(q, 0.8, 1.2);
-  switch (d.model) {
-    case 'disc': {
-      const a = d.majorDeg * DEG;
-      const u = x * Math.cos(a) + y * Math.sin(a);
-      const v = (-x * Math.sin(a) + y * Math.cos(a)) / Math.cos(d.incDeg * DEG);
-      return fade(Math.sqrt(u * u + v * v) / d.extent);
-    }
-    case 'edge': {
-      const a = d.majorDeg * DEG;
-      const u = (x * Math.cos(a) + y * Math.sin(a)) / (d.length * 1.1);
-      const v = (-x * Math.sin(a) + y * Math.cos(a)) / Math.max(d.bulge * 1.6, d.length * 0.2);
-      return fade(Math.sqrt(u * u + v * v));
-    }
-    case 'ellipsoid':
-      return fade(Math.sqrt(x * x + y * y) / d.extent);
-    default:
-      return 1;
-  }
-}
+const DEPTH_N = 512;
 
 /**
  * A nebula from its Hubble/Webb picture, made volumetric: the picture is
@@ -183,6 +65,10 @@ export class SlicedNebula implements DeepObject {
   private hiState: 'none' | 'loading' | 'ready' = 'none';
   private hiTex: Texture | null = null;
   private lowTex: Texture | null = null;
+  /** Full-resolution tiles streamed in up close (when built: npm run hires). */
+  private readonly detail: DetailWindow;
+  /** Depth map built (slices may show). */
+  private depthReady = false;
 
   constructor(
     readonly def: NebulaDef,
@@ -219,7 +105,9 @@ export class SlicedNebula implements DeepObject {
     this.group.visible = false;
 
     const geo = new PlaneGeometry(this.W, this.H);
+    this.detail = new DetailWindow(loader.renderer, def.image, this.W, this.H);
     this.sliceUniforms = {
+      ...this.detail.uniforms,
       uMap: { value: null as Texture | null },
       uDepth: { value: null as Texture | null },
       uIntensity: { value: 0.95 * def.brightness },
@@ -227,9 +115,10 @@ export class SlicedNebula implements DeepObject {
       uZDir: { value: new Vector3(0, 0, 1) },
       uEye: { value: 0 },
       uAnchor: { value: anchorLocal },
+      uCollapse: { value: 0 },
       // Slices fade at grazing views; a tilted disc is seen at a grazing angle
       // even from Earth, so it fades only when nearly edge-on.
-      uFacing: { value: def.depth.model === 'disc' ? new Vector2(0.02, 0.1) : new Vector2(0.1, 0.45) },
+      uFacing: { value: def.depth.model === 'disc' ? new Vector2(0.02, 0.1) : new Vector2(0.5, 0.88) },
     };
     for (let i = 0; i < SLICES; i++) {
       const m = new Mesh(
@@ -339,9 +228,10 @@ export class SlicedNebula implements DeepObject {
     this.hiTex = null;
     this.hiState = 'none';
     this.sliceUniforms.uMap.value = this.lowTex;
+    this.detail.dispose();
   }
 
-  /** Depth map and particles from the 1K picture. */
+  /** Depth map and particles from the 1K picture (computed in a worker). */
   private buildFromImage(image: CanvasImageSource): void {
     const d = this.def;
     const N = DEPTH_N;
@@ -351,99 +241,45 @@ export class SlicedNebula implements DeepObject {
     const g2d = canvas.getContext('2d', { willReadFrequently: true });
     if (!g2d) return;
     g2d.drawImage(image, 0, 0, N, N);
-    const px = g2d.getImageData(0, 0, N, N).data;
-    let maxL = 0;
-    for (let i = 0; i < N * N; i++) maxL = Math.max(maxL, px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2]);
-    maxL = maxL / 765 || 1;
-    const lin = (c: number) => Math.pow(c / 255, 2.2);
-    const yScale = 1 / d.aspect;
+    const input: NebulaBuildInput = {
+      px: g2d.getImageData(0, 0, N, N).data,
+      N,
+      slices: SLICES,
+      depth: d.depth,
+      ax: this.ax,
+      ay: this.ay,
+      aspect: d.aspect,
+      W: this.W,
+      H: this.H,
+      seed: d.id.length * 7919 + Math.round(d.distPc),
+      count: d.particles ?? 120_000,
+      particleSize: d.particleSize ?? 1 / 160,
+    };
+    void buildNebula(input).then((out) => this.applyBuild(out));
+  }
 
-    // Raw layers (image widths).
-    const raw = new Float32Array(N * N * 3);
-    const mask = new Float32Array(N * N);
-    let zRange = 0.02;
-    const p: Px = { x: 0, y: 0, r: 0, g: 0, b: 0, l: 0 };
-    for (let j = 0; j < N; j++) {
-      for (let i = 0; i < N; i++) {
-        const k = j * N + i;
-        p.x = (i + 0.5) / N - 0.5;
-        p.y = (0.5 - (j + 0.5) / N) * yScale;
-        p.r = lin(px[k * 4]);
-        p.g = lin(px[k * 4 + 1]);
-        p.b = lin(px[k * 4 + 2]);
-        p.l = (px[k * 4] + px[k * 4 + 1] + px[k * 4 + 2]) / 765 / maxL;
-        const [z1, z2, th] = layers(d.depth, p, this.ax, this.ay);
-        mask[k] = galaxyMask(d.depth, p, this.ax, this.ay);
-        raw.set([z1, z2, th], k * 3);
-        zRange = Math.max(zRange, Math.abs(z1) + th, Math.abs(z2) + th);
-      }
-    }
-    // Slices are evenly spread over ±zRange; thickness never below ~half a
-    // spacing so no light falls between slices. Normalisation per pixel.
-    const spacing = (2 * zRange) / (SLICES - 1);
-    const data = new Uint16Array(N * N * 4);
-    const gss = (x: number, s: number) => Math.exp((-0.5 * x * x) / (s * s));
-    for (let k = 0; k < N * N; k++) {
-      const z1 = raw[k * 3] / zRange;
-      const z2 = raw[k * 3 + 1] / zRange;
-      const th = Math.max(raw[k * 3 + 2], spacing * 0.6) / zRange;
-      let sum = 0;
-      for (let s = 0; s < SLICES; s++) {
-        const zs = (s / (SLICES - 1)) * 2 - 1;
-        sum += gss(zs - z1, th) + gss(zs - z2, th);
-      }
-      // Rows flipped: texture v = 0 is the image bottom.
-      const row = N - 1 - Math.floor(k / N);
-      const o = (row * N + (k % N)) * 4;
-      data[o] = DataUtils.toHalfFloat(z1);
-      data[o + 1] = DataUtils.toHalfFloat(z2);
-      data[o + 2] = DataUtils.toHalfFloat(th);
-      data[o + 3] = DataUtils.toHalfFloat(mask[k] / Math.max(sum, 1e-3));
-    }
-    const depthTex = new DataTexture(data, N, N, RGBAFormat, HalfFloatType);
+  private applyBuild(out: NebulaBuildOutput): void {
+    const d = this.def;
+    const N = DEPTH_N;
+    const depthTex = new DataTexture(out.depth, N, N, RGBAFormat, HalfFloatType);
     depthTex.minFilter = LinearFilter;
     depthTex.magFilter = LinearFilter;
     depthTex.needsUpdate = true;
     this.sliceUniforms.uDepth.value = depthTex;
-    this.sliceUniforms.uZRange.value = zRange * this.W;
+    this.sliceUniforms.uZRange.value = out.zRange * this.W;
     // uZ is in units of the range; the shader compares it with z1/z2/th, same units.
     for (const m of this.slices) m.visible = true;
+    this.depthReady = true;
 
-    // Particles: soft splats drawn from the same layers.
-    const rnd = new Random(d.id.length * 7919 + Math.round(d.distPc));
-    const count = d.particles ?? 32_000;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const size = new Float32Array(count);
-    let n = 0;
-    for (let guard = 0; n < count && guard < count * 60; guard++) {
-      const fx = rnd.next();
-      const fy = rnd.next();
-      const i = Math.min(N - 1, Math.floor(fx * N));
-      const j = Math.min(N - 1, Math.floor(fy * N));
-      const k = j * N + i;
-      const l = (px[k * 4] + px[k * 4 + 1] + px[k * 4 + 2]) / 765 / maxL;
-      const edge = MathUtils.smoothstep(Math.min(fx, 1 - fx), 0, 0.12) * MathUtils.smoothstep(Math.min(fy, 1 - fy), 0, 0.12);
-      if (l < 0.07 || rnd.next() > Math.pow(l, 1.3) * edge * mask[k]) continue;
-      const z = (rnd.next() < 0.5 ? raw[k * 3] : raw[k * 3 + 1]) + rnd.gaussian() * raw[k * 3 + 2];
-      pos.set([(fx - 0.5) * this.W, (0.5 - fy) * this.H, z * this.W], n * 3);
-      const r = lin(px[k * 4]);
-      const g = lin(px[k * 4 + 1]);
-      const b = lin(px[k * 4 + 2]);
-      const m = Math.max(r, g, b, 1e-4);
-      const kk = 0.5 + 0.5 * l;
-      col.set([(r / m) * kk, (g / m) * kk, (b / m) * kk], n * 3);
-      size[n] = this.W * (d.particleSize ?? 1 / 90) * rnd.range(0.6, 1.4);
-      n++;
-    }
-    const pts = makePoints(pos.subarray(0, n * 3), col.subarray(0, n * 3), size.subarray(0, n), {
-      brightness: (d.particleGain ?? 0.1) * d.brightness,
+    // Many fine splats read as gas from the side; a few large ones as blobs.
+    const pts = makePoints(out.pos, out.col, out.size, {
+      brightness: (d.particleGain ?? 0.12) * d.brightness,
       nearFade: this.W * 0.01,
       minPx: 0,
       maxPx: 40,
     });
     pts.name = `deepsky-${d.id}-gas`;
-    pts.userData.base = (d.particleGain ?? 0.1) * d.brightness;
+    pts.userData.base = (d.particleGain ?? 0.12) * d.brightness;
     this.particles = pts;
     this.group.add(pts);
   }
@@ -468,11 +304,31 @@ export class SlicedNebula implements DeepObject {
     const along = cam.clone().sub(this.position).dot(this.toSun);
     const onAxis = MathUtils.smoothstep(facing, 0.9, 0.99);
     this.sliceUniforms.uEye.value = along > 0 && onAxis > 0 ? along / onAxis : 0;
+    // Exactly on axis the stack collapses onto one slice (slice.frag sums the weights).
+    const collapse = onAxis >= 0.999 && along > 0;
+    this.sliceUniforms.uCollapse.value = collapse ? 1 : 0;
+    if (this.depthReady) this.slices.forEach((m, i) => (m.visible = !collapse || i === SLICES / 2));
     if (this.discNormalLocal) {
       const k = 1 - onAxis;
       this.sliceUniforms.uZDir.value.set(0, 0, 1).lerp(this.discNormalLocal, k);
     }
-    if (this.particles) this.particles.material.uniforms.uBrightness.value = (this.particles.userData.base as number) * (0.35 + 1.4 * (1 - facing)) * inside;
+    // Seen from Earth's side the photograph is exact and the particles only
+    // add grain: they fade in as the view turns away from that axis.
+    const offAxis = 1 - MathUtils.smoothstep(facing, 0.8, 0.97);
+    if (this.particles) {
+      const pts = this.particles;
+      const b = (pts.userData.base as number) * 1.75 * (1 - facing) * offAxis * inside;
+      // Off (on the Earth-side axis, say): skip the 120k vertices altogether.
+      pts.visible = b > 1e-5;
+      // Small on screen: a random subset (samples are in random order) carries
+      // the same light; the full cloud only when it spans ~600 px.
+      const count = pts.geometry.getAttribute('position').count;
+      const px = (W / Math.max(dist, 1e-9)) * (window.innerHeight / 2) / Math.tan(MathUtils.degToRad(ctx.camera.fov) / 2);
+      const n = Math.min(count, Math.max(6000, Math.round(count * (px / 600) ** 2)));
+      pts.geometry.setDrawRange(0, n);
+      pts.material.uniforms.uBrightness.value = b * (count / n);
+    }
+    if (this.hiState === 'ready') this.detail.update(ctx.camera, this.group, ctx.dt);
     this.pulsar?.update(ctx.elapsed, ctx.camera);
   }
 }

@@ -69,6 +69,12 @@ export class Hud {
       labels: { get: () => this.labels.show, set: (v) => (this.labels.show = v) },
       belts: { get: () => sys.showBelts, set: (v) => (sys.showBelts = v) },
       galaxy: { get: () => ctx.galactic.enabled, set: (v) => (ctx.galactic.enabled = v) },
+      craft: {
+        get: () => ctx.spacecraft?.visible ?? false,
+        set: (v) => {
+          if (ctx.spacecraft) ctx.spacecraft.visible = v;
+        },
+      },
       habitable: {
         get: () => science.habitableZones,
         set: (v) => {

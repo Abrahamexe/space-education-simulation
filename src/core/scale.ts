@@ -18,7 +18,26 @@ export type ScaleMode = 'cinematic' | 'real';
 /** Reference body for the cinematic size curve: Earth's mean radius. */
 const REF_RADIUS_KM = 6371.0;
 
-export const SCALE_CONFIG = {
+export interface CinematicScale {
+  refRadiusUnits: number;
+  radiusExponent: number;
+  unitsPerAu: number;
+  distanceExponent: number;
+  satelliteLinearRadii: number;
+  satelliteExponent: number;
+}
+
+/** Defaults; the developer panel can change the cinematic curve at run time (scale.configure). */
+export const SCALE_DEFAULTS: Readonly<CinematicScale> = {
+  refRadiusUnits: 1.5,
+  radiusExponent: 0.55,
+  unitsPerAu: 180,
+  distanceExponent: 0.6,
+  satelliteLinearRadii: 4,
+  satelliteExponent: 0.55,
+};
+
+export const SCALE_CONFIG: { cinematic: CinematicScale; real: { readonly kmPerUnit: number } } = {
   cinematic: {
     /** Earth's radius in scene units; anchors the size curve. */
     refRadiusUnits: 1.5,
@@ -40,7 +59,7 @@ export const SCALE_CONFIG = {
     /** Same anchor as cinematic so Earth keeps its on-screen size. */
     kmPerUnit: REF_RADIUS_KM / 1.5,
   },
-} as const;
+};
 
 function cinematicRadius(km: number): number {
   const c = SCALE_CONFIG.cinematic;
@@ -88,6 +107,16 @@ export class ScaleSystem {
     this._mode = clamped >= 0.5 ? 'real' : 'cinematic';
     this.listeners.forEach((fn) => fn());
   }
+
+  /** Change the cinematic curve (developer panel); everything scaled re-lays itself out. */
+  configure(patch: Partial<CinematicScale>): void {
+    Object.assign(SCALE_CONFIG.cinematic, patch);
+    this.version++;
+    this.listeners.forEach((fn) => fn());
+  }
+
+  /** Bumped by configure(), so caches keyed on the blend also see curve changes. */
+  version = 0;
 
   setMode(mode: ScaleMode): void {
     this.setBlend(mode === 'real' ? 1 : 0);

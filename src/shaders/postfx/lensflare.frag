@@ -22,9 +22,11 @@ uniform float uStarburst;
 uniform float uFlareTime;
 
 // Envelope cut-offs: the halo Gaussian (σ ≈ 0.012) is < 1e-6 beyond 0.045
-// of its radius; the starburst falloff is < 1e-3 beyond ~1 screen height.
+// of its radius; the starburst falloff is < 1 % of its peak beyond ~2/3 of
+// a screen height, where the rays are lost in the glare anyway (the two
+// noise lookups there are the flare's main cost).
 const float HALO_REACH = 0.045;
-const float BURST_CUTOFF = 1e-3;
+const float BURST_CUTOFF = 1e-2;
 
 float hexDist(vec2 q) {
   q = abs(q);

@@ -3,6 +3,7 @@ import {
   EffectComposer,
   EffectPass,
   RenderPass,
+  FXAAEffect,
   SMAAEffect,
   SMAAPreset,
   ToneMappingEffect,
@@ -39,8 +40,8 @@ export interface FlareOccluder {
 /**
  * Post-processing chain (PLAN §5.6), all in a half-float HDR target:
  *
- *   RenderPass ─▶ [Sanitize] ─▶ [Bloom → LensFlare → Grade(exposure, vignette) → ToneMapping]
- *              ─▶ [SMAA]  (anti-aliasing on the tone-mapped, display-range image)
+ *   RenderPass ─▶ [Sanitize → Bloom → LensFlare → Grade(exposure, vignette) → ToneMapping]
+ *              ─▶ [SMAA | FXAA]  (anti-aliasing on the tone-mapped, display-range image)
  *
  * The renderer's own tone mapping stays off; ToneMappingEffect does it so
  * bloom and flare operate on true HDR values.
@@ -54,6 +55,8 @@ export class PostFX {
   readonly grade: GradeEffect;
   readonly toneMapping: ToneMappingEffect;
   readonly smaa: SMAAEffect;
+  private readonly smaaPass: EffectPass;
+  private readonly fxaaPass: EffectPass;
 
   private flareSource: FlareSource | null = null;
   private readonly occluders = new Set<FlareOccluder>();
@@ -83,10 +86,24 @@ export class PostFX {
     this.grade = new GradeEffect();
     this.toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
     this.smaa = new SMAAEffect({ preset: SMAAPreset.HIGH });
+    // Bloom builds its mip chain from the raw render: keep NaN / Inf out of it
+    // (the image itself is scrubbed by the SanitizeEffect in the same pass).
+    const lum = this.bloom.luminanceMaterial;
+    lum.fragmentShader = lum.fragmentShader.replace(
+      'vec4 texel=texture2D(inputBuffer,vUv);',
+      'vec4 texel=texture2D(inputBuffer,vUv);if(any(equal(floatBitsToUint(texel)&0x7f800000u,uvec4(0x7f800000u))))texel=vec4(0.0);texel=clamp(texel,0.0,3.0e4);',
+    );
+    lum.needsUpdate = true;
+    // The bright-pass feeds a blur that starts at half resolution anyway.
+    this.bloom.luminancePass.resolution.scale = 0.5;
 
-    const hdrPass = new EffectPass(camera, this.bloom, this.flare, this.grade, this.toneMapping);
-    const aaPass = new EffectPass(camera, this.smaa);
-    aaPass.dithering = true; // breaks up banding in dark sky gradients
+    const hdrPass = new EffectPass(camera, new SanitizeEffect(), this.bloom, this.flare, this.grade, this.toneMapping);
+    // Antialiasing: SMAA (three passes) on high / ultra, FXAA (one) below.
+    this.smaaPass = new EffectPass(camera, this.smaa);
+    this.fxaaPass = new EffectPass(camera, new FXAAEffect());
+    this.fxaaPass.enabled = false;
+    // Breaks up banding in dark sky gradients.
+    this.smaaPass.dithering = this.fxaaPass.dithering = true;
 
     this.composer.addPass(new RenderPass(scene, camera));
     // Ray-traced black hole (galaxy view): its own pass so the lensed image
@@ -94,15 +111,17 @@ export class PostFX {
     this.lensPass = new EffectPass(camera, this.blackHole);
     this.lensPass.enabled = false;
     this.composer.addPass(this.lensPass);
-    // NaN / Inf scrub: a single bad texel becomes a black square in bloom.
-    this.composer.addPass(new EffectPass(camera, new SanitizeEffect()));
     this.composer.addPass(hdrPass);
-    this.composer.addPass(aaPass);
+    this.composer.addPass(this.smaaPass);
+    this.composer.addPass(this.fxaaPass);
   }
 
-  /** SMAA search quality (quality presets; SMAAPreset 0 low … 3 ultra). */
-  setAntialias(preset: number): void {
-    this.smaa.applyPreset(preset);
+  /** Antialiasing level (quality presets): 0–1 FXAA, 2–3 SMAA high / ultra. */
+  setAntialias(level: number): void {
+    const smaa = level >= 2;
+    this.smaaPass.enabled = smaa;
+    this.fxaaPass.enabled = !smaa;
+    if (smaa) this.smaa.applyPreset(level);
   }
 
   /** Bloom mip chain depth (quality presets). */

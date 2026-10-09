@@ -7,6 +7,7 @@ import { CelestialBody } from '../bodies/CelestialBody';
 import { Planet } from '../bodies/Planet';
 import type { FocusEntry, SolarSystem } from '../bodies/SolarSystem';
 import type { SatelliteRecord } from '../bodies/Moon';
+import { SPACECRAFT } from '../config/spacecraft';
 import { au, date, fixed, hours, km, num, period, sci, sig } from './format';
 
 /**
@@ -47,6 +48,10 @@ export interface BodyInfo {
    * panel offers a jump there to see the comet active.
    */
   perihelionJd: number | null;
+  /** Spacecraft: also show the live distance (and signal delay) from Earth. */
+  craft?: boolean;
+  /** Source line when it differs from the default. */
+  source?: string;
 }
 
 type Facts = Record<string, Record<string, number | boolean | null>>;
@@ -130,6 +135,24 @@ export function buildInfo(e: FocusEntry, system: SolarSystem): BodyInfo {
     perihelionJd: null,
   };
   const stats = info.stats;
+  if (e.kind === 'craft') {
+    const def = SPACECRAFT.find((c) => c.id === e.id);
+    if (!def) return info;
+    const p = strings().panel;
+    info.typeLabel = p.craftTypes[def.kind];
+    info.subtitle = def.status;
+    info.text = def.text;
+    info.fact = def.fact;
+    info.craft = true;
+    info.source = 'schematic' in def.model ? p.craftSourcesSchematic : p.craftSources;
+    stats.push(
+      { label: st.agency, value: def.agency },
+      { label: st.launch, value: date(new Date(def.launch + 'T12:00:00Z')) },
+      { label: st.mass, value: `${num(def.massKg, 0)} kg` },
+      { label: st.size, value: `${num(def.sizeM, Number.isInteger(def.sizeM) ? 0 : 1)} m` },
+    );
+    return info;
+  }
   const f = FACTS[e.id] as Record<string, number> | undefined;
 
   if (e.kind === 'star' && f) {

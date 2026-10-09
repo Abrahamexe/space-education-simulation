@@ -11,6 +11,7 @@
 uniform float uZ;          // this slice's height above the mid-plane (pc)
 uniform float uZMax;       // slices span ±uZMax
 uniform float uWidth;      // picture width (pc)
+uniform float uStride;     // only every uStride-th slice (mirrored about the mid-plane) is drawn
 
 varying vec2 vUv;
 varying vec3 vWorld;
@@ -27,6 +28,9 @@ void main() {
   float h = 110.0 + 820.0 * exp(-(r * r) / (1700.0 * 1700.0));
   float sum = 0.0;
   for (int i = 0; i < LAYERS; i++) {
+    // Same selection as GalaxyModel.updateSlices: normalise over drawn slices.
+    float m = float(i < LAYERS / 2 ? i : LAYERS - 1 - i);
+    if (mod(float(LAYERS / 2 - 1) - m, uStride) > 0.5) continue;
     float t = float(i) / float(LAYERS - 1) * 2.0 - 1.0;
     sum += profile(sign(t) * t * t * uZMax, h);
   }

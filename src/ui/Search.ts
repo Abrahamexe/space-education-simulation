@@ -4,7 +4,7 @@ import { icon } from './icons';
 import { isTypingOrChord } from './Toolbar';
 import type { UiContext } from './context';
 
-const GROUP_ORDER: FocusEntry['kind'][] = ['star', 'planet', 'dwarf', 'comet', 'moon'];
+const GROUP_ORDER: FocusEntry['kind'][] = ['star', 'planet', 'dwarf', 'comet', 'moon', 'craft'];
 
 /** Match quality, lower is better; moons of a matching planet come last. */
 const enum Rank {
@@ -133,7 +133,8 @@ export class Search {
 
   /** Rank every body against the query; an empty query lists everything by group. */
   private match(query: string): FocusEntry[] {
-    const all = this.ctx.system.focusables;
+    // Spacecraft not yet launched (or past their data) cannot be flown to.
+    const all = this.ctx.system.focusables.filter((e) => !(e.body as { hidden?: boolean }).hidden);
     const q = fold(query.trim());
     const groupOf = (e: FocusEntry) => GROUP_ORDER.indexOf(e.kind);
     if (!q) return [...all].sort((a, b) => groupOf(a) - groupOf(b));

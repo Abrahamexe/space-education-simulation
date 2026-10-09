@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "textures": "node scripts/prepare-textures.mjs",
-    "data": "node scripts/fetch-data.mjs"
+    "data": "node scripts/fetch-data.mjs",
+    "hires": "node scripts/build-hires.mjs",
+    "spacecraft": "node scripts/fetch-spacecraft.mjs",
+    "spacecraft:models": "node scripts/prepare-spacecraft-models.mjs"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
@@ -21,6 +24,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
     "@types/stats.js": "^0.17.4",
     "@types/three": "^0.186.0",
     "lil-gui": "^0.21.0",

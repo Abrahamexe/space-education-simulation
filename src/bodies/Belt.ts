@@ -214,6 +214,7 @@ export class Belt implements Updatable {
   private readonly maxMeanMotion: number;
   /** Time (days since J2000) the centres were solved for. */
   private epochDays = Number.NaN;
+  private scaleVersion = 0;
   private epochBlend = Number.NaN;
   private readonly extrapolation = { value: 0 };
   /** User toggle (belts on/off); rocks additionally depend on distance. */
@@ -485,6 +486,16 @@ export class Belt implements Updatable {
   update(ctx: FrameContext): void {
     const k = this.keplerUniforms;
     k.uScaleBlend.value = scale.blend;
+    if (scale.version !== this.scaleVersion) {
+      // The cinematic curve was changed (developer panel): new constants, fresh solve.
+      this.scaleVersion = scale.version;
+      const c = SCALE_CONFIG.cinematic;
+      k.uUnitsPerAu.value = c.unitsPerAu;
+      k.uDistExp.value = c.distanceExponent;
+      k.uRefRadiusUnits.value = c.refRadiusUnits;
+      k.uRadiusExp.value = c.radiusExponent;
+      this.epochDays = Number.NaN;
+    }
     const days = ctx.time.daysSinceJ2000;
     if (this.enabled) {
       const stale =

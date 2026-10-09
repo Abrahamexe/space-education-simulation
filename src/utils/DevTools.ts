@@ -14,7 +14,14 @@ import type { Navigator } from '../core/Navigator';
 import { directionToPose } from '../core/CameraRig';
 import { sunUniforms } from '../core/lighting';
 import { scale } from '../core/scale';
-import { galacticToScene } from '../physics/frames';
+import { ECLIPTIC_TO_EQUATORIAL, galacticToScene } from '../physics/frames';
+import { SCALE_CONFIG, SCALE_DEFAULTS, type CinematicScale } from '../core/scale';
+import type { FocusEntry } from '../bodies/SolarSystem';
+import type { Selection } from '../core/Selection';
+import type { SpacecraftLayer } from '../spacecraft/SpacecraftLayer';
+import type { SkyGrids } from '../bodies/SkyGrids';
+import type { QualityManager } from '../core/QualityManager';
+import type { QualityLevel } from '../config/quality';
 
 const STORE_KEY = 'space.devtools';
 
@@ -173,16 +180,28 @@ function createShell(engine: Engine) {
 }
 
 /**
- * Development-only tooling (PLAN §2): frame-time meter and live tuning in a
- * HUD-styled panel. F2 (or the key left of 1) toggles it; open state and
- * open folders are remembered. Loaded through a dynamic import guarded by
- * import.meta.env.DEV, so none of this reaches the production bundle.
+ * Developer panel (PLAN §2), also for curious users: frame-time meter, live
+ * tuning, the scale curve and true scale, the selected body's coordinates,
+ * sky grids, spacecraft and system info in a HUD-styled panel. F2 (or the
+ * key left of 1) toggles it; open state and open folders are remembered.
+ * Loaded through a dynamic import, so it is a separate chunk.
  */
 export function setupDevTools(
   engine: Engine,
-  bodies: { sun: Sun; starfield: Starfield; system: SolarSystem; nav: Navigator; galactic: GalacticMotion; views: ViewSwitch },
+  bodies: {
+    sun: Sun;
+    starfield: Starfield;
+    system: SolarSystem;
+    nav: Navigator;
+    galactic: GalacticMotion;
+    views: ViewSwitch;
+    selection?: Selection;
+    spacecraft?: SpacecraftLayer;
+    grids?: SkyGrids;
+    quality?: QualityManager;
+  },
 ): GUI {
-  const { sun, starfield, system, nav, galactic, views } = bodies;
+  const { sun, starfield, system, nav, galactic, views, selection, spacecraft, grids, quality } = bodies;
 
   const shell = createShell(engine);
   const gui = new GUI({ container: shell.body, title: 'Geliştirici' });
@@ -207,6 +226,23 @@ export function setupDevTools(
   tf.add(timeState, 'date').name('tarih (UTC)').listen().disable();
   tf.add({ now: () => time.setNow() }, 'now').name('bugün');
   tf.add({ j2000: () => time.setJ2000() }, 'j2000').name('J2000');
+  // Any moment: type a date (UTC), and a free rate on a log scale.
+  const jump = { to: time.date.toISOString().slice(0, 16).replace('T', ' ') };
+  tf.add(jump, 'to')
+    .name('tarihe git (YYYY-AA-GG SS:DD)')
+    .onFinishChange((v: string) => {
+      const ms = Date.parse(`${v.trim().replace(' ', 'T')}${v.length <= 10 ? 'T00:00' : ''}Z`);
+      if (Number.isFinite(ms)) time.setJd(ms / 86400000 + 2440587.5);
+    });
+  const freeRate = {
+    get log() {
+      return Math.log10(Math.max(Math.abs(time.rate), 1e-9));
+    },
+    set log(v: number) {
+      time.setRate(10 ** v);
+    },
+  };
+  tf.add(freeRate, 'log', -4.94, 3, 0.01).name('serbest hız (10 üzeri x gün/sn)').listen();
 
   // ---- Render / post ----------------------------------------------------------
   const post = engine.postfx;
@@ -328,11 +364,6 @@ export function setupDevTools(
     .onChange((id: string) => focus(id));
   pf2.add(system, 'showOrbits').name('yörüngeler');
   pf2.add(system, 'showBelts').name('kuşaklar');
-  const scaleState = { gerçek: false };
-  pf2.add(scaleState, 'gerçek').name('gerçek ölçek').onChange((v: boolean) => {
-    scale.setMode(v ? 'real' : 'cinematic');
-    focus(focusState.odak);
-  });
   pf2.add(sunUniforms.uSunIntensity, 'value', 0, 6, 0.01).name('güneş ışığı');
   pf2.add(sunUniforms.uAmbient, 'value', 0, 0.05, 0.0005).name('ortam');
   const earth = system.get('earth');
@@ -372,6 +403,15 @@ export function setupDevTools(
       return engine.camera.near.toExponential(2);
     },
   };
+  const fovUi = {
+    get fov() {
+      return engine.rig.fov;
+    },
+    set fov(v: number) {
+      engine.rig.setFov(v);
+    },
+  };
+  camf.add(fovUi, 'fov', 10, 110, 1).name('görüş açısı (°)');
   camf.add(camState, 'distance').name('odak mesafesi').listen().disable();
   camf.add(camState, 'near').name('near').listen().disable();
   camf.add(camState, 'origin').name('köken').listen().disable();
@@ -402,6 +442,234 @@ export function setupDevTools(
     }
     cam.lookAt(rig.controls.target);
   };
+
+
+  // ---- Scale: the cinematic curve, presets, true scale ------------------------------
+  const scf = gui.addFolder('Ölçek');
+  const curve = { ...SCALE_CONFIG.cinematic };
+  const PRESETS: Record<string, { blend: number; curve: Partial<CinematicScale> }> = {
+    cinematic: { blend: 0, curve: { ...SCALE_DEFAULTS } },
+    // Bodies in true proportion to each other (and moons at true distances from
+    // their planets); the Sun shrunk enough to keep Mercury outside it.
+    trueSizes: { blend: 0, curve: { ...SCALE_DEFAULTS, radiusExponent: 1, refRadiusUnits: 0.06, satelliteLinearRadii: 1e6, satelliteExponent: 1 } },
+    big: { blend: 0, curve: { ...SCALE_DEFAULTS, refRadiusUnits: 3 } },
+    real: { blend: 1, curve: { ...SCALE_DEFAULTS } },
+  };
+  const curveCtrls: { updateDisplay(): void }[] = [];
+  const applyCurve = () => scale.configure({ ...curve });
+  const applyPreset = (id: string) => {
+    const p = PRESETS[id];
+    Object.assign(curve, SCALE_DEFAULTS, p.curve);
+    scaleUi.preset = id;
+    scale.configure({ ...curve });
+    scale.setBlend(p.blend);
+    curveCtrls.forEach((c) => c.updateDisplay());
+  };
+  const scaleUi = {
+    preset: 'cinematic',
+    get blend() {
+      return scale.blend;
+    },
+    set blend(v: number) {
+      scale.setBlend(v);
+    },
+    defaults: () => applyPreset('cinematic'),
+  };
+  scf
+    .add(scaleUi, 'preset', {
+      'Sinematik (varsayılan)': 'cinematic',
+      'Gerçek boyut oranları': 'trueSizes',
+      'Büyük gezegenler': 'big',
+      'Tamamen gerçek (boyut + mesafe)': 'real',
+    })
+    .name('hazır ayar')
+    .onChange(applyPreset)
+    .listen();
+  scf.add(scaleUi, 'blend', 0, 1, 0.001).name('gerçeklik (0 sinematik, 1 gerçek)').listen();
+  const cf2 = scf.addFolder('Sinematik eğri');
+  curveCtrls.push(
+    cf2.add(curve, 'radiusExponent', 0.2, 1, 0.01).name('boyut üssü (1 = gerçek oran)').onChange(applyCurve),
+    cf2.add(curve, 'refRadiusUnits', 0.01, 5, 0.01).name('Dünya yarıçapı (birim)').onChange(applyCurve),
+    cf2.add(curve, 'distanceExponent', 0.3, 1, 0.01).name('mesafe üssü (1 = gerçek oran)').onChange(applyCurve),
+    cf2.add(curve, 'unitsPerAu', 40, 800, 1).name('1 AU (birim)').onChange(applyCurve),
+    cf2.add(curve, 'satelliteLinearRadii', 1, 60, 0.5).name('uydular: gerçek oranlı bölge (yarıçap)').onChange(applyCurve),
+    cf2.add(curve, 'satelliteExponent', 0.3, 1, 0.01).name('uydular: mesafe üssü').onChange(applyCurve),
+  );
+  scf.add(scaleUi, 'defaults').name('varsayılan ölçek');
+
+  // ---- Position of the selected (or focused) body --------------------------------------
+  const posf = gui.addFolder('Konum (seçili cisim)');
+  const KM_AU = 149597870.7;
+  const C_KMS = 299792.458;
+  const hp = new Vector3();
+  const he = new Vector3();
+  const rel = new Vector3();
+  const subject = (): FocusEntry | null => {
+    if (selection?.selected) return selection.selected;
+    const f = engine.rig.focusTarget;
+    return system.focusables.find((e) => e.body === f) ?? null;
+  };
+  const helio = (body: unknown, out: Vector3): Vector3 | null => {
+    const b = body as { trueHelioKm?: (o: Vector3) => Vector3; hidden?: boolean };
+    if (b.hidden) return null;
+    if (b.trueHelioKm) return b.trueHelioKm(out);
+    return out.set(0, 0, 0); // the Sun
+  };
+  const earthBody = system.get('earth');
+  /** Geocentric ecliptic vector (km) of the subject, or null. */
+  const geo = (): Vector3 | null => {
+    const s = subject();
+    if (!s || !earthBody || s.id === 'earth') return null;
+    const p = helio(s.body, hp);
+    return p ? rel.subVectors(p, helio(earthBody, he)!) : null;
+  };
+  const angle = (deg: number, hours = false) => {
+    const sign = deg < 0 ? '−' : '';
+    let v = Math.abs(hours ? deg / 15 : deg);
+    const a = Math.floor(v);
+    v = (v - a) * 60;
+    const b = Math.floor(v);
+    const c = (v - b) * 60;
+    return hours ? `${a}h ${String(b).padStart(2, '0')}m ${c.toFixed(1)}s` : `${sign}${a}° ${String(b).padStart(2, '0')}′ ${c.toFixed(0)}″`;
+  };
+  const posInfo = {
+    get hedef() {
+      return subject()?.name ?? '—';
+    },
+    get gunes() {
+      const s = subject();
+      const p = s && helio(s.body, hp);
+      return p ? `${(p.length() / KM_AU).toFixed(6)} AU` : '—';
+    },
+    get ekliptik() {
+      const s = subject();
+      const p = s && helio(s.body, hp);
+      if (!p || p.lengthSq() === 0) return '—';
+      const lon = (MathUtils.radToDeg(Math.atan2(p.y, p.x)) + 360) % 360;
+      const lat = MathUtils.radToDeg(Math.asin(p.z / p.length()));
+      return `λ ${lon.toFixed(3)}°  β ${lat.toFixed(3)}°`;
+    },
+    get dunya() {
+      const g = geo();
+      if (!g) return '—';
+      const d = g.length();
+      return d < KM_AU * 0.02 ? `${Math.round(d).toLocaleString('tr-TR')} km` : `${(d / KM_AU).toFixed(5)} AU`;
+    },
+    get isik() {
+      const g = geo();
+      if (!g) return '—';
+      const t = g.length() / C_KMS;
+      return t < 60 ? `${t.toFixed(3)} sn` : t < 3600 ? `${(t / 60).toFixed(2)} dk` : `${(t / 3600).toFixed(2)} sa`;
+    },
+    get ra() {
+      const g = geo();
+      if (!g) return '—';
+      g.applyMatrix3(ECLIPTIC_TO_EQUATORIAL);
+      return angle((MathUtils.radToDeg(Math.atan2(g.y, g.x)) + 360) % 360, true);
+    },
+    get dec() {
+      const g = geo();
+      if (!g) return '—';
+      g.applyMatrix3(ECLIPTIC_TO_EQUATORIAL);
+      return angle(MathUtils.radToDeg(Math.asin(g.z / g.length())));
+    },
+    get cap() {
+      const s = subject();
+      const g = geo();
+      if (!s || !g) return '—';
+      const b = s.body as { radiusKm?: number; def?: { sizeM: number } };
+      const r = s.id === 'sun' ? 695700 : (b.radiusKm ?? (b.def ? b.def.sizeM / 2000 : 0));
+      const arcsec = MathUtils.radToDeg(2 * Math.atan(r / g.length())) * 3600;
+      return arcsec > 120 ? `${(arcsec / 60).toFixed(2)}′` : arcsec > 0.1 ? `${arcsec.toFixed(2)}″` : `${(arcsec * 1000).toFixed(3)} mas`;
+    },
+    get elong() {
+      const g = geo();
+      if (!g || !earthBody) return '—';
+      const toBody = g.normalize();
+      const toSun = helio(earthBody, he)!.negate().normalize();
+      return `${MathUtils.radToDeg(Math.acos(MathUtils.clamp(toBody.dot(toSun), -1, 1))).toFixed(2)}°`;
+    },
+  };
+  const POS_LABELS: [keyof typeof posInfo, string][] = [
+    ['hedef', 'cisim'],
+    ['gunes', 'Güneşe uzaklık'],
+    ['ekliptik', 'ekliptik boylam / enlem'],
+    ['dunya', 'Dünyaya uzaklık'],
+    ['isik', 'Dünyadan ışık süresi'],
+    ['ra', 'sağ açıklık (Dünyadan)'],
+    ['dec', 'dik açıklık (Dünyadan)'],
+    ['cap', 'görünür çap (Dünyadan)'],
+    ['elong', 'Güneşten açısal uzaklık'],
+  ];
+  for (const [k, label] of POS_LABELS) posf.add(posInfo, k).name(label).listen().disable();
+  posf.close();
+
+  // ---- Sky reference circles -------------------------------------------------------
+  if (grids) {
+    const gf2 = gui.addFolder('Gökyüzü ızgaraları');
+    gf2.add(grids.equatorial, 'visible').name('ekvator ızgarası (RA / Dec)');
+    gf2.add(grids.ecliptic, 'visible').name('ekliptik');
+    gf2.add(grids.galactic, 'visible').name('galaktik ekvator');
+    gf2.add(grids, 'opacity', 0, 3, 0.01).name('parlaklık');
+    gf2.close();
+  }
+
+  // ---- Spacecraft ----------------------------------------------------------------------
+  if (spacecraft) {
+    const crf = gui.addFolder('Uzay araçları');
+    const crUi = {
+      get on() {
+        return spacecraft.visible;
+      },
+      set on(v: boolean) {
+        spacecraft.visible = v;
+      },
+      exag: 0,
+      pathGain: 1,
+      markerScale: 1,
+      showAllOrbits: false,
+    };
+    crf.add(crUi, 'on').name('görünür (U)').listen();
+    crf.add(crUi, 'exag', 0, 4, 0.1).name('boyut abartma (10 üzeri x kat)').onChange((v: number) => (spacecraft.exaggeration = 10 ** v));
+    crf.add(crUi, 'pathGain', 0, 4, 0.01).name('iz parlaklığı').onChange((v: number) => spacecraft.tune({ pathGain: v }));
+    crf.add(crUi, 'markerScale', 0.2, 4, 0.01).name('işaret boyu').onChange((v: number) => spacecraft.tune({ markerScale: v }));
+    crf.add(crUi, 'showAllOrbits').name('bütün yörüngeler').onChange((v: boolean) => spacecraft.tune({ showAllOrbits: v }));
+    crf.close();
+  }
+
+  // ---- System info and quality ------------------------------------------------------------
+  const sysf = gui.addFolder('Sistem');
+  const gl = engine.renderer.getContext();
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  const gpu = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
+  const info = engine.renderer.info;
+  const sysInfo = {
+    gpu: gpu.replace(/^ANGLE \(|\)$/g, ''),
+    maxTex: String(gl.getParameter(gl.MAX_TEXTURE_SIZE)),
+    get res() {
+      const c = engine.renderer.domElement;
+      return `${c.width} × ${c.height} (piksel oranı ${engine.renderer.getPixelRatio().toFixed(2)})`;
+    },
+    get tris() {
+      return info.render.triangles.toLocaleString('tr-TR');
+    },
+    get mem() {
+      return `${info.memory.geometries} geometri · ${info.memory.textures} doku · ${info.programs?.length ?? 0} shader`;
+    },
+    get level(): QualityLevel {
+      return quality?.level ?? 'high';
+    },
+    set level(v: QualityLevel) {
+      quality?.set(v);
+    },
+  };
+  sysf.add(sysInfo, 'gpu').name('ekran kartı').disable();
+  sysf.add(sysInfo, 'maxTex').name('en büyük doku').disable();
+  sysf.add(sysInfo, 'res').name('çözünürlük').listen().disable();
+  sysf.add(sysInfo, 'tris').name('üçgen / kare').listen().disable();
+  sysf.add(sysInfo, 'mem').name('GPU belleğinde').listen().disable();
+  if (quality) sysf.add(sysInfo, 'level', { Düşük: 'low', Orta: 'medium', Yüksek: 'high', Ultra: 'ultra' }).name('kalite').listen();
+  sysf.close();
 
   // ---- Shell wiring: open state, folders, filter, reset ------------------------------
   const state = loadState();
@@ -486,6 +754,6 @@ export function setupDevTools(
   (shell.panel.querySelector('[data-reset]') as HTMLElement).addEventListener('click', () => gui.reset());
 
   // Expose for console debugging.
-  (window as unknown as Record<string, unknown>).__space = { engine, sun, starfield, system, gui, view, focus, nav, galactic, views };
+  if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__space = { engine, sun, starfield, system, gui, view, focus, nav, galactic, views };
   return gui;
 }

@@ -23,7 +23,7 @@ import { Planet, type HeliocentricBodyData } from './Planet';
 import type { PlanetData } from './planetTypes';
 import type { Sun } from './Sun';
 
-export type BodyKind = 'star' | 'planet' | 'dwarf' | 'moon' | 'comet';
+export type BodyKind = 'star' | 'planet' | 'dwarf' | 'moon' | 'comet' | 'craft';
 
 export interface FocusEntry {
   id: string;
@@ -144,10 +144,16 @@ export class SolarSystem {
     this.engine.postfx.addOccluder(body);
   }
 
+  /** A focusable that is not a celestial body (spacecraft): search, labels, picking, cards. */
+  addFocusable(entry: FocusEntry): void {
+    this.entries.push(entry);
+  }
+
   /** Distance from a render-space point to the nearest body surface (free camera, near plane). */
   surfaceDistance(renderPos: Vector3): number {
     let best = Infinity;
     for (const e of this.entries) {
+      if ((e.body as { hidden?: boolean }).hidden) continue;
       const p = this.origin.toRender(e.body.getAbsolutePosition(this.tmp), this.tmp);
       const d = p.distanceTo(renderPos) - e.body.getRadius();
       if (d < best) best = d;

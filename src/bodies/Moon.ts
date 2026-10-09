@@ -3,7 +3,7 @@ import { scale } from '../core/scale';
 import type { FloatingOrigin } from '../core/FloatingOrigin';
 import type { Loader } from '../core/Loader';
 import type { FrameContext } from '../core/types';
-import { ECLIPTIC_TO_SCENE, poleFrameFromRaDec } from '../physics/frames';
+import { ECLIPTIC_TO_SCENE, SCENE_TO_ECLIPTIC, poleFrameFromRaDec } from '../physics/frames';
 import {
   SatelliteOrbit,
   calendarToJd,
@@ -112,6 +112,15 @@ export class Moon extends CelestialBody {
     const rot = (parent as Planet).data?.rotation;
     if (rot && 'poleRaDeg' in rot) return poleFrameFromRaDec(rot.poleRaDeg[0], rot.poleDecDeg[0]);
     return ECLIPTIC_TO_SCENE.clone();
+  }
+
+  /** True heliocentric ecliptic position (km): the planet's plus the moon's offset. */
+  trueHelioKm(out: Vector3): Vector3 {
+    const rel = positionFromEccentricAnomaly(this.elements, solveKepler(this.elements.M, this.elements.e), new Vector3())
+      .applyMatrix3(this.frame)
+      .applyMatrix3(SCENE_TO_ECLIPTIC);
+    const parent = this.parent as unknown as { trueHelioKm?: (o: Vector3) => Vector3 };
+    return (parent.trueHelioKm ? parent.trueHelioKm(out) : out.set(0, 0, 0)).add(rel);
   }
 
   get orbitPhase(): number {

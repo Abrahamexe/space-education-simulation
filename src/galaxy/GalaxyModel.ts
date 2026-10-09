@@ -143,6 +143,7 @@ export class GalaxyModel {
     const basis = new Matrix4().makeBasis(right, up, GAL.n);
     const map = { value: null as Texture | null };
     const intensity = { value: 0 };
+    const stride = this.sliceStride;
     for (let i = 0; i < DISC_LAYERS; i++) {
       // Same spacing as glow.frag: crowded towards the mid-plane.
       const t = (i / (DISC_LAYERS - 1)) * 2 - 1;
@@ -159,6 +160,7 @@ export class GalaxyModel {
             uZMax: { value: DISC_ZMAX_PC },
             uWidth: { value: DISC_IMAGE_WIDTH_PC },
             uNormal: { value: GAL.n.clone() },
+            uStride: stride,
           },
           transparent: true,
           depthWrite: false,
@@ -246,12 +248,74 @@ export class GalaxyModel {
   setDiscTexture(tex: Texture): void {
     // The slices share one uniform object.
     this.discLayers[0].material.uniforms.uMap.value = tex;
-    for (const m of this.discLayers) m.visible = true;
+    this.discOn = true;
+    this.applySlices();
   }
+
+  /** Disc slices drawn: every stride-th, mirrored about the mid-plane (glow.vert). */
+  private readonly sliceStride = { value: 1 };
+  private discOn = false;
+
+  private applySlices(): void {
+    const k = this.sliceStride.value;
+    const half = DISC_LAYERS / 2;
+    this.discLayers.forEach((m, i) => {
+      const mirrored = i < half ? i : DISC_LAYERS - 1 - i;
+      m.visible = this.discOn && (half - 1 - mirrored) % k === 0;
+    });
+  }
+
+  /**
+   * Fewer slices where they would land on the same pixels anyway: the
+   * stride is the largest that keeps the outermost gap between drawn slices
+   * under ~1.5 px of parallax anywhere on the disc (face-on or from far away
+   * the stack collapses; seen edge-on from close by every slice counts).
+   * minStride: quality floor (each slice is a full-disc additive layer).
+   */
+  updateSlices(camera: PerspectiveCamera, focalPx: number, minStride: number): void {
+    const n = GAL.n;
+    const probe = this.tmpV;
+    const ray = this.tmpV2;
+    let worst = 0;
+    // Disc centre, four points 12 kpc out and the point under the camera.
+    const under = this.tmpV3.copy(camera.position).sub(GAL.centre);
+    under.addScaledVector(n, -under.dot(n));
+    const pts: [number, number][] = [[0, 0], [12000, 0], [-12000, 0], [0, 12000], [0, -12000]];
+    for (let j = 0; j <= pts.length; j++) {
+      if (j < pts.length) probe.copy(GAL.centre).addScaledVector(GAL.xs, pts[j][0]).addScaledVector(GAL.ys, pts[j][1]);
+      else {
+        if (under.length() > 15000) continue;
+        probe.copy(GAL.centre).add(under);
+      }
+      ray.copy(probe).sub(camera.position);
+      const d = ray.length();
+      if (d < 1e-6) continue;
+      const sin = Math.sqrt(Math.max(0, 1 - (ray.dot(n) / d) ** 2));
+      worst = Math.max(worst, (sin / d) * focalPx);
+    }
+    // Outermost gap (pc) between drawn slices for a stride k: z ∝ t², t = ±(1 − 2k/15).
+    let k = 8;
+    while (k > minStride) {
+      const t = 1 - (2 * k) / (DISC_LAYERS - 1);
+      const gap = DISC_ZMAX_PC * (1 - t * t);
+      if (gap * worst <= 1.5) break;
+      k /= 2;
+    }
+    k = Math.max(k, minStride);
+    if (k !== this.sliceStride.value) {
+      this.sliceStride.value = k;
+      this.applySlices();
+    }
+  }
+
+  private readonly tmpV = new Vector3();
+  private readonly tmpV2 = new Vector3();
+  private readonly tmpV3 = new Vector3();
 
   setDiscIntensity(v: number): void {
     this.discLayers[0].material.uniforms.uIntensity.value = v;
-    for (const m of this.discLayers) m.visible = v > 0.0005 && m.material.uniforms.uMap.value !== null;
+    this.discOn = v > 0.0005 && this.discLayers[0].material.uniforms.uMap.value !== null;
+    this.applySlices();
     // Bulge glow and dust lane fade with the disc.
     const k = v / GV.glowIntensity;
     this.bulge.material.uniforms.uIntensity.value = 0.85 * k;

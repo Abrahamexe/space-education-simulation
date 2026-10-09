@@ -73,6 +73,8 @@ export class GalaxyView implements Updatable {
   private readonly sky: Mesh;
   private readonly skyStars: Points;
   readonly model = new GalaxyModel();
+  /** Most disc slices drawn (quality preset). */
+  discSlices: 4 | 8 | 16 = 16;
   readonly deep: DeepSky;
   private saved = { sky: 1, stars: 1 };
   private lastWheelIn = 0;
@@ -571,6 +573,8 @@ export class GalaxyView implements Updatable {
     const discD = Math.min(d, this.zoom * 4);
     this.model.setDiscIntensity(GV.glowIntensity * MathUtils.smoothstep(discD, GV.glowFade[0], GV.glowFade[1]));
     this.model.update(this.camera);
+    const focal = (this.engine.renderer.domElement.height / 2) / Math.tan(MathUtils.degToRad(this.camera.fov) / 2);
+    this.model.updateSlices(this.camera, focal, 16 / this.discSlices);
     // Beyond the Milky Way: the distant galaxies take over as the painted sky fades.
     this.model.setDeepField(1 - skyK);
 

@@ -19,6 +19,8 @@ credentials*.json
 
 # Raw source assets (large, re-downloadable via scripts/)
 assets-src/
+# High-resolution deep-sky tiles (~0.5 GB): npm run hires
+public/tiles/
 
 # Tooling and editor state
 .claude/

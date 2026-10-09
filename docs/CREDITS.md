@@ -116,6 +116,15 @@ Bu cisimlerin ölçülmüş 3B modelleri yoktur. Bulutsular, Hubble görüntüle
 
 Galaksinin uzak yarısı toz yüzünden doğrudan haritalanamamıştır; görseldeki o bölge bilimsel bir tahmindir.
 
+## Uzay araçları
+
+| Varlık | Kaynak | Lisans | Not |
+|---|---|---|---|
+| Konum ve hızlar (`public/data/spacecraft/*.bin`, `src/data/generated/spacecraft.json`) | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) (`scripts/fetch-spacecraft.mjs`) | Kamu malı (NASA/JPL) | Ekliptik J2000 durum vektörleri; Güneş merkezli yolculuk, gezegen merkezli geçiş ve turlar, Dünya merkezli yörüngeler. Örnekler arasında Kepler (iki cisim) ya da Hermite ara değerlemesi. Hubble ve ISS verisi Aralık / Kasım 2026'da, Chandra Mart 2027'de biter; sonrasında araç gizlenir. |
+| Hubble, James Webb, Chandra, Spitzer, Kepler, TESS, ISS, Voyager, Pioneer 10, Parker, Juno, Cassini modelleri (`public/models/spacecraft/*.glb`) | [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources) | NASA: telif yok, serbest kullanım | `scripts/prepare-spacecraft-models.mjs` ile sadeleştirildi (meshopt, WebP ≤ 2048 px). Pioneer 11 için Pioneer 10, Voyager 2 için Voyager modeli kullanılır. |
+| New Horizons modeli | [science.nasa.gov 3D Resources](https://science.nasa.gov/?p=140363) | NASA: telif yok | |
+| Gaia, Euclid, Europa Clipper, JUICE | Kodda kurulan **şematik** modeller (`src/spacecraft/schematic.ts`) | — | Ücretsiz resmi model bulunmadığından yayımlanmış yerleşim çizimlerine dayalı basit yaklaşımlar. |
+
 ## Metinler
 
 Bilgi panelindeki Türkçe tanıtım metinleri ve "Biliyor muydunuz?" bilgileri bu proje için özgün olarak yazılmıştır (`src/i18n/content.tr.json`); içerdikleri olgular NASA, ESA ve JPL'in kamuya açık görev ve bilgi sayfalarıyla uyumludur.

@@ -28,9 +28,12 @@ import { Hud } from './ui/Hud';
 import { LoadingScreen } from './ui/LoadingScreen';
 import { strings } from './i18n';
 import { CAMERA, STARFIELD } from './config/visual';
+import { QUALITY_PRESETS } from './config/quality';
 import { galacticToScene } from './physics/frames';
 import { Playground } from './playground/Playground';
 import { PlaygroundPanel } from './ui/PlaygroundPanel';
+import { SpacecraftLayer } from './spacecraft/SpacecraftLayer';
+import { SkyGrids } from './bodies/SkyGrids';
 
 /**
  * Opening shot: the camera looks at the Sun with the galactic core a little
@@ -73,6 +76,7 @@ async function boot(): Promise<void> {
   starfield.bakeNebula(engine.renderer);
   engine.add(starfield);
 
+  const grids = new SkyGrids(engine.sky);
   const sun = new Sun(engine.world, engine.origin);
   engine.add(sun);
   engine.addLate(sun.viewUpdater);
@@ -90,6 +94,9 @@ async function boot(): Promise<void> {
   science.onChange(syncHz);
   syncHz();
 
+  // Telescopes and probes: registered before the labels and search are built.
+  const spacecraft = new SpacecraftLayer(engine, system);
+
   const galactic = new GalacticMotion(engine, sun, system.planets);
   galactic.onChange((on) => system.setGalacticFrame(on));
   galactic.enabled = true;
@@ -102,12 +109,18 @@ async function boot(): Promise<void> {
   const picker = new Picker(engine.camera, canvas, system, engine.origin);
   new Input(engine, canvas, picker, selection, nav);
   engine.rig.setPickQuery((x, y) => picker.pick(x, y)?.body ?? null);
+  const syncCraftHighlight = () => spacecraft.highlight(selection.selected?.id ?? null, selection.hovered?.id ?? null);
+  selection.onSelect(syncCraftHighlight);
+  selection.onHover(syncCraftHighlight);
 
   const galaxy = new GalaxyView(engine, starfield, loader);
   const views = new ViewSwitch(engine, galaxy, sun, nav, selection);
   new GalaxyHud(engine, galaxy);
 
   const quality = new QualityManager(engine, system, starfield);
+  const syncGalaxyQuality = () => (galaxy.discSlices = QUALITY_PRESETS[quality.level].discSlices);
+  quality.onChange(syncGalaxyQuality);
+  syncGalaxyQuality();
   const scaleTransition = new ScaleTransition();
   // Before bodies move this frame, so positions use the new blend.
   engine.add(scaleTransition, -10);
@@ -115,7 +128,8 @@ async function boot(): Promise<void> {
   views.onChange((on) => on && playground.exit());
   // The playground is its own world: zooming out to light-years stays here.
   views.blocked = () => playground.active;
-  const hud = new Hud({ engine, system, galactic, views, selection, nav, scaleTransition, quality, playground });
+  playground.onChange(() => spacecraft.setPlayground(playground.active));
+  const hud = new Hud({ engine, system, galactic, views, selection, nav, scaleTransition, quality, playground, spacecraft });
   new PlaygroundPanel(engine, playground);
   views.onChange((on) => on && hud.showNotice(strings().galaxy.enterNotice));
   engine.rig.onMapModeChange((on) => on && hud.showNotice(strings().tools.cameraFreeNotice));
@@ -171,11 +185,10 @@ async function boot(): Promise<void> {
       /* keep the low-res sky */
     });
 
-  if (import.meta.env.DEV) {
-    const { setupDevTools } = await import('./utils/DevTools');
-    setupDevTools(engine, { sun, starfield, system, nav, galactic, views });
-    (window as unknown as { __pg: Playground }).__pg = playground;
-  }
+  // Developer panel (F2): also for curious users, loaded as its own chunk.
+  const { setupDevTools } = await import('./utils/DevTools');
+  setupDevTools(engine, { sun, starfield, system, nav, galactic, views, selection, spacecraft, grids, quality });
+  if (import.meta.env.DEV) (window as unknown as { __pg: Playground }).__pg = playground;
 }
 
 void boot();

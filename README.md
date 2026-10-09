@@ -34,6 +34,7 @@ Tarayıcıda çalışan, sinematik kalitede bir 3D evren keşif uygulaması. Gü
 - **Kuyruklu yıldızlar**: Güneş'e yaklaştıkça uzayan toz ve iyon kuyrukları. Halley'in 1986 geçişini tek tıkla izleyebilirsiniz.
 - **Galaktik hareket**: Güneş Sistemi galaksi içinde ~248 km/s ile yol alır. Gezegenlerin bu hareketle çizdiği sarmal izler gösterilir.
 - **Yaşanabilir bölgeler**: Kopparapu (2014) modeliyle hesaplanır. Güneş Sistemi'nde ve galaksideki yıldız sistemlerinde gösterilir.
+- **Teleskoplar ve sondalar**: Hubble, James Webb, Chandra, Spitzer, Kepler, TESS, Gaia, Euclid, ISS, Voyager 1–2, Pioneer 10–11, New Horizons, Parker, Juno, Cassini, Europa Clipper ve JUICE, JPL Horizons verisiyle gerçek konumlarında. NASA 3D modelleri, yolculuk izleri, Dünya'dan sinyal gecikmesi (U).
 - **Bilgi kartları**: her cisim için Dünya ile kıyas, uzaklık, ışığın yol süresi, uydular ve "Biliyor muydunuz?" notları.
 
 ### Samanyolu
@@ -93,6 +94,9 @@ Ardından tarayıcıda `http://localhost:5173` adresini açın. En iyi sonuç i�
 | `npm run typecheck` | Sadece TypeScript kontrolü |
 | `npm run data` | Yörünge ve fiziksel verileri JPL'den yeniden indirir |
 | `npm run textures` | Yüksek çözünürlüklü kaynak dokulardan 4K sürümleri üretir |
+| `npm run hires` | Bulutsu ve galaksilerin orijinal (16K'ya kadar) görüntülerini indirip karolara böler (`public/tiles/`, ~150 MB, git dışı). Çalıştırılmazsa uygulama 4K ile çalışır |
+| `npm run spacecraft` | Teleskop ve sondaların yörüngelerini JPL Horizons'tan yeniden indirir |
+| `npm run spacecraft:models` | NASA 3D modellerini sadeleştirip `public/models/spacecraft/` altına yazar |
 
 Ham kaynak dosyaları (`assets-src/`) depoya dahil değildir. Uygulamanın çalışması için gereken her şey `public/` altındadır. Kaynakları yeniden üretmek için `scripts/` altındaki indirme betiklerini kullanın.
 
