@@ -324,6 +324,10 @@ export class ExtraObject implements DeepObject {
     return out;
   }
 
+  preload(from: Vector3): Promise<void> {
+    return this.nebula?.preload(from) ?? Promise.resolve();
+  }
+
   update(ctx: DeepContext): void {
     this.nebula?.update(ctx);
     const dist = ctx.camera.position.distanceTo(this.position);

@@ -4,7 +4,6 @@ import { GALAXY_VIEW } from '../config/galaxy';
 import type { Sun } from '../bodies/Sun';
 import type { GalaxyView } from '../galaxy/GalaxyView';
 import { Hyperspace } from '../ui/Hyperspace';
-import { directionToPose } from './CameraRig';
 import type { Engine } from './Engine';
 import type { Navigator } from './Navigator';
 import { scale } from './scale';
@@ -13,10 +12,11 @@ import type { Selection } from './Selection';
 const KUIPER_KM = 50 * KM_PER_AU;
 
 /**
- * Solar System ↔ galaxy hand-over. Zooming out past a few Kuiper-belt
- * distances switches to the galaxy view, continuing the same line of
- * sight; the galaxy hands back when the camera dives into the Sun, and the
- * solar camera then flies home from far out.
+ * Solar System ↔ galaxy hand-over, always under a light-speed jump that
+ * stands for the trip: zooming out past a few Kuiper-belt distances (or
+ * "Galaksiye çık") jumps to the galaxy along the same line of sight and
+ * drops out of it already far out; going back lands straight in the
+ * Solar System overview.
  */
 export class ViewSwitch {
   private readonly tmp = new Vector3();
@@ -33,7 +33,7 @@ export class ViewSwitch {
   ) {
     galaxy.setMapMode(engine.rig.mapMode);
     engine.rig.onMapModeChange((on) => galaxy.setMapMode(on));
-    galaxy.setExitHandler((dir) => this.transition(() => this.backToSolar(dir)));
+    galaxy.setExitHandler(() => this.transition(() => this.backToSolar()));
     engine.addLate({ update: () => this.check() }, 15);
   }
 
@@ -116,24 +116,23 @@ export class ViewSwitch {
     this.listeners.forEach((fn) => fn(true));
   }
 
-  /** "Galaksiye çık": fly straight out until the galaxy takes over. */
+  /** "Galaksiye çık": jump straight away, along the current line of sight from the Sun. */
   goToGalaxy(): void {
     if (this.galaxy.active) return;
-    const rig = this.engine.rig;
+    this.engine.rig.cancelFlight();
     const cam = this.engine.origin.toAbsolute(this.engine.camera.position, new Vector3());
     const dir = cam.lengthSq() > 0 ? cam.normalize() : new Vector3(0, 0.5, 1).normalize();
-    void rig.flyTo(this.sun, { distance: this.threshold() * 1.15, direction: dir });
+    this.transition(() => this.enter(dir), () => this.galaxy.prepareEntry());
   }
 
-  private backToSolar(dir: Vector3): void {
+  private backToSolar(): void {
     const engine = this.engine;
     engine.setView();
     engine.postfx.setFlareSource(this.sun);
     document.body.classList.remove('mode-galaxy');
     engine.rig.active = true;
-    engine.rig.setFocus(this.sun);
-    engine.rig.setPose(directionToPose(dir, this.threshold() * 0.6));
+    // Out of the jump straight into the overview: no flight in from far out.
+    this.nav.homeNow();
     this.listeners.forEach((fn) => fn(false));
-    void this.nav.home();
   }
 }

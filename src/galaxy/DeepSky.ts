@@ -75,6 +75,11 @@ export class DeepSky {
     return out;
   }
 
+  /** Every picture the objects would load seen from `from`; resolves when all have settled. */
+  preload(from: Vector3): Promise<void> {
+    return Promise.all(this.objects.map((o) => o.preload?.(from).catch(() => undefined))).then(() => undefined);
+  }
+
   update(dt: number, elapsed: number, camera: PerspectiveCamera, zoom: number): void {
     for (const o of this.objects) o.update({ camera, dt, elapsed });
     // Markers guide from afar, step aside up close.

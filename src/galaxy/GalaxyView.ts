@@ -12,6 +12,15 @@ import type { Starfield } from '../bodies/Starfield';
 import { GAL, GalaxyModel, imageToScene, markerPosition } from './GalaxyModel';
 import { DeepSky } from './DeepSky';
 
+/** Longest the light-speed jump waits for the galaxy's pictures before entering anyway (ms). */
+const PREPARE_MAX_MS = 6000;
+/** Entry pull-out after the jump: the part the jump stands for (of the path), and the glide left (s). */
+const ENTRY_SKIP = 0.5;
+const ENTRY_GLIDE_S = 3.5;
+/** Way home: the approach to the Sun before the jump (fraction of the distance left, s). */
+const RETURN_APPROACH = 0.3;
+const RETURN_APPROACH_S = 1.4;
+
 /** Something a galaxy label points at. */
 export interface GalaxyTarget {
   id: string;
@@ -284,12 +293,17 @@ export class GalaxyView implements Updatable {
   private warm: Promise<void> | null = null;
 
   /**
-   * Compile the galaxy's shaders in the background, once. Left to the first
-   * frames that show them, the bulge volume and dust lane alone stalled the
-   * entry for ~0.9 s.
+   * Get the galaxy ready in the background, once: fetch and decode the
+   * pictures the deep-sky objects show from the Sun (left to the entry,
+   * they loaded one by one for ~7 s, M31 and M33 in 4K), then compile the
+   * shaders (left to the first frames that show them, the bulge volume and
+   * dust lane alone stalled the entry for ~0.9 s).
    */
   warmUp(): Promise<void> {
-    return (this.warm ??= this.engine.postfx.precompile(this.scene, this.camera).catch(() => undefined));
+    return (this.warm ??= this.deep
+      .preload(new Vector3())
+      .then(() => this.engine.postfx.precompile(this.scene, this.camera))
+      .catch(() => undefined));
   }
 
   /**
@@ -297,7 +311,8 @@ export class GalaxyView implements Updatable {
    * shaders (normally compiled already) and the textures' GPU uploads.
    */
   async prepareEntry(): Promise<void> {
-    await this.warmUp();
+    // Entered right after start: wait for the warm-up, but not for a slow network.
+    await Promise.race([this.warmUp(), new Promise((r) => window.setTimeout(r, PREPARE_MAX_MS))]);
     this.engine.postfx.uploadTextures(this.scene);
   }
 
@@ -308,6 +323,7 @@ export class GalaxyView implements Updatable {
   enter(dir: Vector3, quat: Quaternion): void {
     if (this.activeFlag) return;
     this.activeFlag = true;
+    this.returning = false;
     const sm = this.starfield.sky.material.uniforms;
     const st = this.starfield.stars.material.uniforms;
     this.saved = { sky: sm.uBrightness.value as number, stars: st.uBrightness.value as number };
@@ -404,14 +420,16 @@ export class GalaxyView implements Updatable {
     const dir = new Vector3();
     const tgt = new Vector3();
     const smoother = (x: number) => x * x * x * (x * (x * 6 - 15) + 10);
-    const duration = reducedMotion() ? 1.2 : 10;
+    const duration = reducedMotion() ? 1.2 : ENTRY_GLIDE_S;
     this.controls.enabled = false;
     return new Promise((resolve) => {
       this.tween = {
         start: performance.now(),
         duration: duration * 1000,
         ease: (t) => t,
-        step: (t) => {
+        step: (u) => {
+          // The light-speed jump covers the first stretch: drop out of it already far out.
+          const t = ENTRY_SKIP + (1 - ENTRY_SKIP) * u;
           const k = smoother(t);
           // Distance in log steps, but quick through the near-empty
           // 2 pc to 2.5 kpc stretch and lingering where the disc appears.
@@ -457,14 +475,40 @@ export class GalaxyView implements Updatable {
     return this.flyTo(GAL.centre, GV.overviewDistancePc, dir, fromEntry ? GV.pullOutMinS : 0);
   }
 
-  /** Dive to the Sun and hand back to the Solar System. */
+  private returning = false;
+
+  /**
+   * Head for the Sun and hand back to the Solar System: a short, quickening
+   * approach (the distance shrinks to RETURN_APPROACH of itself while the
+   * pivot slides onto the Sun), then the light-speed jump takes over.
+   */
   returnToSun(): Promise<void> {
+    if (this.returning) return Promise.resolve();
+    this.returning = true;
     this.follow = null;
-    const dir = this.camera.position.clone().sub(this.controls.target);
-    if (dir.lengthSq() < 1e-12) dir.copy(GAL.n);
-    // Arrive from the current side, a little above the ecliptic.
-    const toCam = this.camera.position.lengthSq() > 1e-12 ? this.camera.position.clone().normalize() : dir.normalize();
-    return this.flyTo(new Vector3(), GV.exitPc * 0.8, toCam, 0, UP_SCENE).then(() => this.leave());
+    this.controls.enabled = false;
+    const p0 = this.camera.position.clone();
+    const look0 = this.controls.target.clone();
+    const toCam = p0.lengthSq() > 1e-12 ? p0.clone().normalize() : GAL.n.clone();
+    const l0 = Math.log(Math.max(p0.length(), 1e-9));
+    const l1 = l0 + Math.log(RETURN_APPROACH);
+    const look = new Vector3();
+    return new Promise((resolve) => {
+      this.tween = {
+        start: performance.now(),
+        duration: (reducedMotion() ? 0.3 : RETURN_APPROACH_S) * 1000,
+        ease: (t) => t * t * t,
+        step: (k) => {
+          look.copy(look0).multiplyScalar(1 - k);
+          this.camera.position.copy(toCam).multiplyScalar(Math.exp(l0 + (l1 - l0) * k));
+          this.camera.lookAt(look);
+        },
+        done: () => {
+          this.leave();
+          resolve();
+        },
+      };
+    });
   }
 
   /** Fly to a label's object. */

@@ -193,9 +193,23 @@ export class SlicedNebula implements DeepObject {
     return out;
   }
 
-  private loadLow(): void {
+  /**
+   * Fetch (and decode) now what update() would ask for seen from `from`,
+   * so entering the galaxy finds the pictures ready instead of loading them
+   * over the first seconds.
+   */
+  preload(from: Vector3): Promise<void> {
+    const dist = from.distanceTo(this.position);
+    const W = this.W;
+    const jobs: Promise<void>[] = [];
+    if (this.lowState === 'none' && dist < W * 2 * (this.def.visibleWidths ?? 1500)) jobs.push(this.loadLow());
+    if (this.hiState === 'none' && dist < W * 25) jobs.push(this.loadHigh());
+    return Promise.all(jobs).then(() => undefined);
+  }
+
+  private loadLow(): Promise<void> {
     this.lowState = 'loading';
-    this.loader
+    return this.loader
       .loadDeferred(`textures/${this.def.folder ?? 'deepsky'}/${this.def.image}_1k.jpg`)
       .then((t) => {
         this.lowTex = t;
@@ -203,12 +217,14 @@ export class SlicedNebula implements DeepObject {
         if (this.hiState !== 'ready') this.sliceUniforms.uMap.value = t;
         this.lowState = 'ready';
       })
-      .catch(() => (this.lowState = 'none'));
+      .catch(() => {
+        this.lowState = 'none';
+      });
   }
 
-  private loadHigh(): void {
+  private loadHigh(): Promise<void> {
     this.hiState = 'loading';
-    this.loader
+    return this.loader
       .loadDeferred(`textures/${this.def.folder ?? 'deepsky'}/${this.def.image}_4k.jpg`)
       .then((t) => {
         // Left again while loading: drop it.
@@ -220,7 +236,9 @@ export class SlicedNebula implements DeepObject {
         this.sliceUniforms.uMap.value = t;
         this.hiState = 'ready';
       })
-      .catch(() => (this.hiState = 'none'));
+      .catch(() => {
+        this.hiState = 'none';
+      });
   }
 
   private dropHigh(): void {

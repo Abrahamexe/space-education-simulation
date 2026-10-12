@@ -3,6 +3,7 @@ import { CelestialBody } from '../bodies/CelestialBody';
 import { Moon } from '../bodies/Moon';
 import type { FocusEntry, SolarSystem } from '../bodies/SolarSystem';
 import { INTERACTION } from '../config/visual';
+import { directionToPose } from './CameraRig';
 import type { Engine } from './Engine';
 import type { Selection } from './Selection';
 import type { Focusable } from './types';
@@ -79,11 +80,24 @@ export class Navigator {
   home(): Promise<void> {
     const sun = this.entry('sun')!;
     this.selection.select(null);
+    const { direction, distance } = this.homeView();
+    return this.engine.rig.flyTo(sun.body, { distance, direction });
+  }
+
+  /** The overview at once, no flight (arriving from the galaxy under the light-speed jump). */
+  homeNow(): void {
+    this.selection.select(null);
+    const { direction, distance } = this.homeView();
+    this.engine.rig.setFocus(this.entry('sun')!.body);
+    this.engine.rig.setPose(directionToPose(direction, distance));
+  }
+
+  private homeView(): { direction: Vector3; distance: number } {
     const h = INTERACTION.home;
     const el = MathUtils.degToRad(h.elevationDeg);
     const az = MathUtils.degToRad(h.azimuthDeg);
-    const dir = new Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
-    return this.engine.rig.flyTo(sun.body, { distance: sun.body.getRadius() * h.radii, direction: dir });
+    const direction = new Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+    return { direction, distance: this.entry('sun')!.body.getRadius() * h.radii };
   }
 
   /**

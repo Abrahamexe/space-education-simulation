@@ -78,6 +78,8 @@ export interface DeepObject {
   /** Materials with a `uScale` uniform (px per unit at distance 1), set every frame. */
   scaled(): ShaderMaterial[];
   update(ctx: DeepContext): void;
+  /** Load the pictures it would need seen from `from` (ahead of entering the galaxy). */
+  preload?(from: Vector3): Promise<void>;
 }
 
 /** Approximate blackbody colour (linear RGB, max channel 1) for a temperature. */
