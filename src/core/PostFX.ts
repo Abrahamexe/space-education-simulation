@@ -16,6 +16,10 @@ import {
   Scene,
   Vector2,
   Vector3,
+  Texture,
+  WebGLRenderTarget,
+  type Camera,
+  type Object3D,
   type WebGLRenderer,
 } from 'three';
 import { LENS_FLARE, POSTFX } from '../config/visual';
@@ -127,6 +131,52 @@ export class PostFX {
   /** Bloom mip chain depth (quality presets). */
   setBloomLevels(levels: number): void {
     if (this.bloom.mipmapBlurPass.levels !== levels) this.bloom.mipmapBlurPass.levels = levels;
+  }
+
+  private compileTarget: WebGLRenderTarget | null = null;
+
+  /**
+   * Compile every shader of a scene ahead of its first frame, without
+   * blocking (KHR_parallel_shader_compile). Programs depend on where they
+   * draw: the scene renders into the composer's half-float target (linear,
+   * no tone mapping), so compile with a target bound too, or the programs
+   * would be the canvas variants and the first real frame would compile
+   * again.
+   */
+  precompile(scene: Object3D, camera: Camera): Promise<void> {
+    const r = this.composer.getRenderer();
+    this.compileTarget ??= new WebGLRenderTarget(1, 1, { type: HalfFloatType });
+    const prev = r.getRenderTarget();
+    r.setRenderTarget(this.compileTarget);
+    try {
+      return r.compileAsync(scene, camera).then(() => undefined);
+    } finally {
+      r.setRenderTarget(prev);
+    }
+  }
+
+  /**
+   * Upload every texture a scene's materials use (maps and uniforms) now,
+   * not on the frame that first draws them. Synchronous: call it where a
+   * pause is hidden (under the light-speed jump).
+   */
+  uploadTextures(root: Object3D): void {
+    const r = this.composer.getRenderer();
+    const seen = new Set<Texture>();
+    const visit = (v: unknown) => {
+      if (v instanceof Texture && !seen.has(v) && v.image) {
+        seen.add(v);
+        r.initTexture(v);
+      }
+    };
+    root.traverse((o) => {
+      const mats = (o as { material?: unknown }).material;
+      for (const m of Array.isArray(mats) ? mats : mats ? [mats] : []) {
+        for (const value of Object.values(m as Record<string, unknown>)) visit(value);
+        const uniforms = (m as { uniforms?: Record<string, { value: unknown }> }).uniforms;
+        if (uniforms) for (const u of Object.values(uniforms)) visit(u?.value);
+      }
+    });
   }
 
   /** The black hole in view this frame, or null to switch the pass off. */

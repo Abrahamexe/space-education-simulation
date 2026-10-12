@@ -46,11 +46,8 @@ const BLEND_DAYS = 90;
 const MODEL_LOAD_SIZES = 4000;
 /** The marker gives way to the model above this apparent radius (px). */
 const MARKER_FADE_PX = [2, 6] as const;
-/** Earth orbiters' paths show only near them (multiples of their distance from the centre). */
-const ORBIT_SHOW_DIST = 6;
-/** Paths show in overviews (camera this far from its target) or for craft near the target (multiples of that distance). */
-const PATH_OVERVIEW_DIST = 40;
-const PATH_NEAR_FOCUS = 6;
+/** Inside this multiple of its drawn size an orbit is lines across the view: hidden then. */
+const ORBIT_INSIDE = 1.2;
 
 let dotTexture: Texture | null = null;
 function dot(): Texture {
@@ -89,8 +86,6 @@ export class Spacecraft implements Focusable {
   readonly trajectory: Trajectory;
   /** Not drawn, picked or labelled (no data for the date). */
   hidden = true;
-  /** Below this the label stays hidden (Earth orbiters seen from afar). */
-  labelHidden = true;
   heliocentricDistanceKm = 0;
   earthDistanceKm = 0;
   private readonly pivot = new Group();
@@ -432,10 +427,9 @@ export class Spacecraft implements Focusable {
 
   /**
    * camAbs: the camera's absolute position. view.closeUp: the camera is on a
-   * spacecraft; view.focusDist: camera to orbit target. Paths of craft far
-   * from what is being looked at would only streak across the view.
+   * spacecraft (only its own path is drawn then).
    */
-  update(ctx: FrameContext, show: boolean, camAbs: Vector3, view: { closeUp: boolean; focusDist: number }, budget: { paths: number }): void {
+  update(ctx: FrameContext, show: boolean, camAbs: Vector3, view: { closeUp: boolean }, budget: { paths: number }): void {
     const closeUp = view.closeUp;
     const jd = ctx.time.jd;
     this.jd = jd;
@@ -478,12 +472,12 @@ export class Spacecraft implements Focusable {
     }
     if (this.path && this.pathBuilt) {
       this.updatePathSplit();
-      const o = (0.14 + 0.45 * this.emphasis) * this.pathGain;
+      const o = (0.34 + 0.4 * this.emphasis) * this.pathGain;
       this.setLine(this.path.past, o);
-      this.setLine(this.path.future, o * 0.3);
-      // Overview, or the craft is near what the camera looks at.
-      const relevant = !closeUp && (view.focusDist > PATH_OVERVIEW_DIST || camDist < view.focusDist * PATH_NEAR_FOCUS);
-      this.path.past.visible = this.path.future.visible = relevant || this.emphasis > 0;
+      this.setLine(this.path.future, o * 0.4);
+      // The layer is a mode of its own (planet lines hidden): every path shows,
+      // except on a craft close-up, where only its own does.
+      this.path.past.visible = this.path.future.visible = !closeUp || this.emphasis > 0;
     }
     if (modeOf(seg) === 'sat') {
       const centerDist = Math.hypot(...s.r);
@@ -491,18 +485,15 @@ export class Spacecraft implements Focusable {
       // An orbit reads as an orbit from outside it; from inside it is lines across the view.
       const extent = this.orbitExtent || reach * 1.5;
       const camToCenter = this.mapper.sat(seg.center, this.tmp2.set(0, 0, 0), jd, this.tmp).distanceTo(camAbs);
-      const close = camToCenter < extent * ORBIT_SHOW_DIST;
-      const pinned = this.emphasis > 0 || this.showAllOrbits;
-      this.labelHidden = !(close || pinned);
-      const near = pinned || (close && camToCenter > extent * 1.2 && !closeUp);
+      const inside = camToCenter < extent * ORBIT_INSIDE;
+      const near = this.emphasis > 0 || this.showAllOrbits || (!inside && !closeUp);
       this.orbit.visible = near;
       if (near && Math.abs(jd - this.orbitJd) > seg.step * 0.25) {
         this.orbitJd = jd;
         this.updateOrbit(seg);
       }
-      this.setLine(this.orbit, (0.18 + 0.35 * this.emphasis) * this.pathGain);
+      this.setLine(this.orbit, (0.34 + 0.35 * this.emphasis) * this.pathGain);
     } else {
-      this.labelHidden = false;
       this.orbit.visible = false;
     }
   }

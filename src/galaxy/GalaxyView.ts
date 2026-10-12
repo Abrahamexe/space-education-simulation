@@ -281,6 +281,26 @@ export class GalaxyView implements Updatable {
 
   // ---- Enter / leave ------------------------------------------------------------------
 
+  private warm: Promise<void> | null = null;
+
+  /**
+   * Compile the galaxy's shaders in the background, once. Left to the first
+   * frames that show them, the bulge volume and dust lane alone stalled the
+   * entry for ~0.9 s.
+   */
+  warmUp(): Promise<void> {
+    return (this.warm ??= this.engine.postfx.precompile(this.scene, this.camera).catch(() => undefined));
+  }
+
+  /**
+   * Everything the first galaxy frames need, under the light-speed jump:
+   * shaders (normally compiled already) and the textures' GPU uploads.
+   */
+  async prepareEntry(): Promise<void> {
+    await this.warmUp();
+    this.engine.postfx.uploadTextures(this.scene);
+  }
+
   /**
    * Take over from the solar view. `dir`: Sun → camera, `quat`: the solar
    * camera's orientation, so the first galaxy frame looks the same.

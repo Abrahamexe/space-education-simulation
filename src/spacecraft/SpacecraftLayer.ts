@@ -20,7 +20,8 @@ import type { CraftTrackData } from './Trajectory';
  */
 export class SpacecraftLayer {
   readonly crafts: Spacecraft[] = [];
-  private on = true;
+  /** Off at start: switched on, the view becomes a spacecraft mode (Hud hides the planets' lines). */
+  private on = false;
   private hiddenByPlayground = false;
   private readonly light = new DirectionalLight(0xffffff, 2.2);
   private readonly ambient = new AmbientLight(0xffffff, 0.05);
@@ -60,6 +61,11 @@ export class SpacecraftLayer {
     this.listeners.forEach((fn) => fn(v));
   }
 
+  /** Spacecraft mode in effect (layer on, not hidden by the playground). */
+  get active(): boolean {
+    return this.on && !this.hiddenByPlayground;
+  }
+
   onChange(fn: (on: boolean) => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -97,7 +103,7 @@ export class SpacecraftLayer {
     const closeUp = !!focus && this.crafts.includes(focus as Spacecraft);
     this.engine.origin.toAbsolute(ctx.cameraPosition, this.camAbs);
     const budget = { paths: 1 };
-    const view = { closeUp, focusDist: this.engine.rig.distance };
+    const view = { closeUp };
     let nearest: Spacecraft | null = null;
     let best = Infinity;
     for (const c of this.crafts) {

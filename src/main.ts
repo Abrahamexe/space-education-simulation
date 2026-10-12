@@ -158,11 +158,13 @@ async function boot(): Promise<void> {
   await loader.whenIdle();
 
   // Compile every program and draw one frame while the overlay still hides it.
-  await engine.renderer.compileAsync(engine.scene, engine.camera);
+  await engine.postfx.precompile(engine.scene, engine.camera);
   engine.renderOnce();
   engine.start();
 
   void loading.finish();
+  // The galaxy's shaders compile in the background during the opening shot.
+  window.setTimeout(() => void galaxy.warmUp(), 3000);
   // Opening shot (PLAN §8.2): approach the Sun, hold a beat, then settle
   // into the system overview, unless the user has already taken control.
   let userTookOver = false;

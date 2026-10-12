@@ -57,22 +57,34 @@ export class Hud {
     this.readout.setAttribute('aria-live', 'off');
     this.labels = new Labels(ctx);
     const sys = ctx.system;
+    // Orbit lines (Y) cover both frames: the ellipses, or the galactic trails while G is on.
+    const setOrbits = (v: boolean) => {
+      sys.showOrbits = v;
+      ctx.galactic.showTrails = v;
+    };
+    // Spacecraft mode (U): the planets' lines and names give way to the craft and
+    // their paths; switching it off brings back what was on before.
+    let beforeCraft: { orbits: boolean; labels: boolean } | null = null;
     const layers = new Layers({
-      // Ellipses and galactic trails are two views of the same motion; one at a time.
-      orbits: {
-        get: () => sys.showOrbits && !ctx.galactic.enabled,
-        set: (v) => {
-          if (v) ctx.galactic.enabled = false;
-          sys.showOrbits = v;
-        },
-      },
+      orbits: { get: () => sys.showOrbits, set: setOrbits },
       labels: { get: () => this.labels.show, set: (v) => (this.labels.show = v) },
       belts: { get: () => sys.showBelts, set: (v) => (sys.showBelts = v) },
       galaxy: { get: () => ctx.galactic.enabled, set: (v) => (ctx.galactic.enabled = v) },
       craft: {
         get: () => ctx.spacecraft?.visible ?? false,
         set: (v) => {
-          if (ctx.spacecraft) ctx.spacecraft.visible = v;
+          if (!ctx.spacecraft || ctx.spacecraft.visible === v) return;
+          ctx.spacecraft.visible = v;
+          if (v) {
+            beforeCraft = { orbits: sys.showOrbits, labels: this.labels.show };
+            setOrbits(false);
+            this.labels.show = true;
+          } else if (beforeCraft) {
+            setOrbits(beforeCraft.orbits);
+            this.labels.show = beforeCraft.labels;
+            beforeCraft = null;
+          }
+          layers.sync();
         },
       },
       habitable: {

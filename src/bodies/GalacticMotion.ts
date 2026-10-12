@@ -255,6 +255,7 @@ export class GalacticMotion implements Updatable {
   private readonly trails: Trail[] = [];
   private readonly dust = new Dust();
   private enabledFlag = false;
+  private trailsFlag = true;
   private builtJd = Number.NaN;
   private builtBlend = Number.NaN;
   private builtVersion = 0;
@@ -287,6 +288,18 @@ export class GalacticMotion implements Updatable {
     this.listeners.forEach((fn) => fn(v));
   }
 
+  /** Orbit lines toggle (Y): the trails hide while the motion and dust stay. */
+  get showTrails(): boolean {
+    return this.trailsFlag;
+  }
+
+  set showTrails(v: boolean) {
+    if (v === this.trailsFlag) return;
+    this.trailsFlag = v;
+    this.builtJd = Number.NaN;
+    this.apply();
+  }
+
   private trailOpacityValue: number = G.opacity;
 
   /** Live tuning (dev panel). */
@@ -313,12 +326,14 @@ export class GalacticMotion implements Updatable {
   }
 
   private apply(): void {
-    for (const t of this.trails) t.line.visible = this.enabledFlag;
+    for (const t of this.trails) t.line.visible = this.enabledFlag && this.trailsFlag;
     this.dust.visible = this.enabledFlag;
   }
 
   update(ctx: FrameContext): void {
     if (!this.enabledFlag) return;
+    this.dust.update(ctx, this.engine);
+    if (!this.trailsFlag) return;
     const now = ctx.time.daysSinceJ2000;
     if (now !== this.builtJd || scale.blend !== this.builtBlend || scale.version !== this.builtVersion) {
       const force = scale.blend !== this.builtBlend || scale.version !== this.builtVersion;
@@ -336,7 +351,6 @@ export class GalacticMotion implements Updatable {
       const own = !!owner && (t.body ? t.body === owner : owner === this.sun);
       t.focusFade = focus ? rig.focusRadius * (own ? PLANETS.orbit.focusFadeRadii : PLANETS.orbit.focusFadeOtherRadii) : 0;
     }
-    this.dust.update(ctx, this.engine);
   }
 
   dispose(): void {

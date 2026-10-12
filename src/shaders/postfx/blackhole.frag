@@ -31,6 +31,8 @@ uniform float uSkyGain;
 uniform mat3 uSkyMat;      // hole frame -> galactic
 uniform float uLens;       // 1 = bent light, 0 = straight rays (no lensing)
 uniform float uStep;       // step as a fraction of r (quality)
+uniform float uOcclude;    // 1 = scene nearer than the hole hides it (depth test)
+uniform float uHoleZ;      // the hole's view depth (scene units)
 
 // Without lensing the hole is still drawn as it would look: a shadow of the
 // true apparent size (2.6 Rs) rimmed by a thin bright photon ring and a soft
@@ -91,10 +93,19 @@ vec4 disc(vec3 p, vec3 v) {
   return vec4(col * bright * alpha, alpha);
 }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
   if (uActive < 0.5) {
     outputColor = inputColor;
     return;
+  }
+  // A body in front of the hole hides it. The depth buffer is logarithmic:
+  // d = log2(1 + w) / log2(far + 1), w = view depth.
+  if (uOcclude > 0.5) {
+    float raw = texture2D(depthBuffer, uv).r;
+    if (raw < 1.0 && exp2(raw * log2(cameraFar + 1.0)) - 1.0 < uHoleZ) {
+      outputColor = inputColor;
+      return;
+    }
   }
   vec3 rd = normalize(uCamRot * vec3((uv.x * 2.0 - 1.0) * aspect * uTanHalf, (uv.y * 2.0 - 1.0) * uTanHalf, -1.0));
   vec3 ro = uCamPos;

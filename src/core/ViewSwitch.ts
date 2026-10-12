@@ -3,6 +3,7 @@ import { KM_PER_AU } from '../config/astro';
 import { GALAXY_VIEW } from '../config/galaxy';
 import type { Sun } from '../bodies/Sun';
 import type { GalaxyView } from '../galaxy/GalaxyView';
+import { Hyperspace } from '../ui/Hyperspace';
 import { directionToPose } from './CameraRig';
 import type { Engine } from './Engine';
 import type { Navigator } from './Navigator';
@@ -20,6 +21,7 @@ const KUIPER_KM = 50 * KM_PER_AU;
 export class ViewSwitch {
   private readonly tmp = new Vector3();
   private swapping = false;
+  private readonly hyperspace = new Hyperspace();
   private readonly listeners = new Set<(galaxy: boolean) => void>();
 
   constructor(
@@ -31,7 +33,7 @@ export class ViewSwitch {
   ) {
     galaxy.setMapMode(engine.rig.mapMode);
     engine.rig.onMapModeChange((on) => galaxy.setMapMode(on));
-    galaxy.setExitHandler((dir) => this.crossfade(() => this.backToSolar(dir)));
+    galaxy.setExitHandler((dir) => this.transition(() => this.backToSolar(dir)));
     engine.addLate({ update: () => this.check() }, 15);
   }
 
@@ -58,8 +60,27 @@ export class ViewSwitch {
     const abs = this.engine.origin.toAbsolute(this.engine.camera.position, this.tmp);
     if (abs.length() > this.threshold()) {
       const dir = abs.clone().normalize();
-      this.crossfade(() => this.enter(dir));
+      this.transition(() => this.enter(dir), () => this.galaxy.prepareEntry());
     }
+  }
+
+  /**
+   * Swap views during a light-speed jump; `prepare` (loading, shader
+   * compiles) runs under it first. With reduced motion: a dissolve.
+   */
+  private transition(swap: () => void, prepare?: () => Promise<void>): void {
+    if (this.swapping) return;
+    if (Hyperspace.reduced) {
+      void (prepare?.() ?? Promise.resolve()).then(() => this.crossfade(swap));
+      return;
+    }
+    this.swapping = true;
+    void this.hyperspace
+      .run(async () => {
+        await prepare?.();
+        swap();
+      })
+      .finally(() => (this.swapping = false));
   }
 
   /**

@@ -97,6 +97,7 @@ export class Labels {
     const h = window.innerHeight;
     const focal = h / 2 / Math.tan((cam.fov * Math.PI) / 360);
     const sel = this.ctx.selection.selected?.id;
+    const craftOnly = !!this.ctx.spacecraft?.active;
     this.placed = [];
 
     // Big, near disks that can hide labels behind them.
@@ -106,9 +107,8 @@ export class Labels {
       const body = it.entry.body;
       // Destroyed in the playground: no label.
       if ((body as { simGone?: boolean }).simGone) continue;
-      // Spacecraft without data for the date, or Earth orbiters seen from afar.
-      const craft = body as { hidden?: boolean; labelHidden?: boolean };
-      if (craft.hidden || (craft.labelHidden && it.entry.id !== sel)) continue;
+      // Spacecraft without data for the date.
+      if ((body as { hidden?: boolean }).hidden) continue;
       engine.origin.toRender(body.getAbsolutePosition(this.p), this.p);
       this.q.copy(this.p).applyMatrix4(cam.matrixWorldInverse);
       const depth = -this.q.z;
@@ -128,6 +128,8 @@ export class Labels {
       let show = !!pr && pr.r < MAX_RADIUS_PX;
       const body = it.entry.body;
       if (show && body instanceof Moon && body.relevanceWeight < 0.35) show = false;
+      // Spacecraft mode: only the craft (and whatever is selected) are named.
+      if (show && craftOnly && it.entry.kind !== 'craft' && it.entry.id !== sel) show = false;
       if (show && pr) {
         // Off screen?
         if (pr.x < -40 || pr.x > w + 40 || pr.y < -20 || pr.y > h + 20) show = false;

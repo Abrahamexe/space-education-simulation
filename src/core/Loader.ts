@@ -52,6 +52,22 @@ export class Loader {
     return tex;
   }
 
+  /**
+   * Load and decode off the main thread. Otherwise the JPEG is decoded inside
+   * the first texture upload, on the frame that first shows it (the 4K
+   * galaxy disc stalled the galaxy entry for ~0.6 s that way).
+   */
+  private async fetch(path: string): Promise<Texture> {
+    const tex = await this.loader.loadAsync(this.url(path));
+    const img = tex.image as HTMLImageElement | undefined;
+    try {
+      await img?.decode?.();
+    } catch {
+      /* undecodable here: the upload decodes it as before */
+    }
+    return tex;
+  }
+
   private emit(): void {
     const ratio = this.total === 0 ? 1 : this.done / this.total;
     this.progressFns.forEach((fn) => fn(ratio));
@@ -61,7 +77,7 @@ export class Loader {
   load(path: string, opts: TextureOptions = {}): Promise<Texture> {
     this.total++;
     this.emit();
-    const p = this.loader.loadAsync(this.url(path)).then(
+    const p = this.fetch(path).then(
       (tex) => {
         this.done++;
         this.emit();
@@ -79,7 +95,7 @@ export class Loader {
 
   /** Non-critical texture, loaded in the background. */
   loadDeferred(path: string, opts: TextureOptions = {}): Promise<Texture> {
-    return this.loader.loadAsync(this.url(path)).then((tex) => this.configure(tex, opts));
+    return this.fetch(path).then((tex) => this.configure(tex, opts));
   }
 
   onProgress(fn: ProgressFn): () => void {

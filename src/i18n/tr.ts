@@ -197,10 +197,10 @@ export const tr = {
       ['Esc', 'Geri'],
       ['H', 'Genel görünüm'],
       ['M', 'Serbest kamera'],
-      ['Y · E · K', 'Yörüngeler, etiketler, kuşaklar'],
+      ['Y · E · K', 'Yörünge çizgileri ve galaktik izler, etiketler, kuşaklar'],
       ['G', 'Galaktik hareket (Güneş ile birlikte yol al)'],
       ['B', 'Yaşanabilir bölgeler'],
-      ['U', 'Teleskoplar ve uzay sondaları'],
+      ['U', 'Uzay aracı modu: gezegen çizgileri ve adları gizlenir, teleskoplar ve sondalar yollarıyla görünür'],
     ],
   },
 } as const;

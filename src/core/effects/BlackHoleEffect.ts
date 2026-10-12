@@ -24,6 +24,8 @@ export interface BlackHoleView {
   time: number;
   /** Bend light (default). Off: straight rays, only the shadow and disc are drawn. */
   lensing?: boolean;
+  /** View depth of the hole (scene units): nearer bodies hide it. Unset: drawn over everything. */
+  depth?: number;
 }
 
 /**
@@ -34,7 +36,7 @@ export class BlackHoleEffect extends Effect {
   constructor() {
     super('BlackHoleEffect', fragment, {
       blendFunction: BlendFunction.NORMAL,
-      attributes: EffectAttribute.CONVOLUTION,
+      attributes: EffectAttribute.CONVOLUTION | EffectAttribute.DEPTH,
       uniforms: new Map<string, Uniform>([
         ['uActive', new Uniform(0)],
         ['uCamPos', new Uniform(new Vector3())],
@@ -55,6 +57,8 @@ export class BlackHoleEffect extends Effect {
         ['uSkyMat', new Uniform(new Matrix3())],
         ['uLens', new Uniform(1)],
         ['uStep', new Uniform(0.07)],
+        ['uOcclude', new Uniform(0)],
+        ['uHoleZ', new Uniform(0)],
       ]),
     });
   }
@@ -76,6 +80,8 @@ export class BlackHoleEffect extends Effect {
     this.u<number>('uTanHalf').value = view.tanHalfFov;
     this.u<number>('uTime').value = view.time;
     this.u<number>('uLens').value = view.lensing === false ? 0 : 1;
+    this.u<number>('uOcclude').value = view.depth === undefined ? 0 : 1;
+    this.u<number>('uHoleZ').value = view.depth ?? 0;
     const d = view.disc;
     this.u<number>('uDiskOn').value = d ? 1 : 0;
     if (d) {

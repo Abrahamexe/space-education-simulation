@@ -101,9 +101,10 @@ export class Prominences {
   /** Random point on the unit sphere, optionally close to the limb. */
   private pickAnchor(): Vector3 {
     const v = new Vector3();
-    if (this.rng.next() < LIMB_BIAS) {
+    const n = this.localViewDir.clone().normalize();
+    // (No view direction with the camera at the Sun's centre, e.g. in the galaxy view.)
+    if (this.rng.next() < LIMB_BIAS && Number.isFinite(n.x + n.y + n.z) && n.lengthSq() > 0.5) {
       // Limb = great circle perpendicular to the view direction.
-      const n = this.localViewDir.clone().normalize();
       const a = new Vector3(0, 1, 0).cross(n);
       if (a.lengthSq() < 1e-6) a.set(1, 0, 0);
       a.normalize();

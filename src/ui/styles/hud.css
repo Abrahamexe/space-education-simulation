@@ -1731,3 +1731,86 @@
   text-overflow: ellipsis;
 }
 .pg-inf { display: block; margin-top: 2px; color: var(--c-ink-3); font: var(--t-body-sm); }
+
+/* Light-speed jump (ui/Hyperspace.ts): hides a view change and its loading.
+   Only transform and opacity move, so the compositor keeps it running. */
+.hyperspace {
+  position: fixed;
+  inset: 0;
+  /* Over the scene's labels, under the panels and the HUD. */
+  z-index: calc(var(--z-labels) + 2);
+  overflow: hidden;
+  pointer-events: none;
+}
+.hs-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, #1d2c58 0%, #080d1f 38%, #020409 100%);
+  opacity: 0;
+  transition: opacity var(--hs-enter) cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+.hs-layer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  will-change: transform, opacity;
+}
+.hs-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(235, 242, 255, 0.9) 0%, rgba(150, 185, 255, 0.25) 30%, transparent 70%);
+  opacity: 0;
+}
+.hyperspace.is-on .hs-backdrop {
+  opacity: 1;
+}
+.hyperspace.is-on .hs-layer {
+  animation: hs-rush 0.6s linear infinite;
+  animation-delay: calc(var(--i) * -0.2s);
+}
+.hyperspace.is-out .hs-backdrop {
+  opacity: 0;
+  transition: opacity var(--hs-exit) cubic-bezier(0.2, 0, 0.2, 1);
+}
+.hyperspace.is-out .hs-layer {
+  animation: hs-burst var(--hs-exit) cubic-bezier(0.3, 0, 0.6, 1) forwards;
+}
+.hyperspace.is-out .hs-flash {
+  animation: hs-flash var(--hs-exit) ease-out forwards;
+}
+@keyframes hs-rush {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.2);
+  }
+}
+@keyframes hs-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(4);
+  }
+}
+@keyframes hs-flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}

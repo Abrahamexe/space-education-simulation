@@ -221,6 +221,7 @@ export class Playground {
     for (const b of [...system.planets, ...system.dwarfs, ...system.comets]) this.real.set(b.id, b);
     // Before the bodies move (priority 0), after the scale transition (−10).
     engine.add({ update: (ctx) => this.update(ctx) }, -5);
+    engine.addLate({ update: (ctx) => this.lateUpdate(ctx) });
     scale.onChange(() => {
       this.trails.clear();
       for (const v of this.views.values()) v.applyScale();
@@ -924,13 +925,23 @@ export class Playground {
       pxScale,
       (i, out) => this.toScene(au.set(this.pos[i * 3] - this.sunAu.x, this.pos[i * 3 + 1] - this.sunAu.y, this.pos[i * 3 + 2] - this.sunAu.z), out),
     );
+    this.updateStarLight();
+    this.stepClimate();
+  }
+
+  /**
+   * After the camera has moved this frame (follow, flight, origin rebase):
+   * billboards, the black hole effect and the DOM labels drawn from the
+   * previous frame's camera trailed what they belong to.
+   */
+  private lateUpdate(ctx: FrameContext): void {
+    if (!this.activeFlag || !this.worker || !this.meta.length) return;
+    const pxScale = ctx.viewportHeight / (2 * Math.tan(MathUtils.degToRad(ctx.camera.fov) / 2));
     for (const v of this.views.values()) {
       for (const mat of v.scaled()) mat.uniforms.uScale.value = pxScale;
       v.update(ctx.time.delta, ctx.camera, this.engine.origin.toRender(v.getAbsolutePosition(this.tmpRender), this.tmpRender));
     }
     this.updateLensing(ctx);
-    this.updateStarLight();
-    this.stepClimate();
     this.updateLabels(ctx);
     this.guides.update(ctx.camera, window.innerHeight);
   }
@@ -1030,6 +1041,19 @@ export class Playground {
     const h = window.innerHeight;
     const cam = ctx.camera;
     const p = this.tmpRender;
+    // Discs of the Sun and planets on screen: a body behind one has no label.
+    const focal = h / 2 / Math.tan(MathUtils.degToRad(cam.fov) / 2);
+    const blockers: { x: number; y: number; r: number; z: number }[] = [];
+    for (const b of [this.sun, ...this.real.values()]) {
+      if ((b as { simGone?: boolean }).simGone) continue;
+      this.engine.origin.toRender(b.getAbsolutePosition(p), p);
+      const z = -p.clone().applyMatrix4(cam.matrixWorldInverse).z;
+      if (z <= 0) continue;
+      const r = (b.getRadius() / z) * focal;
+      if (r < 4) continue;
+      p.project(cam);
+      blockers.push({ x: (p.x * 0.5 + 0.5) * w, y: (-p.y * 0.5 + 0.5) * h, r, z });
+    }
     for (const v of this.views.values()) {
       let el = this.labelEls.get(v.id);
       if (!el) {
@@ -1047,11 +1071,14 @@ export class Playground {
         this.labelEls.set(v.id, el);
       }
       this.engine.origin.toRender(v.getAbsolutePosition(p), p);
-      const behind = p.clone().applyMatrix4(cam.matrixWorldInverse).z >= 0;
+      const z = -p.clone().applyMatrix4(cam.matrixWorldInverse).z;
       p.project(cam);
-      const x = (p.x * 0.5 + 0.5) * w + 8;
-      const y = (-p.y * 0.5 + 0.5) * h - 9;
-      const show = !behind && x > -40 && x < w + 40 && y > -20 && y < h + 20;
+      const sx = (p.x * 0.5 + 0.5) * w;
+      const sy = (-p.y * 0.5 + 0.5) * h;
+      const x = sx + 8;
+      const y = sy - 9;
+      const hidden = blockers.some((b) => b.z < z && Math.hypot(sx - b.x, sy - b.y) < b.r);
+      const show = z > 0 && !hidden && x > -40 && x < w + 40 && y > -20 && y < h + 20;
       el.dataset.visible = String(show);
       if (show) el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
     }
@@ -1180,6 +1207,7 @@ export class Playground {
       skyMat: SCENE_TO_GALACTIC.clone().multiply(rot),
       time: ctx.time.elapsed,
       lensing: false,
+      depth: -p.clone().applyMatrix4(cam.matrixWorldInverse).z,
     };
     this.engine.postfx.setBlackHole(view);
   }
