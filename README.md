@@ -128,6 +128,12 @@ Ham kaynak dosyaları (`assets-src/`) depoya dahil değildir. Uygulamanın çal�
 - Logaritmik derinlik tamponu ve kayan orijin ile gigaparsek ölçeğinde hassasiyet
 - Fizik simülasyonu için Web Worker
 
+## Lisans
+
+Telif hakkı © 2026 Abrahamexe. Tüm hakları saklıdır.
+
+Kaynak kod yalnızca incelenmek üzere açıktır; bu bir açık kaynak lisansı değildir. Kod, tasarım ve depodaki diğer özgün çalışmalar yazılı izin olmadan kopyalanamaz, değiştirilemez, başka projelerde kullanılamaz veya dağıtılamaz. Ayrıntılar için [LICENSE](LICENSE) dosyasına bakın.
+
 ## Kaynaklar ve lisanslar
 
 Dokular, görüntüler ve bilimsel verilerin kaynakları [docs/CREDITS.md](docs/CREDITS.md) dosyasında listelenir. Gezegen dokuları [Solar System Scope](https://www.solarsystemscope.com/textures/) (CC BY 4.0), galaksi ve derin uzay görüntüleri NASA, ESA, CSA ve ESO kaynaklıdır.

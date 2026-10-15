@@ -1,0 +1,58 @@
+Copyright (c) 2026 Abrahamexe (https://github.com/Abrahamexe)
+All rights reserved.
+
+PROPRIETARY LICENSE - SOURCE AVAILABLE, NOT OPEN SOURCE
+
+This repository ("the Software") is made public for viewing only. Being able
+to read the source code does not give you any right to use it.
+
+The Software includes, without limitation, the source code, shaders, scripts,
+user interface, visual design, layouts, styles, icons arrangement, texts,
+scenarios, configuration, data processing and every other original work in
+this repository. All of it is the exclusive property of the copyright holder.
+
+1. Permitted
+   You may view the source code on GitHub and read it for personal reference.
+   You may fork the repository on GitHub only to the extent that the GitHub
+   Terms of Service require. A fork does not give you any further rights.
+
+2. Not permitted without prior written permission of the copyright holder
+   - copying, reproducing or reusing the Software or any part of it, in whole
+     or in part, in any other project, whether commercial or not;
+   - modifying, adapting, translating or creating derivative works;
+   - distributing, publishing, sublicensing, selling, renting or hosting the
+     Software or a modified version, or offering it as a service;
+   - copying or imitating the visual design, user interface or user
+     experience of the Software;
+   - using the Software or any part of it to train or improve machine
+     learning or artificial intelligence models.
+
+3. Third-party materials
+   Textures, images, models, fonts, data and libraries made by third parties
+   (for example NASA, ESA, CSA, ESO, Solar System Scope, three.js and the
+   npm packages listed in package.json) are NOT covered by this license.
+   They remain under their own licenses, listed in docs/CREDITS.md. Nothing
+   in this license limits any right you have under those licenses for those
+   materials.
+
+4. No warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+For permission requests, contact the copyright holder through
+https://github.com/Abrahamexe.
+
+-------------------------------------------------------------------------------
+
+TÜRKÇE ÖZET (bağlayıcı metin yukarıdaki İngilizce metindir)
+
+Telif hakkı (c) 2026 Abrahamexe. Tüm hakları saklıdır.
+
+Bu depo yalnızca incelenmek üzere herkese açıktır; açık kaynak lisansı
+değildir. Kaynak kod, tasarım, arayüz, metinler ve depodaki diğer tüm özgün
+çalışmalar sahibine aittir. Yazılı izin olmadan kopyalanamaz, değiştirilemez,
+başka bir projede kullanılamaz, dağıtılamaz, yayımlanamaz, satılamaz, tasarımı
+taklit edilemez ve yapay zekâ eğitiminde kullanılamaz. Üçüncü taraf dokular,
+görüntüler, yazı tipleri ve kütüphaneler kendi lisanslarına tabidir
+(docs/CREDITS.md).
