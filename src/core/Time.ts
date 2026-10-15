@@ -35,7 +35,7 @@ export const TIME_RATE_PRESETS: readonly TimeRatePreset[] = [
   { id: 'yearPerSecond', daysPerSecond: DAYS_PER_JULIAN_YEAR },
 ];
 
-export const DEFAULT_TIME_RATE_ID = 'hourPerSecond';
+const DEFAULT_TIME_RATE_ID = 'hourPerSecond';
 
 /** Frame deltas above this are clamped (tab switches, breakpoints). */
 const MAX_FRAME_DELTA_S = 0.1;

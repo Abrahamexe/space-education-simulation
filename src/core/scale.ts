@@ -85,7 +85,7 @@ function logLerp(a: number, b: number, t: number): number {
 
 type Listener = () => void;
 
-export class ScaleSystem {
+class ScaleSystem {
   private _mode: ScaleMode = 'cinematic';
   /** 0 = cinematic, 1 = real. Animated during a mode switch. */
   private _t = 0;

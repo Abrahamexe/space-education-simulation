@@ -32,7 +32,7 @@ export const ECLIPTIC_TO_EQUATORIAL = new Matrix3().set(
 );
 
 const g = EQUATORIAL_TO_GALACTIC;
-export const EQUATORIAL_TO_GALACTIC_M3 = new Matrix3().set(
+const EQUATORIAL_TO_GALACTIC_M3 = new Matrix3().set(
   g[0], g[1], g[2],
   g[3], g[4], g[5],
   g[6], g[7], g[8],
@@ -47,7 +47,7 @@ export const SCENE_TO_GALACTIC = new Matrix3()
 export const GALACTIC_TO_SCENE = SCENE_TO_GALACTIC.clone().transpose();
 
 /** equatorial J2000 → scene. */
-export const EQUATORIAL_TO_SCENE = new Matrix3()
+const EQUATORIAL_TO_SCENE = new Matrix3()
   .multiplyMatrices(ECLIPTIC_TO_SCENE, ECLIPTIC_TO_EQUATORIAL.clone().transpose());
 
 /** Scene-space unit vector for an ICRF/J2000 right ascension & declination (degrees). */
@@ -61,7 +61,7 @@ export function equatorialToScene(raDeg: number, decDeg: number, out = new Vecto
 }
 
 /** Unit vector for galactic longitude/latitude (radians), galactic frame. */
-export function galacticToVector(l: number, b: number, out = new Vector3()): Vector3 {
+function galacticToVector(l: number, b: number, out = new Vector3()): Vector3 {
   const cb = Math.cos(b);
   return out.set(cb * Math.cos(l), cb * Math.sin(l), Math.sin(b));
 }
@@ -80,7 +80,7 @@ const ICRF_X_SCENE = equatorialToScene(0, 0);
  * JPL convention for body equators and satellite Laplace planes.
  * Returns the frame → scene matrix (columns X, Y, Z).
  */
-export function poleFrame(pole: Vector3, out = new Matrix3()): Matrix3 {
+function poleFrame(pole: Vector3, out = new Matrix3()): Matrix3 {
   const z = pole.clone().normalize();
   const x = new Vector3().crossVectors(ICRF_Z_SCENE, z);
   if (x.lengthSq() < 1e-12) x.copy(ICRF_X_SCENE);

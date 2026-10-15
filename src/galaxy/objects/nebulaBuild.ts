@@ -20,7 +20,7 @@ interface Px {
  * Up to two depth layers and a thickness (image widths, + towards the Sun)
  * for a pixel, following the object's published structure (see DepthSpec).
  */
-export function layers(d: DepthSpec, p: Px, ax: number, ay: number): [number, number, number] {
+function layers(d: DepthSpec, p: Px, ax: number, ay: number): [number, number, number] {
   // Galaxy models work about the anchor (the nucleus).
   const x = p.x - ax;
   const y = p.y - ay;
@@ -98,7 +98,7 @@ export function layers(d: DepthSpec, p: Px, ax: number, ay: number): [number, nu
 }
 
 /** 0..1: is this pixel part of the galaxy (1) or foreground stars / sky (0)? */
-export function galaxyMask(d: DepthSpec, p: Px, ax: number, ay: number): number {
+function galaxyMask(d: DepthSpec, p: Px, ax: number, ay: number): number {
   const x = p.x - ax;
   const y = p.y - ay;
   const fade = (q: number) => 1 - MathUtils.smoothstep(q, 0.8, 1.2);

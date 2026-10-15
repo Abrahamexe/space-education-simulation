@@ -45,7 +45,7 @@ function wrapPi(x: number): number {
 }
 
 /** Evaluate the elements `daysSinceJ2000` days after J2000. */
-export function elementsAt(data: OrbitalElementsData, daysSinceJ2000: number, out?: OrbitalElements): OrbitalElements {
+function elementsAt(data: OrbitalElementsData, daysSinceJ2000: number, out?: OrbitalElements): OrbitalElements {
   const T = daysSinceJ2000 / DAYS_PER_CENTURY;
   const val = (p: ElementPair) => p[0] + p[1] * T;
   const varpi = val(data.varpi) * DEG;
@@ -96,20 +96,9 @@ export function positionFromEccentricAnomaly(el: OrbitalElements, E: number, out
   );
 }
 
-/** Heliocentric ecliptic J2000 position in AU at the given instant. */
-export function heliocentricEcliptic(data: OrbitalElementsData, daysSinceJ2000: number, out = new Vector3()): Vector3 {
-  const el = elementsAt(data, daysSinceJ2000);
-  return positionFromEccentricAnomaly(el, solveKepler(el.M, el.e), out);
-}
-
 /** Orbit-plane normal (ecliptic frame): the direction of orbital angular momentum. */
 export function orbitNormal(el: OrbitalElements, out = new Vector3()): Vector3 {
   return out.set(Math.sin(el.I) * Math.sin(el.Omega), -Math.sin(el.I) * Math.cos(el.Omega), Math.cos(el.I));
-}
-
-/** Sidereal orbital period in days from the mean-longitude rate. */
-export function orbitalPeriodDays(data: OrbitalElementsData): number {
-  return (360 / data.L[1]) * DAYS_PER_CENTURY;
 }
 
 /** Mean anomaly as a 0..1 phase (used to animate orbit trails). */

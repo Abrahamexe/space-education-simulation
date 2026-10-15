@@ -75,7 +75,7 @@ const S = () => strings().panel.stats;
  * Turkish genitive for a proper name, by vowel harmony:
  * Jüpiter'in, Satürn'ün, Mars'ın, Plüton'un, Dünya'nın.
  */
-export function genitive(name: string): string {
+function genitive(name: string): string {
   const vowels = 'aıoueiöüâî';
   const lower = name.toLocaleLowerCase('tr-TR');
   const last = [...lower].reverse().find((c) => vowels.includes(c)) ?? 'e';

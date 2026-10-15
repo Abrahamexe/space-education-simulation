@@ -15,7 +15,7 @@ const fade = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Value noise in [-1, 1]. */
-export function valueNoise3(x: number, y: number, z: number, seed = 0): number {
+function valueNoise3(x: number, y: number, z: number, seed = 0): number {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
   const zi = Math.floor(z);

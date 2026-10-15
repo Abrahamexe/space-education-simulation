@@ -18,7 +18,6 @@ export const DISC_SCALE_HEIGHT_PC = 300;
 export const BULGE_HEIGHT_PC = 700;
 
 export const PC_PER_LY = 0.306_601_4;
-export const KM_PER_PC = 3.085_677_581e13;
 
 /**
  * Face-on disc image: NASA/JPL-Caltech/ESO/R. Hurt artist's impression

@@ -28,10 +28,9 @@ export const GM_KM3S2: Record<string, number> = {
   halley: 0,
 };
 
-export const M_SUN_KG = 1.98847e30;
-export const M_JUP_IN_SUN = 9.5458e-4;
-export const M_EARTH_IN_SUN = 3.003e-6;
-export const R_SUN_KM = 695_700;
+const M_JUP_IN_SUN = 9.5458e-4;
+const M_EARTH_IN_SUN = 3.003e-6;
+const R_SUN_KM = 695_700;
 
 export type AddKind = 'bh' | 'quasar' | 'ns' | 'wd' | 'rd' | 'sunlike' | 'bluegiant' | 'jupiter' | 'earth' | 'neptune' | 'moonlike';
 export type MassUnit = 'sun' | 'jup' | 'earth';

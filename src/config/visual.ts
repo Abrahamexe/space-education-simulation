@@ -254,11 +254,6 @@ export const CAMERA = {
   },
 } as const;
 
-export const LOADING = {
-  /** Overlay fade after loading (ms). */
-  fadeMs: 900,
-} as const;
-
 /**
  * Galactic motion: the Sun carries the system through the Milky Way. Each
  * planet's path over the last `trailDays` is drawn in that moving frame

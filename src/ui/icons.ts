@@ -27,7 +27,7 @@ import habitable from '@phosphor-icons/core/assets/regular/plant.svg?raw';
 import atom from '@phosphor-icons/core/assets/regular/atom.svg?raw';
 import craft from '@phosphor-icons/core/assets/regular/rocket.svg?raw';
 
-export const ICONS = { play, pause, forward, rewind, close, gear, orbits, labels, home, now, target, belts, back, search, help, galaxy, dev, hand, zoomOut, sun, habitable, atom, craft } as const;
+const ICONS = { play, pause, forward, rewind, close, gear, orbits, labels, home, now, target, belts, back, search, help, galaxy, dev, hand, zoomOut, sun, habitable, atom, craft } as const;
 export type IconName = keyof typeof ICONS;
 
 /** Inline icon markup, hidden from assistive tech (buttons carry labels). */

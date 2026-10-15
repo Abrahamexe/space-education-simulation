@@ -6,9 +6,6 @@
 /** Astronomical unit in km (IAU 2012 Resolution B2, exact). */
 export const KM_PER_AU = 149_597_870.7;
 
-/** Speed of light in vacuum, km/s (exact, SI definition). */
-export const SPEED_OF_LIGHT_KM_S = 299_792.458;
-
 /** Julian Date of the J2000.0 epoch (2000-01-01 12:00 TT). */
 export const JD_J2000 = 2_451_545.0;
 
