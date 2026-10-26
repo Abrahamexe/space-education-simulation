@@ -1,6 +1,7 @@
 import { strings } from '../i18n';
 import { QUALITY_ORDER, type QualityLevel } from '../config/quality';
 import { icon } from './icons';
+import { UI_SIZE_ORDER, uiScale, type UiSizeId } from './UiScale';
 import type { UiContext } from './context';
 
 /** View toggles a component can expose (labels live in their own module). */
@@ -214,11 +215,14 @@ export class Settings {
         <h3 id="q-label">${t.quality}</h3>
         <div class="segmented" role="radiogroup" aria-labelledby="q-label"></div>
         <label><input type="checkbox" data-auto> ${t.autoQuality}</label>
+        <h3 id="s-label">${t.uiSize}</h3>
+        <div class="segmented" role="radiogroup" aria-labelledby="s-label" data-size></div>
         <p>${t.creditsText}</p>
       </div>`;
     this.button = el.querySelector('button') as HTMLButtonElement;
     this.pop = el.querySelector('.popover') as HTMLElement;
-    const seg = this.pop.querySelector('.segmented') as HTMLElement;
+    const seg = this.pop.querySelector('.segmented:not([data-size])') as HTMLElement;
+    const sizeSeg = this.pop.querySelector('[data-size]') as HTMLElement;
     const auto = this.pop.querySelector('[data-auto]') as HTMLInputElement;
 
     const radios = QUALITY_ORDER.map((level) => {
@@ -242,6 +246,24 @@ export class Settings {
       }
       auto.checked = ctx.quality.auto;
     };
+    const sizes = UI_SIZE_ORDER.map((id) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.textContent = t.uiSizes[id];
+      b.addEventListener('click', () => uiScale.set(id));
+      sizeSeg.appendChild(b);
+      return [id, b] as [UiSizeId, HTMLButtonElement];
+    });
+    const syncSize = () => {
+      for (const [id, b] of sizes) {
+        const on = id === uiScale.size;
+        b.setAttribute('aria-checked', String(on));
+        b.tabIndex = on ? 0 : -1;
+      }
+    };
+    uiScale.onChange(syncSize);
+    syncSize();
     ctx.quality.onChange(sync);
     auto.addEventListener('change', () => (ctx.quality.auto = auto.checked));
     sync();

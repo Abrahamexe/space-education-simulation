@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import { Moon } from '../bodies/Moon';
 import type { FocusEntry } from '../bodies/SolarSystem';
 import type { UiContext } from './context';
+import { uiScale } from './UiScale';
 
 /** Labels hide once a body's disk is this many px in radius (the body speaks for itself). */
 const MAX_RADIUS_PX = 48;
@@ -12,10 +13,20 @@ const PAD = 6;
 
 const PRIORITY: Record<FocusEntry['kind'], number> = { star: 0, planet: 1, dwarf: 2, comet: 3, moon: 4, craft: 5 };
 
+/** A spacecraft: colour swatch and, for voyages, where its path carries the name. */
+interface PathNamed {
+  swatch: string;
+  pathLabelAnchor(out: Vector3): Vector3 | null;
+}
+
 interface Item {
   entry: FocusEntry;
+  /** Unique per label (a craft has two: at the craft and on its path). */
+  key: string;
+  /** The label on the craft's path, not at the craft. */
+  path?: boolean;
   el: HTMLButtonElement;
-  width: number;
+  name: string;
   visible: boolean;
   x: number;
   y: number;
@@ -51,10 +62,26 @@ export class Labels {
       b.addEventListener('pointerenter', () => ctx.selection.hover(entry));
       b.addEventListener('pointerleave', () => ctx.selection.hover(null));
       el.appendChild(b);
-      this.items.push({ entry, el: b, width: entry.name.length * CHAR_PX + 22, visible: false, x: 0, y: 0 });
+      this.items.push({ entry, el: b, name: entry.name, visible: false, x: 0, y: 0, key: entry.id });
+      // A craft's colour marks its label, and a second label names its path.
+      const craft = entry.body as Partial<PathNamed>;
+      if (entry.kind === 'craft' && craft.swatch) {
+        b.style.setProperty('--swatch', craft.swatch);
+        if (craft.pathLabelAnchor) {
+          const p = b.cloneNode(true) as HTMLButtonElement;
+          p.dataset.kind = 'path';
+          p.addEventListener('click', () => this.onClick(entry));
+          p.addEventListener('pointerenter', () => ctx.selection.hover(entry));
+          p.addEventListener('pointerleave', () => ctx.selection.hover(null));
+          el.appendChild(p);
+          this.items.push({ entry, el: p, name: entry.name, visible: false, x: 0, y: 0, key: `${entry.id}:path`, path: true });
+        }
+      }
     }
     // Important labels claim space first.
-    this.items.sort((a, b) => PRIORITY[a.entry.kind] - PRIORITY[b.entry.kind]);
+    // (Names on a path come after the crafts' own: they are the first to give way.)
+    const rank = (i: Item) => PRIORITY[i.entry.kind] + (i.path ? 0.5 : 0);
+    this.items.sort((a, b) => rank(a) - rank(b));
     this.el = el;
     ctx.engine.addLate({ update: () => this.update() }, 10);
     ctx.selection.onSelect(() => this.restyle());
@@ -109,22 +136,25 @@ export class Labels {
       if ((body as { simGone?: boolean }).simGone) continue;
       // Spacecraft without data for the date.
       if ((body as { hidden?: boolean }).hidden) continue;
-      engine.origin.toRender(body.getAbsolutePosition(this.p), this.p);
+      if (it.path) {
+        if (!(body as unknown as PathNamed).pathLabelAnchor(this.p)) continue;
+        engine.origin.toRender(this.p, this.p);
+      } else engine.origin.toRender(body.getAbsolutePosition(this.p), this.p);
       this.q.copy(this.p).applyMatrix4(cam.matrixWorldInverse);
       const depth = -this.q.z;
       if (depth <= 0) continue;
       const ndc = this.p.project(cam);
       const sx = (ndc.x * 0.5 + 0.5) * w;
       const sy = (-ndc.y * 0.5 + 0.5) * h;
-      const r = (body.getRadius() / depth) * focal;
-      projected.set(it.entry.id, { x: sx, y: sy, r, depth });
+      const r = it.path ? 0 : (body.getRadius() / depth) * focal;
+      projected.set(it.key, { x: sx, y: sy, r, depth });
       if (r > 6) blockers.push({ x: sx, y: sy, r, depth });
     }
 
     // Selected first, then by kind priority (items are pre-sorted).
     const order = [...this.items].sort((a, b) => Number(b.entry.id === sel) - Number(a.entry.id === sel));
     for (const it of order) {
-      const pr = projected.get(it.entry.id);
+      const pr = projected.get(it.key);
       let show = !!pr && pr.r < MAX_RADIUS_PX;
       const body = it.entry.body;
       if (show && body instanceof Moon && body.relevanceWeight < 0.35) show = false;
@@ -143,10 +173,13 @@ export class Labels {
         }
       }
       if (show && pr) {
+        // Type scales with the interface size (hud.css); so does the room a name takes.
+        const z = uiScale.zoom;
+        const lh = LABEL_H * z;
         const x = pr.x + Math.max(pr.r, 3) + PAD;
-        const y = pr.y - LABEL_H / 2;
-        const box = { x, y, w: it.width };
-        const hit = this.placed.some((o) => x < o.x + o.w && x + box.w > o.x && Math.abs(y - o.y) < LABEL_H);
+        const y = pr.y - lh / 2;
+        const box = { x, y, w: (it.name.length * CHAR_PX + 22) * z };
+        const hit = this.placed.some((o) => x < o.x + o.w && x + box.w > o.x && Math.abs(y - o.y) < lh);
         if (hit && it.entry.id !== sel) show = false;
         else {
           this.placed.push(box);

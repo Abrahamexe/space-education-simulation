@@ -60,6 +60,16 @@
   --r-surface: 14px;
   --hit: 40px;
 
+  /* ---- Interface size (ui/UiScale.ts) ------------------------------------------------
+     The overlays carry `zoom: var(--ui-zoom)`. Viewport units inside a zoomed box grow
+     with it, so sizes taken from the window use these instead of vw / vh / dvh.
+     --hud-bottom: height the bottom bars take, set by UiScale. */
+  --ui-zoom: 1;
+  --vw: calc(100vw / var(--ui-zoom));
+  --vh: calc(100vh / var(--ui-zoom));
+  --dvh: calc(100dvh / var(--ui-zoom));
+  --hud-bottom: 66px;
+
   /* ---- Motion (animate / emil skills) ------------------------------------------ */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);

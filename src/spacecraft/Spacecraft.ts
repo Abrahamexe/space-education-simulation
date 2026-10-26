@@ -1,13 +1,13 @@
 import {
   AdditiveBlending,
   Box3,
-  BufferAttribute,
   BufferGeometry,
   CanvasTexture,
   Color,
+  DoubleSide,
   Group,
-  Line,
   MathUtils,
+  Mesh,
   Quaternion,
   ShaderMaterial,
   Vector2,
@@ -15,7 +15,6 @@ import {
   SpriteMaterial,
   Vector3,
   type Material,
-  type Mesh,
   type Object3D,
   type Texture,
 } from 'three';
@@ -26,6 +25,7 @@ import { scale } from '../core/scale';
 import type { Focusable, FrameContext } from '../core/types';
 import { keplerStep } from '../playground/kepler';
 import type { CraftMapper } from './CraftMapper';
+import { ribbonData, ribbonGeometry, setRibbonRange } from './Ribbon';
 import { buildSchematic } from './schematic';
 import pathVert from '../shaders/spacecraft/path.vert?raw';
 import pathFrag from '../shaders/spacecraft/path.frag?raw';
@@ -48,6 +48,23 @@ const MODEL_LOAD_SIZES = 4000;
 const MARKER_FADE_PX = [2, 6] as const;
 /** Inside this multiple of its drawn size an orbit is lines across the view: hidden then. */
 const ORBIT_INSIDE = 1.2;
+/** Ribbon width (CSS px): resting, and for the selected craft. */
+const LINE_PX = [1.8, 2.6] as const;
+/** The live-observation beam (CSS px). */
+const BEAM_PX = 3.2;
+/** The future of a voyage is dashed: one dash per this many samples. */
+const FUTURE_DASH = 6;
+/** Path and orbit opacity: at rest, and for the selected craft (hovered: halfway). */
+const PATH_REST = 0.16;
+const PATH_LIT = 0.9;
+const ORBIT_REST = 0.24;
+const ORBIT_LIT = 0.92;
+
+/** A double-precision position as two float32 parts (see path.vert, RTE). */
+function splitCamera(p: Vector3, hi: Vector3, lo: Vector3): void {
+  hi.set(Math.fround(p.x), Math.fround(p.y), Math.fround(p.z));
+  lo.set(p.x - hi.x, p.y - hi.y, p.z - hi.z);
+}
 
 let dotTexture: Texture | null = null;
 function dot(): Texture {
@@ -100,14 +117,17 @@ export class Spacecraft implements Focusable {
   private readonly tmp2 = new Vector3();
   private readonly q = new Quaternion();
   /** Whole voyage (cruise and flybys), drawn once; past / future split by draw range. */
-  private readonly path: { past: Line; future: Line; times: Float64Array } | null;
+  private readonly path: { past: Mesh; future: Mesh; times: Float64Array; points: Float64Array } | null;
   private pathBuilt = false;
   /** Current orbit about the centre (orbiters, tours). */
-  private readonly orbit: Line;
+  private readonly orbit: Mesh;
   private orbitJd = -Infinity;
   private emphasis = 0;
   /** Size multiplier over the bodies' size curve (developer panel). */
   private exag = 1;
+  /** Where the telescope points (live observation): a beam from the craft along this direction. */
+  private beam: Mesh | null = null;
+  private pointing: Vector3 | null = null;
   /** Developer panel: path brightness and marker size factors, every Earth orbiter's orbit on. */
   pathGain = 1;
   markerScale = 1;
@@ -133,29 +153,42 @@ export class Spacecraft implements Focusable {
     this.group.visible = false;
     world.add(this.group);
 
-    const lineMat = (opacity: number) =>
+    // rte: absolute vertices drawn relative to the camera (voyage paths).
+    const lineMat = (opacity: number, dash = 0, rte = false) =>
       new ShaderMaterial({
         vertexShader: pathVert,
         fragmentShader: pathFrag,
-        uniforms: { uColor: { value: new Color(...def.color) }, uOpacity: { value: opacity }, uFade: { value: new Vector2(0, 1) } },
+        defines: rte ? { RTE: '' } : {},
+        uniforms: {
+          uColor: { value: new Color(...def.color) },
+          uOpacity: { value: opacity },
+          uFade: { value: new Vector2(0, 1) },
+          uHalf: { value: 0 },
+          uEdge: { value: 0.5 },
+          uDash: { value: dash },
+          uTaper: { value: 0 },
+          uCamHi: { value: new Vector3() },
+          uCamLo: { value: new Vector3() },
+        },
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
+        side: DoubleSide,
       });
     const hasCruise = track.segments.some((s) => modeOf(s) === 'helio');
     if (hasCruise) {
-      const g = new BufferGeometry();
-      const past = new Line(g, lineMat(0.5));
-      const future = new Line(g, lineMat(0.14));
+      // Separate geometries: each carries its own draw range (past / future).
+      const past = new Mesh(new BufferGeometry(), lineMat(0.5, 0, true));
+      const future = new Mesh(new BufferGeometry(), lineMat(0.14, FUTURE_DASH, true));
       for (const l of [past, future]) {
         l.frustumCulled = false;
         l.renderOrder = 4;
         l.visible = false;
         world.add(l);
       }
-      this.path = { past, future, times: new Float64Array(0) };
+      this.path = { past, future, times: new Float64Array(0), points: new Float64Array(0) };
     } else this.path = null;
-    this.orbit = new Line(new BufferGeometry(), lineMat(0.35));
+    this.orbit = new Mesh(new BufferGeometry(), lineMat(0.35));
     this.orbit.frustumCulled = false;
     this.orbit.renderOrder = 4;
     this.orbit.visible = false;
@@ -193,6 +226,63 @@ export class Spacecraft implements Focusable {
   /** True heliocentric ecliptic position (km). */
   trueHelioKm(out: Vector3): Vector3 {
     return out.copy(this.pHelio);
+  }
+
+  /** Beam along a scene direction (null = off). */
+  setPointing(dir: Vector3 | null): void {
+    this.pointing = dir ? dir.clone().normalize() : null;
+    if (!this.pointing) {
+      if (this.beam) this.beam.visible = false;
+      return;
+    }
+    if (!this.beam) {
+      const m = new ShaderMaterial({
+        vertexShader: pathVert,
+        fragmentShader: pathFrag,
+        uniforms: {
+          uColor: { value: new Color(0.7, 0.9, 1) },
+          uOpacity: { value: 1 },
+          // Never faded by distance (negative edges: fully on at any range).
+          uFade: { value: new Vector2(-2, -1) },
+          uHalf: { value: 0 },
+          uEdge: { value: 0.5 },
+          uDash: { value: 0 },
+          uTaper: { value: 0.85 },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        side: DoubleSide,
+      });
+      // Unit segment along +Z, turned and scaled each frame.
+      this.beam = new Mesh(ribbonGeometry(ribbonData(new Float32Array([0, 0, 0, 0, 0, 1]))), m);
+      this.beam.frustumCulled = false;
+      this.beam.renderOrder = 47;
+      this.group.add(this.beam);
+    }
+    this.beam.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), this.pointing);
+    this.beam.visible = true;
+  }
+
+  /** Path / marker colour as a CSS rgb() string (labels and menus carry it as a swatch). */
+  get swatch(): string {
+    return `rgb(${this.def.color.map((c) => Math.round(c * 255)).join(',')})`;
+  }
+
+  /**
+   * Where the voyage path is named: the middle of the part already flown
+   * (absolute scene units). Null for craft without a voyage path, or while it
+   * is not drawn.
+   */
+  pathLabelAnchor(out: Vector3): Vector3 | null {
+    const p = this.path;
+    if (!p || !this.pathBuilt || !p.past.visible || this.hidden) return null;
+    const now = this.indexAfter(this.jd);
+    const span = this.def.trailYears ? this.def.trailYears * 365.25 : Infinity;
+    const a = Number.isFinite(span) ? this.indexAfter(this.jd - span) : 0;
+    const mid = (a + now) >> 1;
+    if (mid <= a || mid * 3 + 2 >= p.points.length) return null;
+    return out.set(p.points[mid * 3], p.points[mid * 3 + 1], p.points[mid * 3 + 2]);
   }
 
   /** Selected (1) or hovered (0.5): brighter path. */
@@ -324,7 +414,7 @@ export class Spacecraft implements Focusable {
     const segs = this.trajectory.track.segments.filter((s) => modeOf(s) === 'helio');
     let n = 0;
     for (const s of segs) n += s.n;
-    const pos = new Float32Array(n * 3);
+    const pos = new Float64Array(n * 3);
     const times = new Float64Array(n);
     const st: CraftState = { center: 'sun', r: [0, 0, 0], v: [0, 0, 0] };
     const v = new Vector3();
@@ -344,9 +434,12 @@ export class Spacecraft implements Focusable {
         times[k++] = t;
       }
     }
-    const g = p.past.geometry;
-    g.setAttribute('position', new BufferAttribute(pos.subarray(0, k * 3), 3));
-    g.computeBoundingSphere();
+    p.points = pos.subarray(0, k * 3);
+    const data = ribbonData(p.points);
+    for (const m of [p.past, p.future]) {
+      m.geometry.dispose();
+      m.geometry = ribbonGeometry(data, 0, 0);
+    }
     p.times = times.subarray(0, k);
     this.pathBuilt = true;
   }
@@ -371,20 +464,24 @@ export class Spacecraft implements Focusable {
     const span = this.def.trailYears ? this.def.trailYears * 365.25 : Infinity;
     const a = Number.isFinite(span) ? this.indexAfter(this.jd - span) : 0;
     const b = Number.isFinite(span) ? this.indexAfter(this.jd + span) : p.times.length;
-    p.past.geometry.setDrawRange(a, Math.max(now - a, 0));
-    p.future.geometry.setDrawRange(Math.max(now - 1, 0), Math.max(b - now + 1, 0));
+    // Both halves reach the craft's position (the sample either side of now).
+    setRibbonRange(p.past.geometry, a, now + 1);
+    setRibbonRange(p.future.geometry, Math.max(now - 1, 0), b);
   }
 
   /** The orbit about the centre: one Kepler period, or ±120 days of samples for L2 halo orbits. */
   private updateOrbit(seg: SegmentData): void {
     const pts: number[] = [];
     const v = new Vector3();
+    // Points are offsets from the centre's drawn position: the mesh follows the
+    // centre each frame, so the orbit never lags the planet it circles.
+    const c = this.mapper.sat(seg.center, new Vector3(), this.jd, new Vector3());
     if (seg.interp === 'hermite') {
       const st: CraftState = { center: seg.center, r: [0, 0, 0], v: [0, 0, 0] };
       for (let d = -120; d <= 120; d += 1) {
         const t = this.jd + d;
         if (!this.trajectory.stateAt(t, st) || st.center !== seg.center) continue;
-        this.mapper.sat(seg.center, v.set(st.r[0], st.r[1], st.r[2]), this.jd, v);
+        this.mapper.sat(seg.center, v.set(st.r[0], st.r[1], st.r[2]), this.jd, v).sub(c);
         pts.push(v.x, v.y, v.z);
       }
     } else {
@@ -403,20 +500,18 @@ export class Spacecraft implements Focusable {
       let E = Math.atan2(eSinE, eCosE);
       const N = 240;
       for (let i = 0; i <= N; i++) {
-        this.mapper.sat(seg.center, v.set(r[0], r[1], r[2]), this.jd, v);
+        this.mapper.sat(seg.center, v.set(r[0], r[1], r[2]), this.jd, v).sub(c);
         pts.push(v.x, v.y, v.z);
         const E2 = E + (2 * Math.PI) / N;
         keplerStep(r, vel, seg.gm, (E2 - e * Math.sin(E2) - (E - e * Math.sin(E))) / n);
         E = E2;
       }
     }
-    const g = this.orbit.geometry;
-    g.setAttribute('position', new BufferAttribute(new Float32Array(pts), 3));
-    g.computeBoundingSphere();
+    this.orbit.geometry.dispose();
+    this.orbit.geometry = ribbonGeometry(ribbonData(new Float32Array(pts)));
     // Farthest point from the centre, for the inside / outside test.
-    const c = this.mapper.sat(seg.center, new Vector3(), this.jd, new Vector3());
     let ext = 0;
-    for (let i = 0; i < pts.length; i += 3) ext = Math.max(ext, Math.hypot(pts[i] - c.x, pts[i + 1] - c.y, pts[i + 2] - c.z));
+    for (let i = 0; i < pts.length; i += 3) ext = Math.max(ext, Math.hypot(pts[i], pts[i + 1], pts[i + 2]));
     this.orbitExtent = ext;
   }
 
@@ -458,6 +553,13 @@ export class Spacecraft implements Focusable {
     const px = (this.radius / Math.max(camDist, 1e-12)) * focal / ctx.pixelRatio;
     if (this.modelState === 'none' && camDist < this.radius * MODEL_LOAD_SIZES) this.loadModel();
     this.pivot.visible = px > 0.5;
+    if (this.beam && this.pointing) {
+      // Long enough to reach across the view from wherever the camera is.
+      this.beam.scale.setScalar(Math.max(camDist * 0.9, this.radius * 12));
+      const bu = (this.beam.material as ShaderMaterial).uniforms;
+      bu.uHalf.value = (BEAM_PX * ctx.pixelRatio) / 2 / Math.max(ctx.viewportHeight, 1);
+      bu.uEdge.value = Math.min(1, 2 / Math.max(BEAM_PX * ctx.pixelRatio, 2));
+    }
     const m = 1 - MathUtils.smoothstep(px, MARKER_FADE_PX[0], MARKER_FADE_PX[1]);
     this.marker.visible = m > 0.01;
     this.marker.material.opacity = m * (0.65 + 0.35 * this.emphasis);
@@ -472,9 +574,14 @@ export class Spacecraft implements Focusable {
     }
     if (this.path && this.pathBuilt) {
       this.updatePathSplit();
-      const o = (0.34 + 0.4 * this.emphasis) * this.pathGain;
-      this.setLine(this.path.past, o);
-      this.setLine(this.path.future, o * 0.4);
+      // Faint at rest so a crowd of paths stays readable; the chosen craft's stands out.
+      const o = (PATH_REST + (PATH_LIT - PATH_REST) * this.emphasis) * this.pathGain;
+      this.setLine(ctx, this.path.past, o);
+      this.setLine(ctx, this.path.future, o * 0.8);
+      for (const m of [this.path.past, this.path.future]) {
+        const u = (m.material as ShaderMaterial).uniforms;
+        splitCamera(camAbs, u.uCamHi.value, u.uCamLo.value);
+      }
       // The layer is a mode of its own (planet lines hidden): every path shows,
       // except on a craft close-up, where only its own does.
       this.path.past.visible = this.path.future.visible = !closeUp || this.emphasis > 0;
@@ -484,7 +591,9 @@ export class Spacecraft implements Focusable {
       const reach = scale.satelliteDistance(centerDist, this.mapper.body(seg.center)?.radiusKm ?? 6371);
       // An orbit reads as an orbit from outside it; from inside it is lines across the view.
       const extent = this.orbitExtent || reach * 1.5;
-      const camToCenter = this.mapper.sat(seg.center, this.tmp2.set(0, 0, 0), jd, this.tmp).distanceTo(camAbs);
+      const centre = this.mapper.sat(seg.center, this.tmp2.set(0, 0, 0), jd, this.tmp);
+      this.orbit.position.copy(centre);
+      const camToCenter = centre.distanceTo(camAbs);
       const inside = camToCenter < extent * ORBIT_INSIDE;
       const near = this.emphasis > 0 || this.showAllOrbits || (!inside && !closeUp);
       this.orbit.visible = near;
@@ -492,17 +601,21 @@ export class Spacecraft implements Focusable {
         this.orbitJd = jd;
         this.updateOrbit(seg);
       }
-      this.setLine(this.orbit, (0.34 + 0.35 * this.emphasis) * this.pathGain);
+      this.setLine(ctx, this.orbit, (ORBIT_REST + (ORBIT_LIT - ORBIT_REST) * this.emphasis) * this.pathGain);
     } else {
       this.orbit.visible = false;
     }
   }
 
-  /** Line opacity, faded within a few dozen craft sizes of the camera. */
-  private setLine(l: Line, opacity: number): void {
+  /** Line opacity and width, faded within a few dozen craft sizes of the camera. */
+  private setLine(ctx: FrameContext, l: Mesh, opacity: number): void {
     const u = (l.material as ShaderMaterial).uniforms;
     u.uOpacity.value = opacity;
     u.uFade.value.set(this.radius * 6, this.radius * 60);
+    const px = (LINE_PX[0] + (LINE_PX[1] - LINE_PX[0]) * this.emphasis) * ctx.pixelRatio;
+    u.uHalf.value = px / 2 / Math.max(ctx.viewportHeight, 1);
+    // One device pixel of soft edge, in half-widths.
+    u.uEdge.value = Math.min(1, 2 / Math.max(px, 2));
   }
 
   private setHidden(h: boolean): void {

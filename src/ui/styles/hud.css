@@ -29,8 +29,9 @@
 
 .hud-bottom {
   display: grid;
-  /* minmax(0, …): a wide nav must never push the grid past the viewport. */
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* The nav takes the room between the clusters (centred in it); UiScale stacks the
+     bars when even that is too little. minmax(0, …): never push the grid past the viewport. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   min-width: 0;
   grid-template-areas: 'time nav tools';
   align-items: end;
@@ -43,6 +44,12 @@
 
 .hud :is(button, .cluster, .nav, .readout) {
   pointer-events: auto;
+}
+
+/* Interface size: every overlay root scales together (ui/UiScale.ts). The floating
+   name labels keep their JS-placed positions and scale their type instead. */
+:is(.hud, .panel, .hint, .notice, .craft-menu, .galaxy-hud, .pg-panel, .pg-reopen, .pg-tip, .pg-toasts) {
+  zoom: var(--ui-zoom);
 }
 
 /* Staggered entrance after the intro (PLAN §8.2). */
@@ -317,7 +324,7 @@
 }
 
 .search-list {
-  max-height: min(60vh, 440px);
+  max-height: min(calc(var(--vh) * 0.6), 440px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--s-1) 0 var(--s-2);
@@ -366,6 +373,11 @@
 
 .help-pop {
   width: 300px;
+  /* The key list is long: it scrolls instead of running off the window. */
+  max-height: calc(var(--vh) - 96px - var(--hud-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .help-pop h3:not(:first-child) {
@@ -492,6 +504,115 @@
   }
 }
 
+/* Spacecraft button at the end of the bar, and its list. */
+.nav-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 var(--s-1);
+  background: var(--c-hairline);
+}
+
+.nav-craft .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--c-accent);
+}
+
+.nav-craft[aria-expanded='true'] {
+  color: var(--c-ink);
+  background: var(--c-chip);
+}
+
+.craft-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+  width: 320px;
+  max-width: calc(var(--vw) - 16px);
+  max-height: min(calc(var(--vh) * 0.7), 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-1) 0 var(--s-2);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-surface);
+  background: var(--c-glass-solid);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  transform-origin: bottom center;
+  transform: translateY(6px) scale(0.98);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 160ms var(--ease-out),
+    opacity 160ms ease,
+    visibility 0s linear 160ms;
+}
+
+.craft-menu[data-open='true'] {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform 180ms var(--ease-out),
+    opacity 180ms ease,
+    visibility 0s;
+}
+
+.craft-menu h3 {
+  margin: var(--s-3) var(--s-4) var(--s-1);
+  font: var(--t-cap-xs);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--c-ink-3);
+}
+
+.craft-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: calc(100% - var(--s-4));
+  margin: 0 var(--s-2);
+  padding: 9px var(--s-3);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c-ink-2);
+  font: var(--t-body-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.craft-option:focus-visible {
+  background: var(--c-chip-hover);
+  color: var(--c-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .craft-option:hover {
+    background: var(--c-chip-hover);
+    color: var(--c-ink);
+  }
+}
+
+.craft-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--swatch);
+}
+
+.craft-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.craft-year {
+  font: var(--t-num);
+  color: var(--c-ink-3);
+}
+
 /* ---- Time controls ------------------------------------------------------------------------ */
 
 .time-text {
@@ -534,9 +655,9 @@
   position: fixed;
   top: 72px;
   right: max(var(--s-4), env(safe-area-inset-right));
-  bottom: 96px;
+  bottom: calc(var(--hud-bottom) + 16px);
   z-index: var(--z-panel);
-  width: min(392px, calc(100vw - 32px));
+  width: min(392px, calc(var(--vw) - 32px));
   display: flex;
   flex-direction: column;
   border: 1px solid var(--c-hairline);
@@ -692,6 +813,164 @@
   margin: var(--s-2) 0 0;
   font: var(--t-body-sm);
   color: var(--c-ink-3);
+}
+
+/* Live observation (Hubble, Webb). */
+.live-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-ink-3);
+}
+
+.pill-live[aria-pressed='true'] {
+  border-color: rgba(255, 96, 80, 0.6);
+  background: rgba(255, 96, 80, 0.12);
+}
+
+.pill-live[aria-pressed='true'] .live-dot,
+.live-status[data-state='now'] .live-dot {
+  background: #ff6050;
+  box-shadow: 0 0 0 0 rgba(255, 96, 80, 0.6);
+  animation: live-pulse 1.8s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(255, 96, 80, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-live[aria-pressed='true'] .live-dot,
+  .live-status[data-state='now'] .live-dot {
+    animation: none;
+  }
+}
+
+.live-obs {
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-surface);
+  background: var(--c-chip);
+}
+
+.live-obs[hidden] {
+  display: none;
+}
+
+.live-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font: var(--t-cap-xs);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--c-ink-2);
+}
+
+.panel .live-target {
+  margin: var(--s-2) 0 0;
+  font: var(--t-body);
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-ink);
+}
+
+.live-stats {
+  margin-top: var(--s-4);
+}
+
+.live-title {
+  margin: var(--s-4) 0 0;
+  font: var(--t-body-sm);
+  color: var(--c-ink);
+}
+
+.live-meta {
+  margin: var(--s-1) 0 0;
+  font: var(--t-body-sm);
+  color: var(--c-ink-3);
+}
+
+.live-msg {
+  margin: 0 0 var(--s-3);
+  font: var(--t-body-sm);
+  color: var(--c-ink-2);
+}
+
+/* Sky cutout at the target, with the reticle the Space Telescope Live page draws. */
+.live-sky {
+  position: relative;
+  aspect-ratio: 1;
+  margin: var(--s-3) 0 var(--s-2);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #05060a;
+}
+
+.live-sky img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.live-sky[data-state='ready'] img {
+  opacity: 1;
+}
+
+.live-reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+}
+
+.live-sky[data-state='ready'] .live-reticle {
+  opacity: 1;
+}
+
+.live-sky-error {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  margin: 0;
+  padding: var(--s-3);
+  text-align: center;
+  font: var(--t-body-sm);
+  color: var(--c-ink-2);
+}
+
+.live-sky[data-state='error'] .live-sky-error {
+  display: grid;
+}
+
+.live-fov {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+  font: var(--t-cap-xs);
+  color: var(--c-ink-3);
+}
+
+.live-fov .pill[aria-pressed='true'] {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
 }
 
 .panel-live {
@@ -903,7 +1182,7 @@
   background: none;
   color: var(--c-ink-2);
   font: var(--t-cap-xs);
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-zoom));
   letter-spacing: 0.16em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -933,8 +1212,29 @@
 .label[data-kind='moon'],
 .label[data-kind='dwarf'],
 .label[data-kind='comet'] {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-zoom));
   color: var(--c-ink-3);
+}
+
+/* A craft's label carries its colour (the same as its path and marker); the name on its path is the quiet twin. */
+.label[data-kind='craft']::before,
+.label[data-kind='path']::before {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--swatch, currentColor);
+  opacity: 1;
+}
+
+.label[data-kind='path'] {
+  font-size: calc(9px * var(--ui-zoom));
+  letter-spacing: 0.14em;
+  color: var(--c-ink-3);
+}
+
+.label[data-kind='path'][data-state='selected'],
+.label[data-kind='path'][data-state='hover'] {
+  color: var(--c-ink);
 }
 
 .label[data-state='hover'] {
@@ -950,7 +1250,7 @@
 .hint {
   position: fixed;
   left: 50%;
-  bottom: 92px;
+  bottom: calc(var(--hud-bottom) + 12px);
   z-index: var(--z-hud);
   display: flex;
   gap: var(--s-5);
@@ -1021,6 +1321,10 @@
   color: var(--c-ink-3);
 }
 
+.popover label + h3 {
+  margin-top: var(--s-4);
+}
+
 .popover .segmented {
   width: 100%;
   border: 1px solid var(--c-hairline);
@@ -1060,7 +1364,7 @@
   left: 50%;
   top: 72px;
   z-index: var(--z-popover);
-  max-width: min(480px, calc(100vw - 32px));
+  max-width: min(480px, calc(var(--vw) - 32px));
   padding: var(--s-3) var(--s-4);
   border: 1px solid var(--c-hairline);
   border-radius: var(--r-surface);
@@ -1082,40 +1386,102 @@
 
 /* ---- Responsive ------------------------------------------------------------------------------------- */
 
-@media (max-width: 1640px) {
-  .hud-bottom {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      'nav nav'
-      'time tools';
-  }
-  .hint {
-    bottom: 140px;
-  }
-  .panel {
-    bottom: 152px;
-  }
+/*
+ * What fits is measured (ui/UiScale.ts) and set as classes on <html>, one step at a
+ * time: stack-bottom (nav above the clusters), stack-3 (one column), stack-wrap
+ * (clusters wrap); top-compact (icons only, labels stay as tooltips), top-tight
+ * (no readout, no optional layers). vw-<n>: window narrower than n interface px.
+ */
+:root.stack-bottom .hud-bottom {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'nav nav'
+    'time tools';
 }
 
-/* Narrower screens: the top bar keeps icons only (labels stay as tooltips). */
-@media (max-width: 1180px) {
-  .layer .layer-label,
-  .search-trigger .layer-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .layer,
-  .search-trigger {
-    padding: 0 10px;
-  }
+/* The nav has a row of its own: wider than the window, it scrolls sideways. */
+:root.stack-bottom .nav {
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
 }
 
-@media (max-width: 760px) {
+:root.stack-bottom .nav::-webkit-scrollbar {
+  display: none;
+}
+
+:root.stack-3 .hud-bottom {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'nav'
+    'tools'
+    'time';
+}
+
+:root.stack-3 .hud-bottom > .time,
+:root.stack-3 .hud-bottom > .tools {
+  justify-self: center;
+}
+
+:root.stack-wrap .hud-bottom > .time,
+:root.stack-wrap .hud-bottom > .tools {
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 24px;
+}
+
+:root.top-compact .layer .layer-label,
+:root.top-compact .search-trigger .layer-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:root.top-compact .layer,
+:root.top-compact .search-trigger {
+  padding: 0 10px;
+}
+
+:root.top-tight .readout,
+:root.top-tight .layers .tool-optional {
+  display: none;
+}
+
+/* Phone widths: no title, closer buttons. */
+:root.top-min .brand {
+  display: none;
+}
+
+:root.top-min .hud-top {
+  justify-content: flex-end;
+}
+
+:root.top-min .top-right {
+  gap: var(--s-1);
+}
+
+:root.top-min .layer,
+:root.top-min .search-trigger {
+  padding: 0 8px;
+}
+
+:root.vw-760 {
+  /* The popovers open from the window edge, not from their buttons. */
+  .popover {
+    position: fixed;
+    top: calc(max(var(--s-4), env(safe-area-inset-top)) + 52px);
+    right: var(--s-2);
+    max-width: calc(var(--vw) - 16px);
+  }
   .readout {
+    display: none;
+  }
+  .layers .tool-optional {
     display: none;
   }
   .top-right {
@@ -1154,7 +1520,6 @@
     display: grid;
     gap: var(--s-1);
     text-align: center;
-    bottom: 150px;
   }
   .hint li:last-child {
     display: none;
@@ -1167,7 +1532,7 @@
     right: max(var(--s-2), env(safe-area-inset-right));
     bottom: max(var(--s-2), env(safe-area-inset-bottom));
     width: auto;
-    max-height: 52dvh;
+    max-height: calc(var(--dvh) * 0.52);
     transform: translateY(calc(100% + 16px));
   }
   .panel-title {
@@ -1325,8 +1690,8 @@
   position: absolute;
   left: 50%;
   bottom: calc(max(var(--s-5), env(safe-area-inset-bottom)) + 66px);
-  width: min(640px, calc(100vw - 2 * var(--gutter)));
-  max-height: min(62vh, 560px);
+  width: min(640px, calc(var(--vw) - 2 * var(--gutter)));
+  max-height: min(calc(var(--vh) * 0.62), 560px);
   overflow-y: auto;
   padding: var(--s-4) var(--s-5) var(--s-5);
   border: 1px solid var(--c-hairline);
@@ -1398,7 +1763,7 @@
   position: absolute;
   left: 50%;
   bottom: calc(max(var(--s-5), env(safe-area-inset-bottom)) + 62px);
-  max-width: calc(100vw - 2 * var(--gutter));
+  max-width: calc(var(--vw) - 2 * var(--gutter));
   overflow-x: auto;
   scrollbar-width: none;
   transform: translate(-50%, 6px);
@@ -1420,8 +1785,8 @@
   position: absolute;
   left: var(--gutter);
   bottom: 140px;
-  width: min(400px, calc(100vw - 2 * var(--gutter)));
-  max-height: calc(100vh - 240px);
+  width: min(400px, calc(var(--vw) - 2 * var(--gutter)));
+  max-height: calc(var(--vh) - 240px);
   overflow-y: auto;
   padding: var(--s-4) var(--s-4) var(--s-4) var(--s-5);
   border: 1px solid var(--c-hairline);
@@ -1505,14 +1870,14 @@
   text-align: right;
 }
 
-@media (max-width: 760px) {
+:root.vw-760 {
   .galaxy-credit { display: none; }
   .galaxy-card { bottom: 88px; }
   .galaxy-readout { min-width: 0; }
 }
 
 /* Narrow screens: the galaxy bar drops the distance readout and camera labels. */
-@media (max-width: 1100px) {
+:root.vw-1100 {
   .galaxy-readout { display: none; }
   .galaxy-bar .pill span { display: none; }
 }
@@ -1523,9 +1888,9 @@
   position: fixed;
   top: 112px;
   left: max(var(--s-4), env(safe-area-inset-left));
-  bottom: 96px;
+  bottom: calc(var(--hud-bottom) + 16px);
   z-index: var(--z-panel);
-  width: min(380px, calc(100vw - 32px));
+  width: min(380px, calc(var(--vw) - 32px));
   overflow-y: auto;
   padding: var(--s-4);
   border: 1px solid var(--c-hairline);
@@ -1651,7 +2016,7 @@
   pointer-events: none;
 }
 .pg-toast {
-  max-width: min(560px, calc(100vw - 32px));
+  max-width: min(560px, calc(var(--vw) - 32px));
   padding: 10px 16px;
   border: 1px solid rgba(242, 179, 94, 0.5);
   border-radius: 12px;
@@ -1692,7 +2057,7 @@
   display: none;
   align-items: center;
   gap: 8px;
-  max-width: min(200px, calc(100vw - 32px));
+  max-width: min(200px, calc(var(--vw) - 32px));
   height: 40px;
   white-space: nowrap;
   padding: 0 14px;

@@ -92,6 +92,10 @@ export class SpacecraftLayer {
     this.hiddenByPlayground = active;
   }
 
+  craft(id: string): Spacecraft | undefined {
+    return this.crafts.find((c) => c.id === id);
+  }
+
   highlight(selectedId: string | null, hoveredId: string | null): void {
     for (const c of this.crafts) c.highlight = c.id === selectedId ? 1 : c.id === hoveredId ? 0.5 : 0;
   }

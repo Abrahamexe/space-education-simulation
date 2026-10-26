@@ -3,22 +3,25 @@ import { strings } from '../i18n';
 import { CelestialBody } from '../bodies/CelestialBody';
 import { Moon } from '../bodies/Moon';
 import { MAIN_BODIES } from '../core/Navigator';
+import { CraftMenu } from './CraftMenu';
 import type { UiContext } from './context';
 
 const SUN_SWATCH = '#f2b35e';
+const CRAFT_ID = 'craft';
 
 /**
  * Bottom navigation (PLAN §7.2): one button per major body with a small
  * swatch of its orbit colour (identity, not decoration). A single gold
  * indicator slides to the current body; selecting a moon highlights its
- * planet. Buttons fly the camera to the body.
+ * planet. Buttons fly the camera to the body. The last button opens the
+ * spacecraft list (CraftMenu); a selected craft highlights it.
  */
 export class NavBar {
   readonly el: HTMLElement;
   private readonly indicator: HTMLElement;
   private readonly items = new Map<string, HTMLButtonElement>();
 
-  constructor(ctx: UiContext) {
+  constructor(ctx: UiContext, ensureCraftMode: () => void = () => {}) {
     const el = document.createElement('nav');
     el.className = 'nav';
     el.setAttribute('aria-label', strings().nav.label);
@@ -43,6 +46,13 @@ export class NavBar {
       el.appendChild(b);
     }
 
+    const craft = new CraftMenu(ctx, ensureCraftMode);
+    const sep = document.createElement('span');
+    sep.className = 'nav-sep';
+    sep.setAttribute('aria-hidden', 'true');
+    this.items.set(CRAFT_ID, craft.button);
+    el.append(sep, craft.button);
+
     this.indicator = document.createElement('span');
     this.indicator.className = 'nav-indicator';
     this.indicator.setAttribute('aria-hidden', 'true');
@@ -52,6 +62,7 @@ export class NavBar {
     ctx.selection.onSelect((e) => {
       let id = e?.id ?? null;
       if (e?.body instanceof Moon) id = (e.body.parent as CelestialBody).id;
+      else if (e?.kind === 'craft') id = CRAFT_ID;
       this.setActive(id);
     });
     window.addEventListener('resize', () => this.setActive(this.activeId));

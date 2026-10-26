@@ -50,6 +50,8 @@ export interface BodyInfo {
   perihelionJd: number | null;
   /** Spacecraft: also show the live distance (and signal delay) from Earth. */
   craft?: boolean;
+  /** Telescopes with a live-observation feed (Space Telescope Live). */
+  live?: 'hubble' | 'webb';
   /** Source line when it differs from the default. */
   source?: string;
 }
@@ -144,6 +146,8 @@ export function buildInfo(e: FocusEntry, system: SolarSystem): BodyInfo {
     info.text = def.text;
     info.fact = def.fact;
     info.craft = true;
+    if (def.id === 'hubble') info.live = 'hubble';
+    if (def.id === 'jwst') info.live = 'webb';
     info.source = 'schematic' in def.model ? p.craftSourcesSchematic : p.craftSources;
     stats.push(
       { label: st.agency, value: def.agency },

@@ -18,6 +18,7 @@ import type { Engine } from '../core/Engine';
 import type { Playground, LogEntry, FallStatus } from '../playground/Playground';
 import { formatNumber as fmt, fmtDays } from '../playground/Playground';
 import { icon } from './icons';
+import { uiScale } from './UiScale';
 import { isTypingOrChord } from './Toolbar';
 
 const AU_DAY_TO_KM_S = KM_PER_AU / 86_400;
@@ -145,7 +146,7 @@ class Placement {
   private readonly onMove = (e: PointerEvent) => {
     if (!this.preset) return;
     e.stopImmediatePropagation();
-    this.tip.style.transform = `translate(${e.clientX + 16}px, ${e.clientY + 14}px)`;
+    this.tip.style.transform = `translate(${(e.clientX + 16) / uiScale.zoom}px, ${(e.clientY + 14) / uiScale.zoom}px)`;
     if (!this.start) return;
     const abs = this.hit(e.clientX, e.clientY) ?? this.start.abs;
     const pos = this.arrow.geometry.getAttribute('position') as BufferAttribute;

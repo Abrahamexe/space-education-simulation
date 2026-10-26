@@ -34,9 +34,6 @@ export interface CraftDef {
   trailYears?: number;
 }
 
-const TEL: [number, number, number] = [0.55, 0.8, 1.0];
-const PROBE: [number, number, number] = [1.0, 0.78, 0.45];
-
 export const SPACECRAFT: CraftDef[] = [
   {
     id: 'hubble',
@@ -55,7 +52,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Evrenin genişleme hızının ölçülmesinde, karanlık enerjinin keşfinde ve Hubble Derin Alan görüntüleriyle en uzak galaksilerin bulunmasında rol oynadı.',
     ],
     fact: 'Dünya çevresini yaklaşık 95 dakikada bir dolanıyor; saniyede 7,5 km hızla.',
-    color: TEL,
+    color: [0.45, 0.72, 1],
   },
   {
     id: 'jwst',
@@ -74,7 +71,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Dünya’dan 1,5 milyon km uzaktaki L2 noktasının çevresinde, Ay’ın yörüngesinden geniş bir hale yörüngesinde dolanıyor; kalkan Güneş’i, Dünya’yı ve Ay’ı hep aynı taraftan kesiyor.',
     ],
     fact: 'Kalkanın sıcak yüzü ~85 °C iken soğuk yüzü −233 °C’ye iniyor.',
-    color: TEL,
+    color: [1, 0.82, 0.28],
   },
   {
     id: 'chandra',
@@ -93,7 +90,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Uzay mekiğiyle fırlatılan en ağır yüklerden biriydi.',
     ],
     fact: 'Basık yörüngesi 64 saat sürüyor; zamanının çoğunu Van Allen kuşaklarının dışında geçiriyor.',
-    color: TEL,
+    color: [0.72, 0.55, 1],
   },
   {
     id: 'spitzer',
@@ -112,7 +109,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Dünya yörüngesine değil, Güneş çevresinde Dünya’nın arkasından giden bir yörüngeye yerleştirildi; yıllar içinde Dünya’dan giderek uzaklaştı.',
     ],
     fact: 'Soğutucu sıvı helyumu 2009’da bitti; sonraki 10 yıl “sıcak” görevle çalışmayı sürdürdü.',
-    color: TEL,
+    color: [1, 0.42, 0.42],
     trailYears: 1.5,
   },
   {
@@ -132,7 +129,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Binlerce ötegezegen keşfetti; gökadamızda yıldızlardan çok gezegen olduğunu gösterdi.',
     ],
     fact: 'Doğrulanmış 2 600’den fazla gezegen buldu.',
-    color: TEL,
+    color: [0.4, 0.9, 0.5],
     trailYears: 1.5,
   },
   {
@@ -152,7 +149,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Yakın ve parlak yıldızların çevresindeki gezegenleri buluyor; ayrıntılı incelemeyi Webb gibi büyük teleskoplara bırakıyor.',
     ],
     fact: 'Yörüngesi Ay’ın çekimiyle kararlı kalıyor; yakıt harcamadan on yıllarca sürebilir.',
-    color: TEL,
+    color: [0.25, 0.88, 0.85],
   },
   {
     id: 'gaia',
@@ -171,7 +168,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Kendi ekseni çevresinde yavaşça dönerek gökyüzünü tekrar tekrar taradı. 2025 başında gözlemlerini bitirdi ve kapatıldı.',
     ],
     fact: 'Konum ölçümleri, Ay’daki bir madeni paranın kalınlığını Dünya’dan görmek kadar hassas.',
-    color: TEL,
+    color: [0.9, 0.6, 0.95],
     trailYears: 1.5,
   },
   {
@@ -191,7 +188,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Amacı karanlık madde ve karanlık enerjinin evrenin yapısını nasıl biçimlendirdiğini anlamak.',
     ],
     fact: 'Tek bir görüntüsü, Hubble’ın bir görüntüsünden yaklaşık yüz kat geniş bir alanı kapsıyor.',
-    color: TEL,
+    color: [0.78, 0.92, 0.3],
   },
   {
     id: 'iss',
@@ -210,7 +207,7 @@ export const SPACECRAFT: CraftDef[] = [
       '2 Kasım 2000’den beri sürekli olarak insanlı.',
     ],
     fact: 'Günde yaklaşık 16 kez Dünya’nın çevresini dolanıyor; mürettebat her gün 16 gün doğumu görüyor.',
-    color: [0.85, 0.9, 1.0],
+    color: [0.95, 0.95, 1],
   },
   {
     id: 'voyager1',
@@ -229,7 +226,7 @@ export const SPACECRAFT: CraftDef[] = [
       '1990’da Dünya’yı 6 milyar km öteden “Soluk Mavi Nokta” olarak fotoğrafladı. Ağustos 2012’de güneş rüzgârının sınırını geçti.',
     ],
     fact: 'Üzerinde Dünya’nın seslerini ve görüntülerini taşıyan altın kaplı bir plak var.',
-    color: PROBE,
+    color: [1, 0.6, 0.2],
   },
   {
     id: 'voyager2',
@@ -248,7 +245,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Uranüs ve Neptün’ün bugün bildiğimiz yakın görüntülerinin neredeyse tamamı ondan geliyor. Kasım 2018’de yıldızlararası uzaya geçti.',
     ],
     fact: 'Gezegenlerin 176 yılda bir gelen dizilişinden yararlanıp her geçişte hız kazandı.',
-    color: PROBE,
+    color: [1, 0.4, 0.7],
   },
   {
     id: 'pioneer10',
@@ -267,7 +264,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Üzerindeki Pioneer plakası, insanları ve Dünya’nın yerini gösteren bir mesaj taşıyor.',
     ],
     fact: 'Boğa takımyıldızındaki Aldebaran yönünde ilerliyor.',
-    color: PROBE,
+    color: [0.9, 0.8, 0.55],
   },
   {
     id: 'pioneer11',
@@ -286,7 +283,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Satürn’ün halkalarının arasından geçişin güvenli olduğunu göstererek Voyager’lara yol açtı.',
     ],
     fact: 'Kartal (Aquila) takımyıldızı yönünde ilerliyor.',
-    color: PROBE,
+    color: [0.6, 0.9, 0.7],
   },
   {
     id: 'newhorizons',
@@ -305,7 +302,7 @@ export const SPACECRAFT: CraftDef[] = [
       '1 Ocak 2019’da Kuiper kuşağı cismi Arrokoth’un yanından geçti: ziyaret edilen en uzak cisim.',
     ],
     fact: 'Fırlatıldığında Ay’ın yörüngesini dokuz saatte geçti; Dünya’dan en hızlı ayrılan araçtı.',
-    color: PROBE,
+    color: [0.35, 0.55, 1],
   },
   {
     id: 'parker',
@@ -324,7 +321,7 @@ export const SPACECRAFT: CraftDef[] = [
       '11,4 cm kalınlığındaki karbon köpük ısı kalkanı ~1 370 °C’ye dayanırken arkasındaki aletler oda sıcaklığında kalıyor.',
     ],
     fact: 'Güneş’e en yakın geçişinde saatte ~690 000 km hızla insan yapımı en hızlı nesne oldu.',
-    color: PROBE,
+    color: [1, 0.3, 0.25],
     trailYears: 0.25,
   },
   {
@@ -344,7 +341,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Jüpiter’de güneş enerjisiyle çalışan ilk araç: üç kanadındaki paneller Güneş’e dönük kalsın diye dakikada birkaç tur dönüyor.',
     ],
     fact: 'Elektroniği, radyasyona karşı titanyum bir kasa içinde korunuyor.',
-    color: PROBE,
+    color: [1, 0.7, 0.5],
   },
   {
     id: 'cassini',
@@ -363,7 +360,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Enceladus’un buz gayzerlerini ve altındaki okyanusu, Titan’ın metan göllerini keşfetti. Görevini Satürn’ün atmosferine dalarak bitirdi.',
     ],
     fact: 'Son yıllarında Satürn ile halkaları arasındaki boşluktan 22 kez geçti.',
-    color: PROBE,
+    color: [0.72, 0.72, 0.78],
   },
   {
     id: 'clipper',
@@ -382,7 +379,7 @@ export const SPACECRAFT: CraftDef[] = [
       'Jüpiter yörüngesinden Europa’nın yanından onlarca kez geçerek buz kabuğunun altındaki okyanusun yaşama elverişli olup olmadığını araştıracak.',
     ],
     fact: 'Şematik model: NASA bu araç için ücretsiz bir 3D model yayımlamadı.',
-    color: PROBE,
+    color: [0.45, 1, 0.85],
   },
   {
     id: 'juice',
@@ -401,6 +398,6 @@ export const SPACECRAFT: CraftDef[] = [
       'Yolculuğunda Dünya, Ay ve Venüs’ün çekiminden hız kazanıyor.',
     ],
     fact: 'Şematik model: ESA bu araç için ücretsiz bir 3D model yayımlamadı.',
-    color: PROBE,
+    color: [0.75, 0.9, 1],
   },
 ];

@@ -1,11 +1,15 @@
 import { strings } from '../i18n';
 import { CelestialBody } from '../bodies/CelestialBody';
 import type { FocusEntry } from '../bodies/SolarSystem';
+import { Vector3 } from 'three';
 import { KM_PER_AU } from '../config/astro';
+import { equatorialToScene } from '../physics/frames';
+import { SKY_FOVS, fetchObservation, formatDec, formatRa, skyCutoutUrl, type Observation, type Telescope } from '../spacecraft/LiveObservation';
 import { TIME_RATE_PRESETS, julianToDate } from '../core/Time';
 import { buildInfo, type BodyInfo, type Comparison } from './bodyInfo';
 import { au, km, lightTime } from './format';
 import { icon } from './icons';
+import { uiScale } from './UiScale';
 import type { UiContext } from './context';
 
 /** Bars span ±3 decades (0.001× … 1000× Earth) on a log scale. */
@@ -15,6 +19,9 @@ const LIVE_REFRESH_MS = 250;
 const PASSAGE_LEAD_DAYS = 30;
 /** …and plays at a day per second, so the approach unfolds in about a minute. */
 const PASSAGE_RATE_ID = 'dayPerSecond';
+
+/** Live observation: refetched this often while on. */
+const LIVE_POLL_MS = 60_000;
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
@@ -45,6 +52,11 @@ export class InfoPanel {
   private current: FocusEntry | null = null;
   private liveEl: HTMLElement | null = null;
   private lastLive = 0;
+  /** Live observation of the shown telescope (Hubble, Webb), when switched on. */
+  private info: BodyInfo | null = null;
+  private obs: { telescope: Telescope; craftId: string; data: Observation | null; state: 'loading' | 'ready' | 'error'; timer: number; token: number; fov: number } | null = null;
+  private obsEl: HTMLElement | null = null;
+  private obsToken = 0;
 
   constructor(private readonly ctx: UiContext) {
     const p = strings().panel;
@@ -58,7 +70,16 @@ export class InfoPanel {
     this.scroll = el.querySelector('.panel-scroll') as HTMLElement;
     (el.querySelector('.panel-close') as HTMLElement).addEventListener('click', () => ctx.selection.select(null));
     el.addEventListener('click', (e) => {
-      const passage = (e.target as HTMLElement).closest('[data-passage]') as HTMLElement | null;
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-live-toggle]')) return this.toggleObservation();
+      if (t.closest('[data-live-retry]')) return this.pollObservation();
+      if (t.closest('[data-live-look]')) return this.lookAtTarget();
+      const fov = t.closest<HTMLElement>('[data-live-fov]');
+      if (fov && this.obs) {
+        this.obs.fov = Number(fov.dataset.liveFov);
+        return this.renderObservation();
+      }
+      const passage = t.closest('[data-passage]') as HTMLElement | null;
       if (passage && this.current) {
         const time = ctx.engine.time;
         time.setJd(Number(passage.dataset.passage) - PASSAGE_LEAD_DAYS);
@@ -90,9 +111,11 @@ export class InfoPanel {
     if (!e) {
       this.el.dataset.open = 'false';
       this.current = null;
+      this.stopObservation();
       return;
     }
     if (e.id === this.current?.id) return;
+    this.stopObservation();
     const wasOpen = this.el.dataset.open === 'true';
     this.current = e;
     this.el.dataset.entering = String(!wasOpen);
@@ -118,7 +141,7 @@ export class InfoPanel {
     const HANDLE_ZONE_PX = 120;
     let start: { y: number; t: number; id: number } | null = null;
     let dy = 0;
-    const isSheet = () => window.matchMedia('(max-width: 760px)').matches;
+    const isSheet = () => uiScale.width <= 760;
     this.el.addEventListener('pointerdown', (e) => {
       if (!isSheet() || e.pointerType === 'mouse') return;
       const top = this.el.getBoundingClientRect().top;
@@ -134,7 +157,7 @@ export class InfoPanel {
       if (dy > 4) {
         this.el.dataset.dragging = 'true';
         this.el.setPointerCapture(e.pointerId);
-        this.el.style.transform = `translateY(${dy}px)`;
+        this.el.style.transform = `translateY(${dy / uiScale.zoom}px)`;
       }
     });
     const end = (e: PointerEvent) => {
@@ -162,12 +185,17 @@ export class InfoPanel {
         <h2 class="panel-title" id="panel-title">${esc(info.name)}</h2>
         ${info.subtitle ? `<p class="panel-sub">${esc(info.subtitle)}</p>` : ''}
         <div class="panel-actions"><button type="button" class="pill" data-fly="${info.id}">${icon('target')}${p.flyTo}</button>${
+          info.live
+            ? `<button type="button" class="pill pill-live" data-live-toggle aria-pressed="false"><span class="live-dot" aria-hidden="true"></span>${p.live.button}</button>`
+            : ''
+        }${
           info.perihelionJd !== null
             ? `<button type="button" class="pill" data-passage="${info.perihelionJd}" title="${esc(p.watchPassageNote)}">${icon('now')}${p.watchPassage(julianToDate(info.perihelionJd).getUTCFullYear())}</button>`
             : ''
         }</div>
         ${info.perihelionJd !== null ? `<p class="panel-note">${esc(p.watchPassageNote)}</p>` : ''}
       </header>`);
+    if (info.live) parts.push('<section class="live-obs" aria-live="polite" hidden></section>');
     if (info.moons.length) {
       parts.push(`
         <section class="moons" aria-labelledby="moons-title">
@@ -205,8 +233,137 @@ export class InfoPanel {
     [...this.scroll.children].forEach((c, i) => (c as HTMLElement).style.setProperty('--i', String(i)));
     this.el.setAttribute('aria-labelledby', 'panel-title');
     this.liveEl = this.scroll.querySelector('.panel-live');
+    this.obsEl = this.scroll.querySelector('.live-obs');
+    this.info = info;
     this.lastLive = 0;
     this.updateLive();
+  }
+
+  // ---- Live observation (Hubble, Webb) -----------------------------------------------
+
+  private toggleObservation(): void {
+    if (this.obs) return this.stopObservation();
+    const telescope = this.info?.live;
+    const entry = this.current;
+    if (!telescope || !entry) return;
+    this.obs = { telescope, craftId: entry.id, data: null, state: 'loading', timer: window.setInterval(() => this.pollObservation(), LIVE_POLL_MS), token: ++this.obsToken, fov: SKY_FOVS[1] };
+    this.scroll.querySelector('[data-live-toggle]')?.setAttribute('aria-pressed', 'true');
+    this.renderObservation();
+    this.pollObservation();
+  }
+
+  private stopObservation(): void {
+    const o = this.obs;
+    if (!o) return;
+    window.clearInterval(o.timer);
+    this.ctx.spacecraft?.craft(o.craftId)?.setPointing(null);
+    this.obs = null;
+    this.scroll.querySelector('[data-live-toggle]')?.setAttribute('aria-pressed', 'false');
+    if (this.obsEl) this.obsEl.hidden = true;
+  }
+
+  private pollObservation(): void {
+    const o = this.obs;
+    if (!o) return;
+    const token = o.token;
+    if (!o.data) {
+      o.state = 'loading';
+      this.renderObservation();
+    }
+    void fetchObservation(o.telescope).then((data) => {
+      if (this.obs?.token !== token) return;
+      // Same observation as shown: leave the card (and its sky image) alone.
+      const same = !!o.data && !!data && o.state === 'ready' && +o.data.start === +data.start && o.data.raDeg === data.raDeg && o.data.decDeg === data.decDeg;
+      if (data) {
+        o.data = data;
+        o.state = 'ready';
+        this.ctx.spacecraft?.craft(o.craftId)?.setPointing(equatorialToScene(data.raDeg, data.decDeg));
+      } else if (!o.data) o.state = 'error';
+      if (!same) this.renderObservation();
+    });
+  }
+
+  /** The camera behind and beside the telescope, so the beam runs away ahead of it. */
+  private lookAtTarget(): void {
+    const d = this.obs?.data;
+    const entry = this.current;
+    if (!d || !entry) return;
+    const to = equatorialToScene(d.raDeg, d.decDeg);
+    const up = new Vector3(0, 1, 0);
+    const side = new Vector3().crossVectors(to, up);
+    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+    side.normalize();
+    const direction = to.clone().multiplyScalar(-0.8).addScaledVector(side, 0.5).addScaledVector(up, 0.25).normalize();
+    void this.ctx.engine.rig.flyTo(entry.body, { distance: this.ctx.nav.framingDistance(entry), direction });
+  }
+
+  private renderObservation(): void {
+    const el = this.obsEl;
+    const o = this.obs;
+    if (!el || !o) return;
+    const L = strings().panel.live;
+    el.hidden = false;
+    if (!o.data) {
+      el.innerHTML =
+        o.state === 'error'
+          ? `<p class="live-msg">${L.error}</p><button type="button" class="pill" data-live-retry>${L.retry}</button>`
+          : `<p class="live-msg">${L.loading}</p>`;
+      return;
+    }
+    const d = o.data;
+    const now = Date.now();
+    const status = now < +d.start ? 'next' : now > +d.end ? 'last' : 'now';
+    const hm = (t: Date) => t.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const day = d.start.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+    const kind = d.targetCategory ? (L.categories[d.targetCategory] ?? d.targetCategory) : null;
+    const row = (k: string, v: string, attr = '') => `<div><dt>${esc(k)}</dt><dd${attr}>${v}</dd></div>`;
+    el.innerHTML = `
+      <p class="live-status" data-state="${status}"><span class="live-dot" aria-hidden="true"></span>${L.status[status]}</p>
+      ${d.targetName ? `<h3 class="live-target">${esc(d.targetName)}</h3>` : ''}
+      <figure class="live-sky" data-state="loading">
+        <img alt="${esc(L.sky.alt)}" src="${skyCutoutUrl(d.raDeg, d.decDeg, o.fov)}" width="480" height="480" decoding="async">
+        <span class="live-reticle" aria-hidden="true"></span>
+        <p class="live-sky-error">${L.sky.error}</p>
+      </figure>
+      <div class="live-fov" role="group" aria-label="${esc(L.sky.fov)}">
+        <span>${L.sky.fov}</span>
+        ${SKY_FOVS.map((f) => `<button type="button" class="pill" data-live-fov="${f}" aria-pressed="${f === o.fov}">${f >= 1 ? `${f}°` : `${Math.round(f * 60)}′`}</button>`).join('')}
+      </div>
+      <dl class="stats live-stats">
+        ${kind ? row(L.kind, esc(kind)) : ''}
+        ${d.instruments.length ? row(L.instrument, esc(d.instruments.join(', '))) : ''}
+        ${row(L.coords, `${formatRa(d.raDeg)}<br>${formatDec(d.decDeg)}`)}
+        ${row(L.time, `${esc(day)}<br>${hm(d.start)} – ${hm(d.end)}`)}
+        ${row(status === 'next' ? L.remainNext : L.remain, '', ' data-lo="remain"')}
+      </dl>
+      ${d.title ? `<p class="live-title">${esc(d.title)}</p>` : ''}
+      <p class="live-meta">${[d.programType, d.programId ? `#${d.programId}` : null, d.science, d.investigator].filter(Boolean).map((s) => esc(String(s))).join(' · ')}</p>
+      <div class="panel-actions"><button type="button" class="pill" data-live-look>${icon('target')}${L.lookAt}</button></div>
+      <p class="panel-note">${L.note}</p>`;
+    const sky = el.querySelector('.live-sky') as HTMLElement;
+    const img = sky.querySelector('img') as HTMLImageElement;
+    img.addEventListener('load', () => (sky.dataset.state = 'ready'));
+    img.addEventListener('error', () => (sky.dataset.state = 'error'));
+    this.updateObservation();
+  }
+
+  /** Countdown to the end of the exposure (or to its start). */
+  private updateObservation(): void {
+    const d = this.obs?.data;
+    const el = this.obsEl?.querySelector('[data-lo="remain"]');
+    if (!d || !el) return;
+    const now = Date.now();
+    // The exposure began (or ended) while the card stayed: redraw it in its new state.
+    const status = now < +d.start ? 'next' : now > +d.end ? 'last' : 'now';
+    if (this.obsEl?.querySelector('.live-status')?.getAttribute('data-state') !== status) return this.renderObservation();
+    const s = Math.round(((now < +d.start ? +d.start : +d.end) - now) / 1000);
+    if (s <= 0 && now > +d.end) {
+      el.textContent = strings().panel.live.done;
+      return;
+    }
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    el.textContent = h > 0 ? `${h} sa ${m} dk` : `${m} dk ${String(s % 60).padStart(2, '0')} sn`;
   }
 
   /** Real heliocentric distance and light time, refreshed a few times a second. */
@@ -215,6 +372,7 @@ export class InfoPanel {
     const now = performance.now();
     if (now - this.lastLive < LIVE_REFRESH_MS) return;
     this.lastLive = now;
+    if (this.obs) this.updateObservation();
     const body = this.current.body as Partial<CelestialBody> & { earthDistanceKm?: number };
     const d = body.heliocentricDistanceKm;
     if (typeof d !== 'number') return;

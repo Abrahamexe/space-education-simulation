@@ -11,11 +11,12 @@ import { TimeControls } from './TimeControls';
 import { Help } from './Help';
 import { Search } from './Search';
 import { Layers, Settings, Toolbar } from './Toolbar';
+import { uiScale } from './UiScale';
 import type { UiContext } from './context';
 
 const READOUT_REFRESH_MS = 250;
 const NOTICE_MS = 5000;
-/** Must match the bottom-sheet breakpoint in hud.css. */
+/** Must match the bottom-sheet breakpoint (vw-760) in hud.css; interface pixels. */
 const MOBILE_MAX_WIDTH = 760;
 
 /**
@@ -65,28 +66,26 @@ export class Hud {
     // Spacecraft mode (U): the planets' lines and names give way to the craft and
     // their paths; switching it off brings back what was on before.
     let beforeCraft: { orbits: boolean; labels: boolean } | null = null;
+    const setCraftMode = (v: boolean) => {
+      if (!ctx.spacecraft || ctx.spacecraft.visible === v) return;
+      ctx.spacecraft.visible = v;
+      if (v) {
+        beforeCraft = { orbits: sys.showOrbits, labels: this.labels.show };
+        setOrbits(false);
+        this.labels.show = true;
+      } else if (beforeCraft) {
+        setOrbits(beforeCraft.orbits);
+        this.labels.show = beforeCraft.labels;
+        beforeCraft = null;
+      }
+      layers.sync();
+    };
     const layers = new Layers({
       orbits: { get: () => sys.showOrbits, set: setOrbits },
       labels: { get: () => this.labels.show, set: (v) => (this.labels.show = v) },
       belts: { get: () => sys.showBelts, set: (v) => (sys.showBelts = v) },
       galaxy: { get: () => ctx.galactic.enabled, set: (v) => (ctx.galactic.enabled = v) },
-      craft: {
-        get: () => ctx.spacecraft?.visible ?? false,
-        set: (v) => {
-          if (!ctx.spacecraft || ctx.spacecraft.visible === v) return;
-          ctx.spacecraft.visible = v;
-          if (v) {
-            beforeCraft = { orbits: sys.showOrbits, labels: this.labels.show };
-            setOrbits(false);
-            this.labels.show = true;
-          } else if (beforeCraft) {
-            setOrbits(beforeCraft.orbits);
-            this.labels.show = beforeCraft.labels;
-            beforeCraft = null;
-          }
-          layers.sync();
-        },
-      },
+      craft: { get: () => ctx.spacecraft?.visible ?? false, set: (v) => setCraftMode(v) },
       habitable: {
         get: () => science.habitableZones,
         set: (v) => {
@@ -105,7 +104,7 @@ export class Hud {
     // ---- Bottom ------------------------------------------------------------------
     const bottom = document.createElement('div');
     bottom.className = 'hud-bottom';
-    bottom.append(new TimeControls(ctx).el, new NavBar(ctx).el, new Toolbar(ctx).el);
+    bottom.append(new TimeControls(ctx).el, new NavBar(ctx, () => setCraftMode(true)).el, new Toolbar(ctx).el);
 
     const spacer = document.createElement('div');
     root.append(top, spacer, bottom);
@@ -116,11 +115,13 @@ export class Hud {
 
     document.body.append(this.labels.el, root, new InfoPanel(ctx).el, this.hint.el, this.notice);
     this.root = root;
+    uiScale.fit();
 
     ctx.engine.onFrame(() => this.updateReadout());
     // Keep the focused body in the open part of the screen while the panel shows.
     ctx.selection.onSelect((e) => requestAnimationFrame(() => this.updateViewShift(!!e)));
     window.addEventListener('resize', () => this.updateViewShift(!!ctx.selection.selected));
+    uiScale.onChange(() => requestAnimationFrame(() => this.updateViewShift(!!ctx.selection.selected)));
     // Free camera: the panel describes the body we just left, so close it,
     // and explain the new controls once per visit.
     ctx.engine.rig.onRelease(() => {
@@ -138,6 +139,7 @@ export class Hud {
   /** Staggered entrance and the first-run hint. */
   reveal(): void {
     this.root.classList.add('is-ready');
+    uiScale.fit();
     window.setTimeout(() => this.hint.show(), 1200);
   }
 
@@ -147,9 +149,11 @@ export class Hud {
       this.ctx.engine.setViewShift(0, 0);
       return;
     }
-    const sheet = window.innerWidth <= MOBILE_MAX_WIDTH;
-    if (sheet) this.ctx.engine.setViewShift(0, panel.offsetHeight / 2);
-    else this.ctx.engine.setViewShift((panel.offsetWidth + 16) / 2, 0);
+    const sheet = uiScale.width <= MOBILE_MAX_WIDTH;
+    // Window pixels: the panel's own size is in zoomed interface pixels.
+    const box = panel.getBoundingClientRect();
+    if (sheet) this.ctx.engine.setViewShift(0, box.height / 2);
+    else this.ctx.engine.setViewShift((box.width + 16 * uiScale.zoom) / 2, 0);
   }
 
   showNotice(text: string): void {
