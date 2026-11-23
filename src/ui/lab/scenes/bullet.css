@@ -1,0 +1,10 @@
+/* Bullet Cluster lab scene: only what the shared .lab-* classes do not already cover. */
+.bullet .bullet-canvas { display: block; width: 100%; max-width: 460px; height: auto; aspect-ratio: 460 / 300; margin: var(--s-2) 0; border-radius: 8px; background: #000; }
+.bullet .bullet-layers { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.bullet .bullet-layers .lab-check { display: inline-block; margin: 4px 0; }
+.bullet .bullet-sw { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }
+.bullet .bullet-sw-ring { border: 1px solid #fff; border-radius: 50%; background: none; }
+/* The label is long: put it on its own line above the slider. */
+.bullet .bullet-slider { flex-wrap: wrap; white-space: normal; }
+.bullet .bullet-slider-label { flex: 0 0 100%; }
+.bullet .bullet-slider output { width: 112px; }

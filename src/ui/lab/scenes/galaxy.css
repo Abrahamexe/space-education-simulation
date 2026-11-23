@@ -1,0 +1,46 @@
+/* Galaxy formation scene: canvases, layer swatches, readout grid and plot colours. */
+.gal .gal-views { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0 4px; }
+.gal .gal-views figure { margin: 0; }
+.gal .gal-views figcaption { margin-top: 3px; color: var(--c-ink-3); font-size: 11px; text-align: center; }
+.gal .gal-cv { display: block; width: 100%; border-radius: 8px; background: #05070d; border: 1px solid rgba(255, 255, 255, 0.08); }
+.gal .gal-layers { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 2px 0; }
+.gal .gal-layers .lab-check { margin: 3px 0; padding-left: 0; text-indent: 0; }
+.gal .gal-sw { display: inline-block; width: 10px; height: 10px; margin: 0 6px 0 -2px; border-radius: 50%; vertical-align: -1px; }
+.gal .gal-sw-dm { background: #3d7bff; }
+.gal .gal-sw-gas { background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); border-radius: 3px; width: 16px; }
+.gal .gal-sw-star { background: #ffe6bd; }
+.gal .gal-tbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; color: var(--c-ink-3); font-size: 11px; }
+.gal .gal-tbar i { flex: 1; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); }
+.gal .gal-stage { min-height: 3.4em; }
+.gal .gal-res { display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink-2); font-size: 12px; }
+.gal .gal-res select { padding: 4px 6px; border: 1px solid var(--c-hairline-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; background: var(--c-chip, rgba(255, 255, 255, 0.06)); color: var(--c-ink); font: inherit; }
+.gal .gal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin: 8px 0; }
+.gal .gal-stats div { display: flex; flex-direction: column; gap: 1px; padding: 5px 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.035); min-width: 0; }
+.gal .gal-stats span { color: var(--c-ink-3); font-size: 10.5px; line-height: 1.25; }
+.gal .gal-stats b { color: var(--c-ink); font: var(--t-num); font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.gal .gal-h { margin: 12px 0 0; color: var(--c-ink); font: var(--t-cap-xs); letter-spacing: var(--track-caps); text-transform: uppercase; }
+.gal .gal-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 4px; color: var(--c-ink-2); font-size: 11px; }
+.gal .gal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.gal .gal-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.gal .gal-legend i.gal-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.gal .gal-legend i.gal-dash { height: 0; border-top: 2px dashed rgba(255, 255, 255, 0.55); border-radius: 0; }
+.gal .gal-legend i.gal-dot2 { height: 0; border-top: 2px dotted #8fb8ff; border-radius: 0; }
+.gal .gal-method { margin-top: 8px; }
+.gal .gal-method ul { margin: 6px 0; padding-left: 16px; }
+.gal .gal-method li { margin: 4px 0; }
+
+.lab-plot .g-total { stroke: #7fffc4; fill: #7fffc4; }
+.lab-plot .g-dm { stroke: #5d8dff; fill: #5d8dff; }
+.lab-plot .g-gas { stroke: #ff6fc8; fill: #ff6fc8; }
+.lab-plot .g-star { stroke: #ffd27a; fill: #ffd27a; }
+.lab-plot .g-pts { stroke: none; fill: #fff; }
+.lab-plot .g-now { stroke: #5d8dff; fill: none; }
+.lab-plot .g-init { stroke: rgba(255, 255, 255, 0.55); stroke-dasharray: 5 4; fill: none; stroke-width: 1.5; }
+.lab-plot .g-nfw { stroke: #8fb8ff; stroke-dasharray: 1 4; stroke-linecap: round; fill: none; stroke-width: 1.5; opacity: 0.8; }
+.lab-plot path.line.g-total,
+.lab-plot path.line.g-dm,
+.lab-plot path.line.g-gas,
+.lab-plot path.line.g-star,
+.lab-plot path.line.g-now,
+.lab-plot path.line.g-init,
+.lab-plot path.line.g-nfw { fill: none; }

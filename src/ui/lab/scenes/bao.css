@@ -1,0 +1,22 @@
+/* BAO scene: component colours for the shared lab plot, legend and marker. */
+.lab-plot .s-dm { stroke: #5d8dff; fill: #5d8dff; }
+.lab-plot .s-baryon { stroke: #ff6fc8; fill: #ff6fc8; }
+.lab-plot .s-photon { stroke: #ffe27a; fill: #ffe27a; }
+.lab-plot .s-neutrino { stroke: #9ad9c4; fill: #9ad9c4; }
+.lab-plot path.line.s-dm,
+.lab-plot path.line.s-baryon,
+.lab-plot path.line.s-photon,
+.lab-plot path.line.s-neutrino { fill: none; }
+.lab-plot .bao-mark { stroke: rgba(255, 255, 255, 0.55); stroke-width: 1; stroke-dasharray: 5 4; }
+.lab-plot .bao-mark-label { fill: var(--c-ink-2); }
+
+.bao .bao-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; margin: 4px 0; }
+.bao .bao-leg { display: flex; align-items: center; gap: 6px; padding: 0; text-indent: 0; margin: 4px 0; }
+.bao .bao-leg input { margin: 0; }
+.bao .bao-sw { flex: none; width: 14px; height: 3px; border-radius: 2px; }
+.bao .bao-sw-dm { background: #5d8dff; }
+.bao .bao-sw-baryon { background: #ff6fc8; }
+.bao .bao-sw-photon { background: #ffe27a; }
+.bao .bao-sw-neutrino { background: #9ad9c4; }
+.bao .bao-stage { min-height: 4.2em; }
+.bao .lab-slider output { width: 84px; }

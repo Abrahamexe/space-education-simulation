@@ -9,7 +9,7 @@ export type LabAction =
   | { kind: 'sim' }
   | { kind: 'tab'; tab: LabTab; anchor?: string };
 
-export type LabTab = 'concepts' | 'experiments' | 'plots' | 'data' | 'exercises';
+export type LabTab = 'concepts' | 'experiments' | 'interaction' | 'plots' | 'data' | 'exercises';
 
 export interface Concept {
   id: string;
@@ -367,3 +367,27 @@ export const EXERCISES: Exercise[] = [
     solution: '1/H<sub>0</sub> = 3,086 × 10¹⁹ / 70 s = 4,41 × 10¹⁷ s ≈ 13,97 milyar yıl. Evrenin gerçek yaşı (13,8) buna yakın; bu bir tesadüf değil, madde ve karanlık enerjinin etkilerinin yaklaşık dengelenmesi.',
   },
 ];
+
+/**
+ * Scene 4: what is known about dark matter and what is still a hypothesis,
+ * kept strictly apart. Facts are textbook-level; candidate statuses as of 2024–25.
+ */
+export const DM_UNKNOWNS = `
+  <p>Karanlık madde ile normal madde arasında <b>bilinen tek etkileşim kütleçekimidir</b>. Başka bir etkileşim varsa çok zayıftır; aşağıdaki deneyler bunu arıyor.</p>
+  <h4 class="comp-h">Bildiğimiz (gözlemle sınanmış)</h4>
+  <ul>
+    <li><b>Normal madde değil:</b> Büyük Patlama çekirdek sentezi ve CMB, baryon miktarını Ω<sub>b</sub> ≈ 0,049 ile sınırlar; toplam madde ise Ω<sub>m</sub> ≈ 0,31.</li>
+    <li><b>Neredeyse çarpışmasız:</b> Mermi Kümesi ve benzer çarpışan kümeler kendi kendine çarpışmayı σ/m ≲ 1 cm²/g ile sınırlar (Sahne 2).</li>
+    <li><b>Soğuk (ya da en fazla ılık):</b> Küçük ölçekli yapılar (Lyman-α ormanı, cüce galaksiler) karanlık maddenin erken evrende yavaş hareket ettiğini gösterir.</li>
+    <li><b>Kararlı ve ışık saçmaz:</b> Evrenin yaşı boyunca bozunmamış; ışıkla etkileşimi ölçülemeyecek kadar küçük.</li>
+  </ul>
+  <h4 class="comp-h">Adaylar (henüz hiçbiri bulunmadı)</h4>
+  <dl class="lab-kv">
+    <dt>WIMP</dt><dd>Zayıf etkileşen, ~10 GeV – 10 TeV kütleli parçacık. Doğrudan arama: ksenon dedektörleri (XENONnT, LZ, PandaX); dolaylı: cüce galaksilerden gama ışını (Fermi-LAT); hızlandırıcı: LHC. Sonuç: etkileşim kesitinde ~10⁻⁴⁷ cm² mertebesine kadar iniliyor, sinyal yok.</dd>
+    <dt>Aksiyon</dt><dd>Güçlü kuvvetteki bir simetri sorununu çözmek için önerilmiş çok hafif parçacık (μeV – meV). Arama: manyetik alanda mikrodalgaya dönüşmesi (ADMX haloskopu), Güneş’ten gelen aksiyonlar (CAST, gelecekte IAXO). Bazı kütle aralıkları dışlandı.</dd>
+    <dt>Steril nötrino</dt><dd>keV kütleli, yalnızca kütleçekimi ve karışımla etkileşen nötrino; ılık karanlık madde. 2014’te iddia edilen 3,5 keV X-ışını çizgisi tartışmalı; Hitomi ve XRISM gözlemleri kesinleştirmedi.</dd>
+    <dt>İlkel kara delikler</dt><dd>Erken evrende oluşmuş olabilecek kara delikler. Kütleçekimsel mikromercek taramaları (EROS, OGLE, Subaru HSC) ve CMB geniş kütle aralıklarını dışladı; asteroit kütleli küçük bir aralık hâlâ açık.</dd>
+    <dt>Ultra hafif (“bulanık”) KM</dt><dd>~10⁻²² eV kütleli, galaksi ölçeğinde dalga gibi davranan alan; cücelerde çekirdek oluşturur. Lyman-α ormanı verisi bu kütleyi alttan sınırlıyor.</dd>
+  </dl>
+  <h4 class="comp-h">Karanlık madde yerine değiştirilmiş kütleçekimi?</h4>
+  <p>MOND (Milgrom 1983) galaksilerin dönme eğrilerini karanlık madde olmadan şaşırtıcı iyi açıklar. Ama galaksi kümelerinde hâlâ eksik kütle bırakır, Mermi Kümesi’nde kütlenin gazdan ayrılmasını açıklamakta zorlanır ve CMB’deki akustik tepelerin göreli yüksekliklerini karanlık madde olmadan üretemez. Bu yüzden bugün çoğunluk görüşü karanlık maddeden yanadır; ama parçacığın kendisi bulunana kadar soru kapanmış sayılmaz.</p>`;

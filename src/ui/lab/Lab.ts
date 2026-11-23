@@ -2,13 +2,14 @@ import lab from '../../data/generated/lab.json';
 import { M33_ROTATION } from '../../config/universe';
 import type { UniverseView } from '../../universe/UniverseView';
 import { icon } from '../icons';
-import { CONCEPTS, EXERCISES, METHODS, type LabAction, type LabTab } from './content';
+import { CONCEPTS, DM_UNKNOWNS, EXERCISES, METHODS, type LabAction, type LabTab } from './content';
 import { COSMO, G, MPC, MSUN, nfwSpeed, num, sci } from './physics';
 import { plot, project } from './plot';
 
 const TABS: [LabTab, string][] = [
   ['concepts', 'Kavramlar'],
   ['experiments', 'Deneyler'],
+  ['interaction', 'Etkileşim'],
   ['plots', 'Grafikler'],
   ['data', 'Veri ve yöntem'],
   ['exercises', 'Alıştırmalar'],
@@ -154,9 +155,34 @@ export class Lab {
         ${CONCEPTS.map((c) => `<details class="lab-card" data-anchor="${c.id}"><summary><span>${c.title}</span><em>${c.question}</em></summary>${c.body()}<div class="lab-acts">${c.actions.map((x) => this.btn(x.label, x.action)).join('')}</div></details>`).join('')}`;
       (p.querySelector('details') as HTMLDetailsElement | null)?.setAttribute('open', '');
     } else if (tab === 'experiments') this.renderExperiments(p);
+    else if (tab === 'interaction') await this.renderInteraction(p);
     else if (tab === 'plots') await this.renderPlots(p);
     else if (tab === 'data') this.renderData(p);
     else this.renderExercises(p);
+  }
+
+  // ---- Dark matter ↔ ordinary matter ------------------------------------------------------
+
+  /** Four scenes; the heavy ones (simulations in workers) load only when this tab opens. */
+  private async renderInteraction(p: HTMLElement): Promise<void> {
+    p.innerHTML = `
+      <p class="lab-intro">Karanlık madde ile normal madde yalnızca kütleçekimiyle etkileşir; bütün farkı normal maddenin çarpışabilmesi, ışınım yapıp soğuyabilmesi ve basınç oluşturabilmesi yaratır. Dört sahnede bunun sonuçlarını izle.</p>
+      <section class="lab-card" data-anchor="bao"><h3>Sahne 1 · Erken evren: ses dalgası ve çukur</h3><div data-scene="bao"></div></section>
+      <section class="lab-card" data-anchor="bullet"><h3>Sahne 2 · Mermi Kümesi: kim çarpışır, kim geçer?</h3><div data-scene="bullet"></div></section>
+      <section class="lab-card" data-anchor="galaxy"><h3>Sahne 3 · Bir halede galaksi doğuyor</h3><div data-scene="galaxy"><p class="note">Yükleniyor…</p></div></section>
+      <section class="lab-card" data-anchor="unknowns"><h3>Sahne 4 · Bildiklerimiz ve bilmediklerimiz</h3>${DM_UNKNOWNS}</section>`;
+    const slot = (k: string) => p.querySelector(`[data-scene="${k}"]`) as HTMLElement;
+    const [{ mountBao }, { mountBullet }] = await Promise.all([import('./scenes/bao'), import('./scenes/bullet')]);
+    mountBao(slot('bao'));
+    mountBullet(slot('bullet'));
+    await this.mountGalaxyScene(slot('galaxy'));
+  }
+
+  /** Scene 3: galaxy formation in a dark-matter halo (N-body + SPH in a worker). */
+  private async mountGalaxyScene(el: HTMLElement): Promise<void> {
+    const { mountGalaxyFormation } = await import('./scenes/galaxy');
+    el.innerHTML = '';
+    mountGalaxyFormation(el);
   }
 
   // ---- Experiments -------------------------------------------------------------------------
