@@ -18,6 +18,8 @@ import { KM_PER_AU } from './config/astro';
 import { GalaxyView } from './galaxy/GalaxyView';
 import { ViewSwitch } from './core/ViewSwitch';
 import { GalaxyHud } from './ui/GalaxyHud';
+import { UniverseHud } from './ui/UniverseHud';
+import { UniverseView } from './universe/UniverseView';
 import { Selection } from './core/Selection';
 import { Picker } from './core/Picker';
 import { Navigator } from './core/Navigator';
@@ -115,7 +117,10 @@ async function boot(): Promise<void> {
 
   const galaxy = new GalaxyView(engine, starfield, loader);
   const views = new ViewSwitch(engine, galaxy, sun, nav, selection);
-  new GalaxyHud(engine, galaxy);
+  const universe = new UniverseView(engine);
+  views.attachUniverse(universe);
+  new GalaxyHud(engine, galaxy, () => views.goToUniverse());
+  new UniverseHud(engine, universe);
 
   const quality = new QualityManager(engine, system, starfield);
   const syncGalaxyQuality = () => (galaxy.discSlices = QUALITY_PRESETS[quality.level].discSlices);
@@ -127,7 +132,6 @@ async function boot(): Promise<void> {
   const playground = new Playground(engine, system, sun, galactic, starfield, loader);
   views.onChange((on) => on && playground.exit());
   // The playground is its own world: zooming out to light-years stays here.
-  views.blocked = () => playground.active;
   playground.onChange(() => spacecraft.setPlayground(playground.active));
   const hud = new Hud({ engine, system, galactic, views, selection, nav, scaleTransition, quality, playground, spacecraft });
   new PlaygroundPanel(engine, playground);

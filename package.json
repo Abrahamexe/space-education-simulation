@@ -15,7 +15,8 @@
     "spacecraft": "node scripts/fetch-spacecraft.mjs",
     "spacecraft:models": "node scripts/prepare-spacecraft-models.mjs",
     "deepsky": "node scripts/fetch-deepsky.mjs",
-    "extragalactic": "node scripts/fetch-extragalactic.mjs"
+    "extragalactic": "node scripts/fetch-extragalactic.mjs",
+    "universe": "node scripts/build-universe.mjs"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",

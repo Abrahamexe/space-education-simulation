@@ -19,6 +19,7 @@ export const tr = {
     label: 'Gök cisimleri',
     craft: 'Uzay araçları',
     craftMenu: 'Uzay araçları listesi',
+    craftEnded: (y: number) => `Görev ${y}'de sona erdi: seçince tarih o günlere alınır`,
     craftGroups: {
       telescope: 'Uzay teleskopları',
       near: 'Dünya ve Güneş yakını',

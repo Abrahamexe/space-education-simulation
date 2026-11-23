@@ -84,12 +84,29 @@ export class Navigator {
     return this.engine.rig.flyTo(sun.body, { distance, direction });
   }
 
-  /** The overview at once, no flight (arriving from the galaxy under the light-speed jump). */
+  /** The overview at once, no flight (arriving from the galaxy under the view dissolve). */
   homeNow(): void {
     this.selection.select(null);
     const { direction, distance } = this.homeView();
     this.engine.rig.setFocus(this.entry('sun')!.body);
     this.engine.rig.setPose(directionToPose(direction, distance));
+  }
+
+  /**
+   * Arriving from the galaxy: start far out along `dir` (from the Sun) and
+   * fly in to the overview, slowing down as the system grows.
+   */
+  homeFrom(dir: Vector3, distance: number, seconds: number): Promise<void> {
+    this.selection.select(null);
+    const rig = this.engine.rig;
+    rig.setFocus(this.entry('sun')!.body);
+    const from = directionToPose(dir, distance);
+    rig.setPose(from);
+    const home = this.homeView();
+    const to = directionToPose(home.direction, home.distance);
+    // Turn the short way round.
+    to.azimuth = from.azimuth + Math.atan2(Math.sin(to.azimuth - from.azimuth), Math.cos(to.azimuth - from.azimuth));
+    return rig.flyPose(from, to, seconds, 'power2.out');
   }
 
   private homeView(): { direction: Vector3; distance: number } {

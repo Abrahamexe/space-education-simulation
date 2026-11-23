@@ -30,11 +30,11 @@ const CENTERS = {
  * planet flybys (closest approach) and tours (arrival .. end of data).
  */
 const CRAFT = {
-  hubble: { cmd: '-48', start: '1990-04-25T03:00', end: '2026-12-17', home: 'earth', step: '6 h' },
-  iss: { cmd: '-125544', start: '1998-11-20', end: '2026-11-07', home: 'earth', step: '6 h' },
-  chandra: { cmd: '-151', start: '1999-08-08', end: '2027-03-30', home: 'earth', step: '6 h' },
-  tess: { cmd: '-95', start: '2018-04-19', end: '2028-03-29', home: 'earth', step: '6 h' },
-  jwst: { cmd: '-170', start: '2021-12-25T14:00', end: '2031-10-04', home: 'earth', step: '1 d', interp: 'hermite' },
+  hubble: { cmd: '-48', start: '1990-04-25T03:00', end: '2027-01-30', home: 'earth', step: '6 h' },
+  iss: { cmd: '-125544', start: '1998-11-20', end: '2026-12-21', home: 'earth', step: '6 h' },
+  chandra: { cmd: '-151', start: '1999-08-08', end: '2027-04-27', home: 'earth', step: '6 h' },
+  tess: { cmd: '-95', start: '2018-04-19', end: '2028-05-19', home: 'earth', step: '6 h' },
+  jwst: { cmd: '-170', start: '2021-12-25T14:00', end: '2031-11-15', home: 'earth', step: '1 d', interp: 'hermite' },
   euclid: { cmd: '-680', start: '2023-07-02', end: '2031-10-04', home: 'earth', step: '1 d', interp: 'hermite' },
   gaia: {
     cmd: '-139479',

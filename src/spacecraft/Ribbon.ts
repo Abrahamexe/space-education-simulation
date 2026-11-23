@@ -18,17 +18,44 @@ export interface RibbonData {
 }
 
 /** Ribbon buffers for `points` (x y z per sample, at least two; doubles keep their low part). */
-export function ribbonData(points: ArrayLike<number>): RibbonData {
+export function ribbonData(points: ArrayLike<number>, alongOf?: (i: number) => number): RibbonData {
   const n = Math.floor(points.length / 3);
-  const pos = new Float32Array(n * 6);
-  const low = new Float32Array(n * 6);
-  const tan = new Float32Array(n * 6);
-  const side = new Float32Array(n * 2);
-  const along = new Float32Array(n * 2);
+  const d: RibbonData = {
+    samples: n,
+    position: new BufferAttribute(new Float32Array(n * 6), 3),
+    positionLow: new BufferAttribute(new Float32Array(n * 6), 3),
+    tangent: new BufferAttribute(new Float32Array(n * 6), 3),
+    side: new BufferAttribute(new Float32Array(n * 2), 1),
+    along: new BufferAttribute(new Float32Array(n * 2), 1),
+    index: new Uint32BufferAttribute(new Uint32Array(Math.max(n - 1, 0) * 6), 1),
+  };
+  const side = d.side.array as Float32Array;
+  for (let i = 0; i < n * 2; i++) side[i] = i % 2 === 0 ? -1 : 1;
+  const idx = d.index.array as Uint32Array;
+  for (let i = 0; i < n - 1; i++) {
+    const v = i * 2;
+    idx.set([v, v + 1, v + 2, v + 1, v + 3, v + 2], i * 6);
+  }
+  writeRibbon(d, points, alongOf);
+  return d;
+}
+
+/**
+ * Refill a ribbon's positions, tangents and `along` values in place (same
+ * sample count): small ribbons that move every frame reuse their buffers.
+ * `along` defaults to the sample index (dash pattern, taper).
+ */
+export function writeRibbon(d: RibbonData, points: ArrayLike<number>, alongOf: (i: number) => number = (i) => i): void {
+  const n = d.samples;
+  const pos = d.position.array as Float32Array;
+  const low = d.positionLow.array as Float32Array;
+  const tan = d.tangent.array as Float32Array;
+  const along = d.along.array as Float32Array;
   let tx = 1;
   let ty = 0;
   let tz = 0;
   for (let i = 0; i < n; i++) {
+    // Tangent: along the chord through both neighbours (central difference).
     const a = Math.max(i - 1, 0) * 3;
     const b = Math.min(i + 1, n - 1) * 3;
     let dx = points[b] - points[a];
@@ -44,6 +71,7 @@ export function ribbonData(points: ArrayLike<number>): RibbonData {
       ty = dy;
       tz = dz;
     }
+    const al = alongOf(i);
     for (let k = 0; k < 2; k++) {
       const o = (i * 2 + k) * 3;
       for (let c = 0; c < 3; c++) {
@@ -54,24 +82,13 @@ export function ribbonData(points: ArrayLike<number>): RibbonData {
       tan[o] = tx;
       tan[o + 1] = ty;
       tan[o + 2] = tz;
-      side[i * 2 + k] = k === 0 ? -1 : 1;
-      along[i * 2 + k] = i;
+      along[i * 2 + k] = al;
     }
   }
-  const idx = new Uint32Array(Math.max(n - 1, 0) * 6);
-  for (let i = 0; i < n - 1; i++) {
-    const v = i * 2;
-    idx.set([v, v + 1, v + 2, v + 1, v + 3, v + 2], i * 6);
-  }
-  return {
-    samples: n,
-    position: new BufferAttribute(pos, 3),
-    positionLow: new BufferAttribute(low, 3),
-    tangent: new BufferAttribute(tan, 3),
-    side: new BufferAttribute(side, 1),
-    along: new BufferAttribute(along, 1),
-    index: new Uint32BufferAttribute(idx, 1),
-  };
+  d.position.needsUpdate = true;
+  d.positionLow.needsUpdate = true;
+  d.tangent.needsUpdate = true;
+  d.along.needsUpdate = true;
 }
 
 /** A geometry over the shared buffers, drawing samples [a, b). */

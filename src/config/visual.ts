@@ -11,7 +11,8 @@ export const RENDER = {
   fovDeg: 45,
   /** Near plane as a fraction of the camera's distance to the focus surface. */
   nearToSurfaceRatio: 0.05,
-  minNear: 1e-5,
+  /** Low enough for a real-scale spacecraft close-up (a few metres ≈ 1e-6 scene units). */
+  minNear: 1e-8,
   maxNear: 1,
   far: 1e9,
   clearColor: 0x000000,

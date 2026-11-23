@@ -128,3 +128,43 @@ Galaksinin uzak yarısı toz yüzünden doğrudan haritalanamamıştır; görsel
 ## Metinler
 
 Bilgi panelindeki Türkçe tanıtım metinleri ve "Biliyor muydunuz?" bilgileri bu proje için özgün olarak yazılmıştır (`src/i18n/content.tr.json`); içerdikleri olgular NASA, ESA ve JPL'in kamuya açık görev ve bilgi sayfalarıyla uyumludur.
+
+## Evren haritası (src/universe, scripts/build-universe.mjs)
+
+| Veri | Kaynak | Lisans / kullanım |
+|---|---|---|
+| 2MRS galaksi kataloğu | Huchra ve ark. 2012, ApJS 199, 26 (VizieR J/ApJS/199/26) | Bilimsel veri, kaynak gösterilerek |
+| SDSS DR17 tayf galaksileri | Sloan Digital Sky Survey (SkyServer) | SDSS veri kullanım koşulları, kaynak gösterilerek |
+| Cosmicflows-4 grup uzaklıkları | Tully ve ark. 2023, ApJ 944, 94 (VizieR J/ApJ/944/94) | Bilimsel veri, kaynak gösterilerek |
+| MCXC X-ışını kümeleri | Piffaretti ve ark. 2011, A&A 534, A109 | Bilimsel veri, kaynak gösterilerek |
+| Yerel Grup kataloğu | McConnachie 2012, AJ 144, 4 (VizieR J/AJ/144/4) | Bilimsel veri, kaynak gösterilerek |
+| CMB haritası (WMAP 9 yıl ILC) | NASA / WMAP Bilim Ekibi (LAMBDA) | Kamu malı |
+
+## Yerel Grup fotoğrafları (scripts/build-localgroup.mjs, Wikimedia Commons)
+
+| Galaksi | Kaynak | Lisans |
+|---|---|---|
+| Andromeda (M31) | Adam Evans | CC BY 2.0 |
+| Üçgen (M33) | Popcorn4life | CC BY 4.0 |
+| Büyük Macellan Bulutu | ESO | CC BY 4.0 |
+| Küçük Macellan Bulutu | CTIO/NOIRLab/NSF/AURA/SMASH/D. Nidever | CC BY 4.0 |
+| M32 | NASA/ESA | Kamu malı |
+| NGC 205 | KPNO/NOIRLab/NSF/AURA/Adam Block | CC BY 4.0 |
+| NGC 185, NGC 147 | 2MASS / NASA | Kamu malı |
+| NGC 6822 | ESA/Euclid/Euclid Consortium/NASA | CC BY-SA 3.0 IGO |
+| IC 1613, NGC 55, NGC 300, Sculptor | ESO | CC BY 4.0 |
+| Fornax | ESO/Digitized Sky Survey 2 | CC BY 4.0 |
+| IC 10, Sextans A, Sextans B | P. Massey/Lowell Obs., K. Olsen/NOIRLab | CC BY 4.0 |
+| WLM | Local Group Survey Team, T.A. Rector/NOIRLab | CC BY 4.0 |
+| NGC 3109 | DES/DOE/FNAL/DECam/CTIO/NOIRLab/NSF/AURA | CC BY 4.0 |
+| IC 5152 | Legacy Surveys / D. Lang | CC BY 4.0 |
+
+Gökyüzü arka planı çıkarılarak ve kırpılarak değiştirildi.
+
+## Karanlık madde kanıt durakları (scripts/build-evidence.mjs)
+
+| Görüntü | Kaynak | Lisans |
+|---|---|---|
+| Mermi Kümesi (Webb + Chandra, 2025) | NASA, ESA, CSA, STScI, CXC; J. Jee, S. Cha, K. Finner | Kamu malı |
+| Abell 1689 | NASA, ESA, E. Jullo, P. Natarajan, J.-P. Kneib | Kamu malı |
+| Saç Kümesi | CTIO/NOIRLab/DOE/NSF/AURA | CC BY 4.0 |

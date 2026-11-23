@@ -1,4 +1,5 @@
 import { keplerStep } from '../playground/kepler';
+import { fetchTle, TLE_VALID_DAYS, tleState, type TleElements } from './LiveTle';
 
 /** Centre a trajectory segment is given about. */
 export type CraftCenter = 'sun' | 'earth' | 'jupiter' | 'saturn' | 'uranus' | 'neptune' | 'pluto';
@@ -48,16 +49,42 @@ export class Trajectory {
   private readonly rb = [0, 0, 0];
   private readonly vb = [0, 0, 0];
 
+  /** Current elements (Earth orbiters), used past the end of the data. */
+  private tle: TleElements | null = null;
+  /** Stand-in segment while the elements are in use. */
+  private liveSeg: SegmentData | null = null;
+
   constructor(
     readonly id: string,
     readonly track: CraftTrackData,
+    private readonly norad?: number,
   ) {}
 
   get loaded(): boolean {
     return this.data !== null;
   }
 
+  /** The craft is on its live elements at this time (past the data, near the elements' epoch). */
+  isLive(jd: number): boolean {
+    return !!this.tle && jd > this.track.endJd && Math.abs(jd - this.tle.epochJd) <= TLE_VALID_DAYS;
+  }
+
   load(): Promise<void> {
+    if (this.norad && !this.tleLoading) {
+      this.tleLoading = fetchTle(this.norad).then((el) => {
+        this.tle = el;
+        if (el)
+          this.liveSeg = {
+            center: 'earth',
+            gm: 398600.4418,
+            t0: el.epochJd - TLE_VALID_DAYS,
+            step: 0.25,
+            n: TLE_VALID_DAYS * 8 + 1,
+            offset: -1,
+            interp: 'kepler',
+          };
+      });
+    }
     this.loading ??= fetch(`${import.meta.env.BASE_URL}data/spacecraft/${this.id}.bin`)
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`))))
       .then((b) => void (this.data = new Float32Array(b)))
@@ -67,14 +94,23 @@ export class Trajectory {
     return this.loading;
   }
 
+  private tleLoading: Promise<void> | null = null;
+
+  /** Data and (Earth orbiters) live elements both settled. */
+  async ready(): Promise<void> {
+    await this.load();
+    await this.tleLoading;
+  }
+
   covers(jd: number): boolean {
-    return jd >= this.track.startJd && jd <= this.track.endJd;
+    return (jd >= this.track.startJd && jd <= this.track.endJd) || this.isLive(jd);
   }
 
   /** Segment holding the time (or the nearest one in a gap between two). */
   segmentAt(jd: number): SegmentData | null {
     const segs = this.track.segments;
     if (!this.covers(jd)) return null;
+    if (this.isLive(jd)) return this.liveSeg;
     const end = (s: SegmentData) => s.t0 + (s.n - 1) * s.step;
     for (let i = 0; i < segs.length; i++) {
       const s = segs[i];
@@ -110,6 +146,11 @@ export class Trajectory {
     if (!this.data) return null;
     const s = this.segmentAt(jd);
     if (!s) return null;
+    if (s === this.liveSeg && this.tle) {
+      tleState(this.tle, jd, out.r, out.v);
+      out.center = 'earth';
+      return out;
+    }
     const raw = (jd - s.t0) / s.step;
     if (raw < 0 || raw > s.n - 1 || s.n < 2) {
       // In a gap between segments: carry the nearest end sample over.

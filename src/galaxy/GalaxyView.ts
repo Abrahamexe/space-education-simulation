@@ -12,14 +12,14 @@ import type { Starfield } from '../bodies/Starfield';
 import { GAL, GalaxyModel, imageToScene, markerPosition } from './GalaxyModel';
 import { DeepSky } from './DeepSky';
 
-/** Longest the light-speed jump waits for the galaxy's pictures before entering anyway (ms). */
+/** Longest the view dissolve waits for the galaxy's pictures before entering anyway (ms). */
 const PREPARE_MAX_MS = 6000;
-/** Entry pull-out after the jump: the part the jump stands for (of the path), and the glide left (s). */
-const ENTRY_SKIP = 0.5;
-const ENTRY_GLIDE_S = 3.5;
-/** Way home: the approach to the Sun before the jump (fraction of the distance left, s). */
-const RETURN_APPROACH = 0.3;
-const RETURN_APPROACH_S = 1.4;
+/** Entry pull-out after the hand-over: part of the path already behind (the solar trip out), and its length (s). */
+const ENTRY_SKIP = 0.04;
+const ENTRY_GLIDE_S = 6;
+/** Way home: approach to the Sun down to the hand-over distance; length per e-fold of distance, clamped (s). */
+const RETURN_S_PER_EFOLD = 0.22;
+const RETURN_S = [1.6, 4] as const;
 
 /** Something a galaxy label points at. */
 export interface GalaxyTarget {
@@ -307,7 +307,7 @@ export class GalaxyView implements Updatable {
   }
 
   /**
-   * Everything the first galaxy frames need, under the light-speed jump:
+   * Everything the first galaxy frames need, under the view dissolve:
    * shaders (normally compiled already) and the textures' GPU uploads.
    */
   async prepareEntry(): Promise<void> {
@@ -342,6 +342,14 @@ export class GalaxyView implements Updatable {
 
   private leave(): void {
     if (!this.activeFlag) return;
+    const dir = this.camera.position.clone().normalize();
+    this.suspend();
+    this.exitHandler?.(dir);
+  }
+
+  /** Stop drawing and listening (the universe view takes over, or the Solar System). */
+  suspend(): void {
+    if (!this.activeFlag) return;
     this.activeFlag = false;
     this.tween = null;
     this.controls.enabled = false;
@@ -350,9 +358,40 @@ export class GalaxyView implements Updatable {
     const st = this.starfield.stars.material.uniforms;
     sm.uBrightness.value = this.saved.sky;
     st.uBrightness.value = this.saved.stars;
-    const dir = this.camera.position.clone().normalize();
     this.enterFns.forEach((fn) => fn(false));
-    this.exitHandler?.(dir);
+  }
+
+  /**
+   * "Evrene çık": pull straight out from the Galaxy along the current line of
+   * sight to the universe map's hand-over distance (Local Group scale).
+   */
+  pullOut(distancePc: number): Promise<void> {
+    this.follow = null;
+    const pivot = this.controls.target.clone();
+    const off = this.camera.position.clone().sub(pivot);
+    const dir = off.lengthSq() > 1e-12 ? off.normalize() : GAL.n.clone();
+    return this.flyTo(new Vector3(), distancePc, dir, 3);
+  }
+
+  /**
+   * Back from the universe map: start far out along `dir` (scene frame, from
+   * the Milky Way) and glide in to the disc overview.
+   */
+  resumeFromFar(dir: Vector3, distancePc: number): void {
+    if (this.activeFlag) return;
+    this.activeFlag = true;
+    this.returning = false;
+    const sm = this.starfield.sky.material.uniforms;
+    const st = this.starfield.stars.material.uniforms;
+    this.saved = { sky: sm.uBrightness.value as number, stars: st.uBrightness.value as number };
+    this.camera.position.copy(dir).normalize().multiplyScalar(distancePc);
+    this.camera.up.copy(GAL.n);
+    this.controls.target.set(0, 0, 0);
+    this.camera.lookAt(0, 0, 0);
+    this.controls.enabled = false;
+    this.engine.setView(this.scene, this.camera);
+    this.enterFns.forEach((fn) => fn(true));
+    void this.overview(true);
   }
 
   // ---- Smooth zoom ------------------------------------------------------------------
@@ -428,7 +467,7 @@ export class GalaxyView implements Updatable {
         duration: duration * 1000,
         ease: (t) => t,
         step: (u) => {
-          // The light-speed jump covers the first stretch: drop out of it already far out.
+          // The view dissolve covers the first stretch: drop out of it already far out.
           const t = ENTRY_SKIP + (1 - ENTRY_SKIP) * u;
           const k = smoother(t);
           // Distance in log steps, but quick through the near-empty
@@ -480,7 +519,7 @@ export class GalaxyView implements Updatable {
   /**
    * Head for the Sun and hand back to the Solar System: a short, quickening
    * approach (the distance shrinks to RETURN_APPROACH of itself while the
-   * pivot slides onto the Sun), then the light-speed jump takes over.
+   * pivot slides onto the Sun), then the view dissolve takes over.
    */
   returnToSun(): Promise<void> {
     if (this.returning) return Promise.resolve();
@@ -491,16 +530,20 @@ export class GalaxyView implements Updatable {
     const look0 = this.controls.target.clone();
     const toCam = p0.lengthSq() > 1e-12 ? p0.clone().normalize() : GAL.n.clone();
     const l0 = Math.log(Math.max(p0.length(), 1e-9));
-    const l1 = l0 + Math.log(RETURN_APPROACH);
+    const l1 = Math.min(l0, Math.log(GV.entryPc));
+    const seconds = reducedMotion() ? 0.3 : MathUtils.clamp((l0 - l1) * RETURN_S_PER_EFOLD, RETURN_S[0], RETURN_S[1]);
     const look = new Vector3();
+    const up0 = this.camera.up.clone();
     return new Promise((resolve) => {
       this.tween = {
         start: performance.now(),
-        duration: (reducedMotion() ? 0.3 : RETURN_APPROACH_S) * 1000,
-        ease: (t) => t * t * t,
+        duration: seconds * 1000,
+        // Distance in log space: constant perceived speed, easing out of the start.
+        ease: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2) * 0.6 + t * 0.4,
         step: (k) => {
-          look.copy(look0).multiplyScalar(1 - k);
+          look.copy(look0).multiplyScalar(1 - MathUtils.smoothstep(k, 0, 0.6));
           this.camera.position.copy(toCam).multiplyScalar(Math.exp(l0 + (l1 - l0) * k));
+          this.camera.up.copy(up0);
           this.camera.lookAt(look);
         },
         done: () => {
@@ -599,6 +642,8 @@ export class GalaxyView implements Updatable {
         this.setOrbitUp(this.camera.up);
         this.controls.enabled = true;
         tw.done();
+        // The tween may have handed back to the Solar System (leave() restored the sky).
+        if (!this.activeFlag) return;
       }
     } else {
       this.controls.enabled = true;

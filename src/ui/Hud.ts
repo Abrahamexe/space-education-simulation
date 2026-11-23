@@ -81,7 +81,11 @@ export class Hud {
       layers.sync();
     };
     const layers = new Layers({
-      orbits: { get: () => sys.showOrbits, set: setOrbits },
+      // In spacecraft mode the orbit toggle is about the craft's paths (planet lines are off there).
+      orbits: {
+        get: () => (ctx.spacecraft?.visible ? ctx.spacecraft.showPaths : sys.showOrbits),
+        set: (v) => (ctx.spacecraft?.visible ? (ctx.spacecraft.showPaths = v) : setOrbits(v)),
+      },
       labels: { get: () => this.labels.show, set: (v) => (this.labels.show = v) },
       belts: { get: () => sys.showBelts, set: (v) => (sys.showBelts = v) },
       galaxy: { get: () => ctx.galactic.enabled, set: (v) => (ctx.galactic.enabled = v) },

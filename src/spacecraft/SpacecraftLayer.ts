@@ -11,6 +11,9 @@ import { CraftMapper } from './CraftMapper';
 import { Spacecraft } from './Spacecraft';
 import type { CraftTrackData } from './Trajectory';
 
+/** Frame time path building may take (ms). */
+const PATH_BUILD_MS = 4;
+
 /**
  * Telescopes and probes (config/spacecraft.ts) in the solar-system view:
  * builds them, registers them for search, labels, picking and the info
@@ -47,8 +50,10 @@ export class SpacecraftLayer {
       this.crafts.push(craft);
       system.addFocusable({ id: def.id, name: def.name, kind: 'craft', body: craft });
     }
-    // After planets and moons have moved this frame.
+    // Positions after planets and moons have moved this frame (the camera follows them);
+    // sizes, paths and light once the camera has moved too.
     engine.add({ update: (ctx) => this.update(ctx) }, 2);
+    engine.addLate({ update: (ctx) => this.updateView(ctx) }, 0);
   }
 
   get visible(): boolean {
@@ -70,6 +75,18 @@ export class SpacecraftLayer {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   }
+
+  /** Voyage paths and orbits drawn (the orbit toggle while in spacecraft mode). */
+  get showPaths(): boolean {
+    return this.pathsOn;
+  }
+
+  set showPaths(v: boolean) {
+    this.pathsOn = v;
+    for (const c of this.crafts) c.pathsOn = v;
+  }
+
+  private pathsOn = true;
 
   /** Developer panel: model size multiplier (1 = the bodies' size curve). */
   set exaggeration(k: number) {
@@ -103,15 +120,21 @@ export class SpacecraftLayer {
   private update(ctx: FrameContext): void {
     if (!this.engine.rig.active) return;
     const show = this.on && !this.hiddenByPlayground;
+    for (const c of this.crafts) c.update(ctx, show);
+  }
+
+  private updateView(ctx: FrameContext): void {
+    if (!this.engine.rig.active) return;
     const focus = this.engine.rig.focusTarget;
     const closeUp = !!focus && this.crafts.includes(focus as Spacecraft);
     this.engine.origin.toAbsolute(ctx.cameraPosition, this.camAbs);
-    const budget = { paths: 1 };
+    // Path building gets a few milliseconds of each frame.
+    const budget = { until: performance.now() + PATH_BUILD_MS };
     const view = { closeUp };
     let nearest: Spacecraft | null = null;
     let best = Infinity;
     for (const c of this.crafts) {
-      c.update(ctx, show, this.camAbs, view, budget);
+      c.updateView(ctx, this.camAbs, view, budget);
       if (c.hidden) continue;
       const d = c.getAbsolutePosition(this.tmp).distanceTo(this.camAbs) / c.getRadius();
       if (d < best) {

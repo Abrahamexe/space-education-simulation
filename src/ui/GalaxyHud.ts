@@ -1,6 +1,6 @@
 import { strings } from '../i18n';
 import { PC_PER_LY } from '../config/galaxy';
-import { CATEGORY_LABELS, DEEP_SKY, MILKY_WAY_FACTS, type Category, type Facts } from '../config/deepsky';
+import { DEEP_SKY, MILKY_WAY_FACTS, type Category, type Facts } from '../config/deepsky';
 import { EXTRAGALACTIC } from '../config/extragalactic';
 import type { Engine } from '../core/Engine';
 import type { GalaxyTarget, GalaxyView } from '../galaxy/GalaxyView';
@@ -25,7 +25,6 @@ const KIND_PRIORITY: Record<GalaxyTarget['kind'], number> = {
   star: 5,
   planet: 5,
 };
-const CATEGORY_ORDER: Category[] = ['blackhole', 'galaxy', 'giant', 'nebula', 'system', 'pulsar', 'cluster'];
 
 function lightYears(pc: number): string {
   const g = strings().galaxy;
@@ -76,6 +75,7 @@ export class GalaxyHud {
   constructor(
     engine: Engine,
     private readonly view: GalaxyView,
+    toUniverse?: () => void,
   ) {
     const g = strings().galaxy;
     this.labels = document.createElement('div');
@@ -101,6 +101,7 @@ export class GalaxyHud {
     this.bar.innerHTML = `
       <button type="button" class="pill" data-back>${icon('sun')}<span>${g.back}</span></button>
       <button type="button" class="pill pill-accent" data-explore aria-haspopup="dialog" aria-expanded="false">${icon('galaxy')}<span>${g.explore}</span></button>
+      <button type="button" class="pill" data-universe title="Evren haritası: Yerel Grup, Laniakea, kozmik ağ">${icon('zoomOut')}<span>Evrene çık</span></button>
       <button type="button" class="btn-icon" data-pause aria-label="${g.pause}" title="${g.pause} (Boşluk)">${icon('pause')}</button>
       <button type="button" class="galaxy-speed" data-speed title="${g.speed}">1×</button>
       <p class="galaxy-readout" aria-live="off"></p>
@@ -119,6 +120,11 @@ export class GalaxyHud {
     (this.bar.querySelector('[data-overview]') as HTMLElement).addEventListener('click', () => void view.overview());
     (this.bar.querySelector('[data-info]') as HTMLElement).addEventListener('click', () => this.showCard(g.title, MILKY_WAY_FACTS, undefined, null));
     this.exploreBtn.addEventListener('click', () => this.setExplore(this.explore.dataset.open !== 'true'));
+    (this.bar.querySelector('[data-universe]') as HTMLElement).addEventListener('click', () => {
+      this.setExplore(false);
+      this.closeCard();
+      toUniverse?.();
+    });
     const pauseBtn = this.bar.querySelector('[data-pause]') as HTMLButtonElement;
     const speedBtn = this.bar.querySelector('[data-speed]') as HTMLButtonElement;
     pauseBtn.addEventListener('click', () => (view.deepPaused = !view.deepPaused));
@@ -170,50 +176,111 @@ export class GalaxyHud {
     this.sysIndicator.className = 'nav-indicator';
     this.sysIndicator.setAttribute('aria-hidden', 'true');
 
-    // Destinations by category.
+    // Destinations: two tabs (inside / beyond the Milky Way), sections ordered
+    // near to far, each with a one-line description; rows carry the type and
+    // distance so look-alike names (M87 the galaxy, M87* its black hole) read apart.
     this.explore = document.createElement('div');
     this.explore.className = 'galaxy-explore';
     this.explore.setAttribute('role', 'dialog');
     this.explore.setAttribute('aria-label', g.explore);
     this.explore.dataset.open = 'false';
-    // Two tabs: inside the Milky Way (by category) and beyond it.
-    const chips = (defs: { id: string; short: string }[]) =>
-      defs.map((d) => `<button type="button" class="chip" data-go="${d.id}">${esc(d.short)}</button>`).join('');
-    const section = (tab: 'in' | 'out', title: string, defs: { id: string; short: string }[]) =>
-      defs.length ? `<section data-tab="${tab}"><h3>${title}</h3><div class="chips">${chips(defs)}</div></section>` : '';
+    type Row = { id: string; name: string; type?: string };
+    // Distance from the Sun (pc): the card's figure, or where the target sits.
+    const distOf = (r: Row) => {
+      const t = view.targets.find((x) => x.id === r.id);
+      return t ? (t.distPc ?? t.position.length()) : 0;
+    };
+    const rowHtml = (r: Row) => {
+      const t = view.targets.find((x) => x.id === r.id);
+      if (!t) return '';
+      const type = r.type ?? t.facts?.type ?? t.fact ?? '';
+      const dist = lightYears(distOf(r));
+      const meta = [type, dist].filter(Boolean).join(' · ');
+      const search = `${r.name} ${t.name} ${type}`.toLocaleLowerCase('tr-TR');
+      return `<button type="button" class="xp-item" data-go="${r.id}" data-search="${esc(search)}" >
+        <span class="xp-name">${esc(r.name)}</span><span class="xp-meta">${esc(meta)}</span></button>`;
+    };
+    const section = (tab: 'in' | 'out', title: string, hint: string, rows: Row[]) =>
+      rows.length
+        ? `<section data-tab="${tab}"><h3>${esc(title)}<span class="xp-hint">${esc(hint)}</span></h3><div class="xp-grid">${[...rows]
+            .sort((x, y) => distOf(x) - distOf(y))
+            .map(rowHtml)
+            .join('')}</div></section>`
+        : '';
     // The Magellanic Clouds are beyond the Galaxy's disc (~50 kpc).
     const inGalaxy = (d: { distPc: number }) => d.distPc < 30_000;
-    const inside = CATEGORY_ORDER.filter((c) => c !== 'galaxy').map((cat) => {
-      const defs = DEEP_SKY.filter((d) => d.category === cat && inGalaxy(d)).map((d) => ({ id: d.id, short: d.short }));
-      if (cat === 'blackhole') defs.unshift({ id: 'sgr-a', short: 'Sgr A* (galaksi merkezi)' }, { id: 'sstars', short: 'Sgr A* ve S yıldızları' });
-      return section('in', CATEGORY_LABELS[cat], defs);
-    });
-    const holes = EXTRAGALACTIC.filter((d) => d.hole).map((d) => ({ id: d.image ? `${d.id}-hole` : d.id, short: d.hole!.short }));
-    const gal = (m: string) => EXTRAGALACTIC.filter((d) => d.category === 'galaxy' && (d.menu ?? 'galaxy') === m).map((d) => ({ id: d.id, short: d.short }));
-    const outside = [
-      section('out', 'Süper kütleli kara delikler', holes),
-      section('out', 'Galaksiler', gal('galaxy')),
-      section('out', 'Çarpışan ve tuhaf galaksiler', gal('interacting')),
-      section('out', 'Kuasarlar ve derin evren', gal('deep')),
-      section('out', 'Dev yıldızlar (Macellan Bulutu)', DEEP_SKY.filter((d) => !inGalaxy(d)).map((d) => ({ id: d.id, short: d.short }))),
+    const deep = (cat: Category): Row[] => DEEP_SKY.filter((d) => d.category === cat && inGalaxy(d)).map((d) => ({ id: d.id, name: d.short }));
+    const holes = deep('blackhole');
+    holes.unshift({ id: 'sgr-a', name: 'Sgr A*' }, { id: 'sstars', name: 'Sgr A* ve S yıldızları', type: 'Kara deliğin çevresinde dolanan yıldızlar' });
+    const inside = [
+      section('in', 'Yıldız sistemleri', 'Yakın yıldızlar ve gezegenleri', deep('system')),
+      section('in', 'Yıldız kümeleri', 'Birlikte doğmuş binlerce yıldız', deep('cluster')),
+      section('in', 'Bulutsular', 'Yıldızların doğduğu ve öldüğü gaz bulutları', deep('nebula')),
+      section('in', 'Pulsarlar ve nötron yıldızları', 'Hızla dönen yıldız ölüleri', deep('pulsar')),
+      section('in', 'Dev yıldızlar', 'Bilinen en büyük yıldızlar', deep('giant')),
+      section('in', 'Kara delikler', 'Işığın bile kaçamadığı çökmüş kütleler', holes),
     ];
+    const gal = (m: string) => EXTRAGALACTIC.filter((d) => d.category === 'galaxy' && (d.menu ?? 'galaxy') === m).map((d) => ({ id: d.id, name: d.short }));
+    const smbh = EXTRAGALACTIC.filter((d) => d.hole).map((d) => ({ id: d.image ? `${d.id}-hole` : d.id, name: d.hole!.short }));
+    const outside = [
+      section('out', 'Macellan Bulutu yıldızları', 'Komşu cüce galaksideki devler', DEEP_SKY.filter((d) => !inGalaxy(d)).map((d) => ({ id: d.id, name: d.short }))),
+      section('out', 'Galaksiler', 'Komşular ve ünlü sarmallar', gal('galaxy')),
+      section('out', 'Çarpışan ve tuhaf galaksiler', 'Birleşen, halka ve tekerlek biçimli galaksiler', gal('interacting')),
+      section('out', 'Süper kütleli kara delikler', 'Galaksilerin kalbindeki devler', smbh),
+      section('out', 'Kuasarlar ve derin evren', 'Evrenin en uzak ışıkları', gal('deep')),
+    ];
+    const count = (html: string[]) => html.join('').split('class="xp-item"').length - 1;
     this.explore.dataset.tab = 'in';
     this.explore.innerHTML = `<div class="galaxy-explore-head"><h2>${g.explore}</h2><button type="button" class="btn-icon" data-close aria-label="${g.closeCard}">${icon('close')}</button></div>
+      <label class="xp-search">${icon('search')}<input type="search" data-xp-search placeholder="Ara: ad ya da tür (ör. bulutsu, kuasar)" aria-label="Keşfet içinde ara" autocomplete="off" spellcheck="false"></label>
       <div class="segmented galaxy-tabs" role="tablist">
-        <button type="button" role="tab" data-tab-btn="in" aria-selected="true">Samanyolu içinde</button>
-        <button type="button" role="tab" data-tab-btn="out" aria-selected="false">Samanyolu dışında</button>
-      </div>${inside.join('')}${outside.join('')}`;
+        <button type="button" role="tab" data-tab-btn="in" aria-selected="true" aria-checked="true">Samanyolu içinde <span class="xp-count">${count(inside)}</span></button>
+        <button type="button" role="tab" data-tab-btn="out" aria-selected="false" aria-checked="false">Samanyolu dışında <span class="xp-count">${count(outside)}</span></button>
+      </div>
+      <p class="xp-order">Yakından uzağa sıralı</p>
+      <div class="xp-body">${inside.join('')}${outside.join('')}<p class="xp-empty" hidden>Eşleşen yer yok.</p></div>`;
     const tabBtns = [...this.explore.querySelectorAll<HTMLButtonElement>('[data-tab-btn]')];
-    tabBtns.forEach((b) =>
-      b.addEventListener('click', () => {
-        this.explore.dataset.tab = b.dataset.tabBtn!;
-        tabBtns.forEach((x) => {
-          x.setAttribute('aria-selected', String(x === b));
-          x.setAttribute('aria-checked', String(x === b));
-        });
-      }),
-    );
-    tabBtns[0].setAttribute('aria-checked', 'true');
+    const setTab = (tab: string) => {
+      this.explore.dataset.tab = tab;
+      tabBtns.forEach((x) => {
+        const on = x.dataset.tabBtn === tab;
+        x.setAttribute('aria-selected', String(on));
+        x.setAttribute('aria-checked', String(on));
+      });
+    };
+    tabBtns.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tabBtn!)));
+    // Search: across both tabs; sections with no match hide.
+    const input = this.explore.querySelector('[data-xp-search]') as HTMLInputElement;
+    const empty = this.explore.querySelector('.xp-empty') as HTMLElement;
+    const filter = () => {
+      const q = input.value.trim().toLocaleLowerCase('tr-TR');
+      this.explore.dataset.searching = String(q.length > 0);
+      let any = false;
+      for (const sec of this.explore.querySelectorAll<HTMLElement>('section')) {
+        let shown = 0;
+        for (const it of sec.querySelectorAll<HTMLElement>('.xp-item')) {
+          const hit = !q || (it.dataset.search ?? '').includes(q);
+          it.hidden = !hit;
+          if (hit) shown++;
+        }
+        sec.hidden = shown === 0;
+        if (shown && q) any = true;
+      }
+      empty.hidden = !q || any;
+    };
+    input.addEventListener('input', filter);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const first = [...this.explore.querySelectorAll<HTMLElement>('.xp-item')].find((x) => !x.hidden && x.offsetParent !== null);
+        first?.click();
+      } else if (e.key === 'Escape') {
+        e.stopPropagation();
+        if (input.value) {
+          input.value = '';
+          filter();
+        } else this.setExplore(false);
+      }
+    });
     this.explore.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('[data-go]') as HTMLElement | null;
       if (b) {
@@ -277,6 +344,9 @@ export class GalaxyHud {
   private setExplore(open: boolean): void {
     this.explore.dataset.open = String(open);
     this.exploreBtn.setAttribute('aria-expanded', String(open));
+    const input = this.explore.querySelector('[data-xp-search]') as HTMLInputElement | null;
+    if (open) requestAnimationFrame(() => input?.focus({ preventScroll: true }));
+    else input?.blur();
   }
 
   private go(t: GalaxyTarget): void {

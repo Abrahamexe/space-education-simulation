@@ -14,7 +14,8 @@ export interface CraftDef {
   /** Trajectory file (public/data/spacecraft/<track>.bin). */
   track: string;
   /** public/models/spacecraft/<glb>.glb, or a model built in code. */
-  model: { glb: string } | { schematic: 'gaia' | 'euclid' | 'clipper' | 'juice' };
+  /** hide: node-name prefixes dropped on load (stray parts in the source model). */
+  model: { glb: string; hide?: string[] } | { schematic: 'gaia' | 'euclid' | 'clipper' | 'juice' };
   /** Largest dimension (m), the model is scaled to it. */
   sizeM: number;
   /** Which model axis points where (Sun, away from it, or Earth), optionally tipped by tiltDeg (Gaia keeps its shield 45° off the Sun). */
@@ -30,6 +31,8 @@ export interface CraftDef {
   fact: string;
   /** Path / marker colour. */
   color: [number, number, number];
+  /** NORAD catalogue number: past the Horizons data, the craft follows CelesTrak's current elements. */
+  norad?: number;
   /** Path shown only this many years either side of now (craft that circle the Sun near Earth for decades). */
   trailYears?: number;
 }
@@ -40,6 +43,7 @@ export const SPACECRAFT: CraftDef[] = [
     name: 'Hubble Uzay Teleskobu',
     kind: 'telescope',
     track: 'hubble',
+    norad: 20580,
     model: { glb: 'hubble' },
     sizeM: 13.2,
     attitude: { axis: '+z', to: 'sun' },
@@ -78,6 +82,7 @@ export const SPACECRAFT: CraftDef[] = [
     name: 'Chandra X-ışını Gözlemevi',
     kind: 'telescope',
     track: 'chandra',
+    norad: 25867,
     model: { glb: 'chandra' },
     sizeM: 19.5,
     attitude: { axis: '+y', to: 'sun' },
@@ -195,7 +200,9 @@ export const SPACECRAFT: CraftDef[] = [
     name: 'Uluslararası Uzay İstasyonu',
     kind: 'station',
     track: 'iss',
-    model: { glb: 'iss' },
+    norad: 25544,
+    // NASA's ISS file carries seven stray 2 m discs stacked beside the station.
+    model: { glb: 'iss', hide: ['bendedtru', 'pCylinder'] },
     sizeM: 109,
     attitude: { axis: '-x', to: 'earth' },
     agency: 'NASA / Roscosmos / ESA / JAXA / CSA',

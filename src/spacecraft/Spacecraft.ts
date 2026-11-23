@@ -25,7 +25,7 @@ import { scale } from '../core/scale';
 import type { Focusable, FrameContext } from '../core/types';
 import { keplerStep } from '../playground/kepler';
 import type { CraftMapper } from './CraftMapper';
-import { ribbonData, ribbonGeometry, setRibbonRange } from './Ribbon';
+import { ribbonData, ribbonGeometry, setRibbonRange, writeRibbon, type RibbonData } from './Ribbon';
 import { buildSchematic } from './schematic';
 import pathVert from '../shaders/spacecraft/path.vert?raw';
 import pathFrag from '../shaders/spacecraft/path.frag?raw';
@@ -59,6 +59,14 @@ const PATH_REST = 0.16;
 const PATH_LIT = 0.9;
 const ORBIT_REST = 0.24;
 const ORBIT_LIT = 0.92;
+/**
+ * Voyage paths follow the craft's own interpolation between the data
+ * samples: an interval is halved while its midpoint strays from the chord by
+ * more than this fraction of the chord (scene units), up to PATH_MAX_DEPTH
+ * times (2^6 = 64 pieces: Parker's perihelion passes, flybys).
+ */
+const PATH_TOLERANCE = 0.006;
+const PATH_MAX_DEPTH = 6;
 
 /** A double-precision position as two float32 parts (see path.vert, RTE). */
 function splitCamera(p: Vector3, hi: Vector3, lo: Vector3): void {
@@ -117,8 +125,21 @@ export class Spacecraft implements Focusable {
   private readonly tmp2 = new Vector3();
   private readonly q = new Quaternion();
   /** Whole voyage (cruise and flybys), drawn once; past / future split by draw range. */
-  private readonly path: { past: Mesh; future: Mesh; times: Float64Array; points: Float64Array } | null;
+  private readonly path: {
+    past: Mesh;
+    future: Mesh;
+    /** Last sample before now, the craft, first sample after: the line runs exactly through it. */
+    pastTip: Mesh;
+    futureTip: Mesh;
+    tip: RibbonData;
+    times: Float64Array;
+    points: Float64Array;
+    /** Dash coordinate per point, in data samples (dashes keep their spacing where the path is refined). */
+    along: Float64Array;
+  } | null;
   private pathBuilt = false;
+  /** Path being built, a slice per frame (see buildPath). */
+  private builder: Generator<void, void> | null = null;
   /** Current orbit about the centre (orbiters, tours). */
   private readonly orbit: Mesh;
   private orbitJd = -Infinity;
@@ -132,6 +153,8 @@ export class Spacecraft implements Focusable {
   pathGain = 1;
   markerScale = 1;
   showAllOrbits = false;
+  /** Paths and orbits drawn at all (the orbit toggle in spacecraft mode). */
+  pathsOn = true;
 
   constructor(
     readonly def: CraftDef,
@@ -141,7 +164,7 @@ export class Spacecraft implements Focusable {
     private readonly gltf: GLTFLoader,
     private readonly envMap: Texture,
   ) {
-    this.trajectory = new Trajectory(def.track, track);
+    this.trajectory = new Trajectory(def.track, track, def.norad);
     this.radius = this.drawnRadius();
     this.group.name = `craft-${def.id}`;
     this.group.add(this.pivot);
@@ -180,13 +203,16 @@ export class Spacecraft implements Focusable {
       // Separate geometries: each carries its own draw range (past / future).
       const past = new Mesh(new BufferGeometry(), lineMat(0.5, 0, true));
       const future = new Mesh(new BufferGeometry(), lineMat(0.14, FUTURE_DASH, true));
-      for (const l of [past, future]) {
+      const tip = ribbonData(new Float64Array(9));
+      const pastTip = new Mesh(ribbonGeometry(tip, 0, 2), past.material);
+      const futureTip = new Mesh(ribbonGeometry(tip, 1, 3), future.material);
+      for (const l of [past, future, pastTip, futureTip]) {
         l.frustumCulled = false;
         l.renderOrder = 4;
         l.visible = false;
         world.add(l);
       }
-      this.path = { past, future, times: new Float64Array(0), points: new Float64Array(0) };
+      this.path = { past, future, pastTip, futureTip, tip, times: new Float64Array(0), points: new Float64Array(0), along: new Float64Array(0) };
     } else this.path = null;
     this.orbit = new Mesh(new BufferGeometry(), lineMat(0.35));
     this.orbit.frustumCulled = false;
@@ -196,6 +222,7 @@ export class Spacecraft implements Focusable {
     scale.onChange(() => {
       this.radius = this.drawnRadius();
       this.pathBuilt = false;
+      this.builder = null;
       this.orbitJd = -Infinity;
       this.fitModel();
     });
@@ -326,6 +353,14 @@ export class Spacecraft implements Focusable {
     this.modelState = 'loading';
     const m = this.def.model;
     const done = (o: Object3D) => {
+      const hide = 'glb' in m ? (m.hide ?? []) : [];
+      if (hide.length) {
+        const drop: Object3D[] = [];
+        o.traverse((c) => {
+          if (hide.some((h) => c.name.startsWith(h))) drop.push(c);
+        });
+        for (const c of drop) c.removeFromParent();
+      }
       o.traverse((c) => {
         const mesh = c as Mesh;
         if (!mesh.isMesh) return;
@@ -407,40 +442,77 @@ export class Spacecraft implements Focusable {
 
   // ---- Paths ------------------------------------------------------------------------
 
-  /** Cruise and flyby samples through the cruise curve (once, and after scale changes). */
-  private buildPath(): void {
+  /**
+   * Cruise and flyby path through the cruise curve (once, and after scale
+   * changes): the data samples plus as many points between them as the
+   * curve needs, each from the same interpolation that places the craft, so
+   * the craft always sits on its line.
+   */
+  private *buildPath(): Generator<void, void> {
     const p = this.path;
     if (!p) return;
-    const segs = this.trajectory.track.segments.filter((s) => modeOf(s) === 'helio');
-    let n = 0;
-    for (const s of segs) n += s.n;
-    const pos = new Float64Array(n * 3);
-    const times = new Float64Array(n);
+    const pts: number[] = [];
+    const times: number[] = [];
+    const along: number[] = [];
     const st: CraftState = { center: 'sun', r: [0, 0, 0], v: [0, 0, 0] };
-    const v = new Vector3();
     const h = new Vector3();
+    const at = (t: number, out: Vector3): Vector3 | null => {
+      if (!this.trajectory.stateAt(t, st)) return null;
+      return this.mapper.helio(this.helioOf(st, t, h), t, out);
+    };
+    const chordMid = new Vector3();
+    // Points after (t0, a) up to (t1, b), refined where the curve bends.
+    const refine = (t0: number, a: Vector3, t1: number, b: Vector3, k0: number, k1: number, depth: number): void => {
+      if (depth < PATH_MAX_DEPTH) {
+        const tm = (t0 + t1) / 2;
+        const m = at(tm, new Vector3());
+        if (m) {
+          const chord = a.distanceTo(b);
+          const off = chordMid.addVectors(a, b).multiplyScalar(0.5).distanceTo(m);
+          if (off > chord * PATH_TOLERANCE) {
+            const km = (k0 + k1) / 2;
+            refine(t0, a, tm, m, k0, km, depth + 1);
+            refine(tm, m, t1, b, km, k1, depth + 1);
+            return;
+          }
+        }
+      }
+      pts.push(b.x, b.y, b.z);
+      times.push(t1);
+      along.push(k1);
+    };
+    let prev = new Vector3();
     let k = 0;
     // Segments are in time order; skip samples that would double back at joins.
     for (const s of this.trajectory.track.segments) {
       if (modeOf(s) !== 'helio') continue;
-      for (let i = 0; i < s.n; i++) {
+      for (let i = 0; i < s.n; i++, k++) {
+        // A voyage is thousands of samples: hand the frame back now and then.
+        if ((k & 127) === 127) yield;
         const t = s.t0 + i * s.step;
-        if (k > 0 && t <= times[k - 1]) continue;
+        const last = times.length ? times[times.length - 1] : -Infinity;
+        if (t <= last) continue;
         this.trajectory.sampleAt(s, i, st);
-        this.mapper.helio(this.helioOf(st, t, h), t, v);
-        pos[k * 3] = v.x;
-        pos[k * 3 + 1] = v.y;
-        pos[k * 3 + 2] = v.z;
-        times[k++] = t;
+        const cur = this.mapper.helio(this.helioOf(st, t, h), t, new Vector3());
+        // Refine only inside a segment (across a gap the craft coasts on the nearer end's conic).
+        if (i > 0 && times.length) refine(last, prev, t, cur, k - 1, k, 0);
+        else {
+          pts.push(cur.x, cur.y, cur.z);
+          times.push(t);
+          along.push(k);
+        }
+        prev = cur;
       }
     }
-    p.points = pos.subarray(0, k * 3);
-    const data = ribbonData(p.points);
+    p.points = Float64Array.from(pts);
+    p.times = Float64Array.from(times);
+    p.along = Float64Array.from(along);
+    const al = p.along;
+    const data = ribbonData(p.points, (i) => al[i]);
     for (const m of [p.past, p.future]) {
       m.geometry.dispose();
       m.geometry = ribbonGeometry(data, 0, 0);
     }
-    p.times = times.subarray(0, k);
     this.pathBuilt = true;
   }
 
@@ -457,17 +529,33 @@ export class Spacecraft implements Focusable {
     return lo;
   }
 
-  /** Split the voyage at now: bright behind, faint ahead (within trailYears when set). */
-  private updatePathSplit(): void {
+  /**
+   * Split the voyage at now: bright behind, faint ahead (within trailYears
+   * when set), joined at the craft itself by the two tip pieces.
+   */
+  private updatePathSplit(onPath: boolean): void {
     const p = this.path!;
     const now = this.indexAfter(this.jd);
+    const n = p.times.length;
     const span = this.def.trailYears ? this.def.trailYears * 365.25 : Infinity;
     const a = Number.isFinite(span) ? this.indexAfter(this.jd - span) : 0;
-    const b = Number.isFinite(span) ? this.indexAfter(this.jd + span) : p.times.length;
-    // Both halves reach the craft's position (the sample either side of now).
-    setRibbonRange(p.past.geometry, a, now + 1);
-    setRibbonRange(p.future.geometry, Math.max(now - 1, 0), b);
+    const b = Number.isFinite(span) ? this.indexAfter(this.jd + span) : n;
+    const tips = onPath && now > 0 && now < n;
+    setRibbonRange(p.past.geometry, a, tips ? now : Math.min(now + 1, n));
+    setRibbonRange(p.future.geometry, tips ? now : Math.max(now - 1, 0), b);
+    p.pastTip.userData.on = p.futureTip.userData.on = tips;
+    if (!tips) return;
+    const i0 = (now - 1) * 3;
+    const i1 = now * 3;
+    const pt = p.points;
+    const f = (this.jd - p.times[now - 1]) / Math.max(p.times[now] - p.times[now - 1], 1e-12);
+    const k0 = p.along[now - 1];
+    const k1 = p.along[now];
+    this.tipPts.set([pt[i0], pt[i0 + 1], pt[i0 + 2], this.abs.x, this.abs.y, this.abs.z, pt[i1], pt[i1 + 1], pt[i1 + 2]]);
+    writeRibbon(p.tip, this.tipPts, (i) => (i === 0 ? k0 : i === 2 ? k1 : k0 + (k1 - k0) * f));
   }
+
+  private readonly tipPts = new Float64Array(9);
 
   /** The orbit about the centre: one Kepler period, or ±120 days of samples for L2 halo orbits. */
   private updateOrbit(seg: SegmentData): void {
@@ -524,8 +612,7 @@ export class Spacecraft implements Focusable {
    * camAbs: the camera's absolute position. view.closeUp: the camera is on a
    * spacecraft (only its own path is drawn then).
    */
-  update(ctx: FrameContext, show: boolean, camAbs: Vector3, view: { closeUp: boolean }, budget: { paths: number }): void {
-    const closeUp = view.closeUp;
+  update(ctx: FrameContext, show: boolean): void {
     const jd = ctx.time.jd;
     this.jd = jd;
     const tr = this.trajectory;
@@ -546,6 +633,19 @@ export class Spacecraft implements Focusable {
     this.heliocentricDistanceKm = this.pHelio.length();
     this.earthDistanceKm = s.center === 'earth' ? Math.hypot(...s.r) : this.pHelio.distanceTo(this.mapper.helioKm('earth', jd, this.tmp));
     this.orient();
+  }
+
+  /**
+   * Everything that depends on where the camera is, run after the camera has
+   * moved this frame (a fast craft followed at real scale moves many of its
+   * own sizes per frame: last frame's camera would be far off).
+   */
+  updateView(ctx: FrameContext, camAbs: Vector3, view: { closeUp: boolean }, budget: { until: number }): void {
+    if (this.hidden) return;
+    const closeUp = view.closeUp;
+    const jd = this.jd;
+    const tr = this.trajectory;
+    const s = this.state;
 
     // Apparent size → model or marker.
     const camDist = this.abs.distanceTo(camAbs);
@@ -567,13 +667,18 @@ export class Spacecraft implements Focusable {
 
     // Paths.
     const seg = tr.segmentAt(jd)!;
-    // Paths are built one per frame (a voyage is thousands of samples).
-    if (this.path && !this.pathBuilt && budget.paths > 0) {
-      budget.paths--;
-      this.buildPath();
+    // Paths are built a few milliseconds per frame (a voyage is thousands of samples).
+    if (this.path && !this.pathBuilt && performance.now() < budget.until) {
+      this.builder ??= this.buildPath();
+      while (performance.now() < budget.until) {
+        if (this.builder.next().done) {
+          this.builder = null;
+          break;
+        }
+      }
     }
     if (this.path && this.pathBuilt) {
-      this.updatePathSplit();
+      this.updatePathSplit(modeOf(seg) === 'helio');
       // Faint at rest so a crowd of paths stays readable; the chosen craft's stands out.
       const o = (PATH_REST + (PATH_LIT - PATH_REST) * this.emphasis) * this.pathGain;
       this.setLine(ctx, this.path.past, o);
@@ -584,7 +689,9 @@ export class Spacecraft implements Focusable {
       }
       // The layer is a mode of its own (planet lines hidden): every path shows,
       // except on a craft close-up, where only its own does.
-      this.path.past.visible = this.path.future.visible = !closeUp || this.emphasis > 0;
+      const on = this.pathsOn && (!closeUp || this.emphasis > 0);
+      this.path.past.visible = this.path.future.visible = on;
+      this.path.pastTip.visible = this.path.futureTip.visible = on && this.path.pastTip.userData.on === true;
     }
     if (modeOf(seg) === 'sat') {
       const centerDist = Math.hypot(...s.r);
@@ -595,7 +702,7 @@ export class Spacecraft implements Focusable {
       this.orbit.position.copy(centre);
       const camToCenter = centre.distanceTo(camAbs);
       const inside = camToCenter < extent * ORBIT_INSIDE;
-      const near = this.emphasis > 0 || this.showAllOrbits || (!inside && !closeUp);
+      const near = this.pathsOn && (this.emphasis > 0 || this.showAllOrbits || (!inside && !closeUp));
       this.orbit.visible = near;
       if (near && Math.abs(jd - this.orbitJd) > seg.step * 0.25) {
         this.orbitJd = jd;
@@ -623,7 +730,7 @@ export class Spacecraft implements Focusable {
     this.group.visible = !h;
     if (h) {
       this.orbit.visible = false;
-      if (this.path) this.path.past.visible = this.path.future.visible = false;
+      if (this.path) this.path.past.visible = this.path.future.visible = this.path.pastTip.visible = this.path.futureTip.visible = false;
     }
   }
 

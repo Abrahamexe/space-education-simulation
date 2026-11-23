@@ -1,28 +1,33 @@
 import { Vector3 } from 'three';
-import { KM_PER_AU } from '../config/astro';
-import { GALAXY_VIEW } from '../config/galaxy';
 import type { Sun } from '../bodies/Sun';
 import type { GalaxyView } from '../galaxy/GalaxyView';
-import { Hyperspace } from '../ui/Hyperspace';
+import type { UniverseView } from '../universe/UniverseView';
+import { UNIVERSE_VIEW } from '../config/universe';
+import { KM_PER_AU } from '../config/astro';
+import { directionToPose } from './CameraRig';
 import type { Engine } from './Engine';
 import type { Navigator } from './Navigator';
 import { scale } from './scale';
 import type { Selection } from './Selection';
 
-const KUIPER_KM = 50 * KM_PER_AU;
+/** Solar camera distance from the Sun where the trip hands over to the galaxy (AU, scene-mapped). */
+const HANDOVER_AU = 8000;
+/** Solar part of the trip out / back in (s). */
+const OUT_S = 3;
+const IN_S = 3.6;
 
 /**
- * Solar System ↔ galaxy hand-over, always under a light-speed jump that
- * stands for the trip: zooming out past a few Kuiper-belt distances (or
- * "Galaksiye çık") jumps to the galaxy along the same line of sight and
- * drops out of it already far out; going back lands straight in the
- * Solar System overview.
+ * Solar System ↔ galaxy as one trip. Only the "Galaksiye çık" button leaves
+ * (zooming out never switches): the camera speeds away from the Sun along
+ * its line of sight, the galaxy view takes over behind a short dissolve
+ * near the Sun and keeps pulling out. Back: the galaxy camera closes in on
+ * the Sun, then the solar camera comes in from far out to the overview.
  */
 export class ViewSwitch {
-  private readonly tmp = new Vector3();
   private swapping = false;
-  private readonly hyperspace = new Hyperspace();
+  private leaving = false;
   private readonly listeners = new Set<(galaxy: boolean) => void>();
+  private universe: UniverseView | null = null;
 
   constructor(
     private readonly engine: Engine,
@@ -33,8 +38,9 @@ export class ViewSwitch {
   ) {
     galaxy.setMapMode(engine.rig.mapMode);
     engine.rig.onMapModeChange((on) => galaxy.setMapMode(on));
-    galaxy.setExitHandler(() => this.transition(() => this.backToSolar()));
-    engine.addLate({ update: () => this.check() }, 15);
+    galaxy.setExitHandler((dir) => this.transition(() => this.backToSolar(dir)));
+    // Any user move during the trip out cancels it.
+    engine.rig.onInterrupt(() => (this.leaving = false));
   }
 
   get inGalaxy(): boolean {
@@ -46,41 +52,14 @@ export class ViewSwitch {
     return () => this.listeners.delete(fn);
   }
 
-  /** Solar camera distance from the Sun beyond which the galaxy takes over (scene units). */
-  private threshold(): number {
-    return GALAXY_VIEW.enterKuiperMultiple * scale.distance(KUIPER_KM);
-  }
-
-  /** While true (playground), zooming out never switches to the galaxy. */
-  blocked: () => boolean = () => false;
-
-  private check(): void {
-    const rig = this.engine.rig;
-    if (this.galaxy.active || !rig.active || rig.isFlying || this.blocked()) return;
-    const abs = this.engine.origin.toAbsolute(this.engine.camera.position, this.tmp);
-    if (abs.length() > this.threshold()) {
-      const dir = abs.clone().normalize();
-      this.transition(() => this.enter(dir), () => this.galaxy.prepareEntry());
-    }
-  }
-
-  /**
-   * Swap views during a light-speed jump; `prepare` (loading, shader
-   * compiles) runs under it first. With reduced motion: a dissolve.
-   */
+  /** Swap views behind a dissolve, after `prepare` (loading, shader compiles) is done. */
   private transition(swap: () => void, prepare?: () => Promise<void>): void {
     if (this.swapping) return;
-    if (Hyperspace.reduced) {
-      void (prepare?.() ?? Promise.resolve()).then(() => this.crossfade(swap));
-      return;
-    }
     this.swapping = true;
-    void this.hyperspace
-      .run(async () => {
-        await prepare?.();
-        swap();
-      })
-      .finally(() => (this.swapping = false));
+    void (prepare?.() ?? Promise.resolve()).then(() => {
+      this.swapping = false;
+      this.crossfade(swap, 900);
+    });
   }
 
   /**
@@ -116,23 +95,77 @@ export class ViewSwitch {
     this.listeners.forEach((fn) => fn(true));
   }
 
-  /** "Galaksiye çık": jump straight away, along the current line of sight from the Sun. */
-  goToGalaxy(): void {
-    if (this.galaxy.active) return;
-    this.engine.rig.cancelFlight();
-    const cam = this.engine.origin.toAbsolute(this.engine.camera.position, new Vector3());
-    const dir = cam.lengthSq() > 0 ? cam.normalize() : new Vector3(0, 0.5, 1).normalize();
-    this.transition(() => this.enter(dir), () => this.galaxy.prepareEntry());
+  /**
+   * The universe map above the galaxy: "Evrene çık" pulls the galaxy camera
+   * out to the Local Group, the map takes over behind a dissolve and keeps
+   * pulling out to Laniakea; the way back mirrors it.
+   */
+  attachUniverse(u: UniverseView): void {
+    this.universe = u;
+    u.setExitHandler((dir) =>
+      this.transition(() => {
+        document.body.classList.remove('mode-universe');
+        this.galaxy.resumeFromFar(dir, UNIVERSE_VIEW.entryMpc * 1e6);
+      }),
+    );
   }
 
-  private backToSolar(): void {
+  get inUniverse(): boolean {
+    return !!this.universe?.active;
+  }
+
+  goToUniverse(): void {
+    const u = this.universe;
+    if (!u || !this.galaxy.active || this.swapping || this.leaving) return;
+    this.leaving = true;
+    const ready = u.prepare();
+    void this.galaxy.pullOut(UNIVERSE_VIEW.entryMpc * 1e6).then(() => {
+      this.leaving = false;
+      if (!this.galaxy.active) return;
+      const dir = this.galaxy.camera.position.clone().normalize();
+      this.transition(() => {
+        this.galaxy.suspend();
+        document.body.classList.add('mode-universe');
+        u.enter(dir);
+      }, () => ready.catch(() => undefined));
+    });
+  }
+
+  /** Far end of the solar part of the trip (scene units from the Sun). */
+  private handoverDistance(): number {
+    return scale.distance(HANDOVER_AU * KM_PER_AU);
+  }
+
+  /** "Galaksiye çık": speed away from the Sun along the current line of sight, then hand over. */
+  goToGalaxy(): void {
+    if (this.galaxy.active || this.leaving || this.swapping) return;
+    const rig = this.engine.rig;
+    rig.cancelFlight();
+    const sunAbs = this.sun.getAbsolutePosition(new Vector3());
+    const off = this.engine.origin.toAbsolute(this.engine.camera.position, new Vector3()).sub(sunAbs);
+    const d0 = off.length();
+    const dir = d0 > 0 ? off.divideScalar(d0) : new Vector3(0, 0.5, 1).normalize();
+    // Loading and shader uploads start now, while the camera is on its way.
+    const ready = this.galaxy.prepareEntry();
+    const far = Math.max(this.handoverDistance(), d0 * 4);
+    this.selection.select(null);
+    rig.setFocus(this.sun);
+    this.leaving = true;
+    void rig.flyPose(directionToPose(dir, d0), directionToPose(dir, far), OUT_S, 'power2.in').then(() => {
+      if (!this.leaving) return;
+      this.leaving = false;
+      this.transition(() => this.enter(dir), () => ready);
+    });
+  }
+
+  private backToSolar(dir: Vector3): void {
     const engine = this.engine;
     engine.setView();
     engine.postfx.setFlareSource(this.sun);
     document.body.classList.remove('mode-galaxy');
     engine.rig.active = true;
-    // Out of the jump straight into the overview: no flight in from far out.
-    this.nav.homeNow();
+    // Come in from far out along the galaxy camera's line of sight.
+    void this.nav.homeFrom(dir, this.handoverDistance(), IN_S);
     this.listeners.forEach((fn) => fn(false));
   }
 }

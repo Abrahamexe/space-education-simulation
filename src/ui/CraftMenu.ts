@@ -1,11 +1,15 @@
 import { strings } from '../i18n';
 import { SPACECRAFT, type CraftDef } from '../config/spacecraft';
+import { julianToDate } from '../core/Time';
+import type { Spacecraft } from '../spacecraft/Spacecraft';
 import { icon } from './icons';
 import { uiScale } from './UiScale';
 import type { UiContext } from './context';
 
 /** Window pixels (at zoom 1) the top bar takes. */
 const TOP_CLEAR_PX = 72;
+/** Days inside the data a time jump lands (ended missions: their last days). */
+const JUMP_MARGIN_D = 2;
 
 type Group = 'telescope' | 'near' | 'planetary' | 'outer';
 
@@ -83,7 +87,7 @@ export class CraftMenu {
       this.close(false);
       if (!entry) return;
       this.ensureMode();
-      void this.ctx.nav.flyTo(entry);
+      void this.go(entry.body as Spacecraft).then(() => this.ctx.nav.flyTo(entry));
     });
     document.addEventListener('pointerdown', (e) => {
       if (!this.isOpen) return;
@@ -94,6 +98,37 @@ export class CraftMenu {
       if (e.key === 'Escape' && this.isOpen) this.close();
     });
     uiScale.onLayout(() => this.isOpen && this.place());
+  }
+
+  /**
+   * A craft only exists within its data: a mission that has ended (Cassini)
+   * or a date past the ephemeris moves the clock to the nearest day it has,
+   * instead of flying to an empty spot.
+   */
+  private async go(craft: Spacecraft): Promise<void> {
+    const tr = craft.trajectory;
+    await tr.ready();
+    const time = this.ctx.engine.time;
+    if (tr.covers(time.jd)) return;
+    const { startJd, endJd } = tr.track;
+    time.setJd(time.jd > endJd ? endJd - JUMP_MARGIN_D : startJd + JUMP_MARGIN_D);
+  }
+
+  /** Mission span on each row; ended ones say so (choosing them moves the date). */
+  private refresh(): void {
+    const jd = this.ctx.engine.time.jd;
+    const year = (j: number) => julianToDate(j).getUTCFullYear();
+    for (const o of this.pop.querySelectorAll<HTMLElement>('.craft-option')) {
+      const craft = this.ctx.nav.entry(o.dataset.id as string)?.body as Spacecraft | undefined;
+      if (!craft) continue;
+      const tr = craft.trajectory;
+      const label = o.children[2] as HTMLElement;
+      const launch = craft.def.launch.slice(0, 4);
+      const ended = !tr.covers(jd) && jd > tr.track.endJd && !craft.def.norad;
+      o.dataset.ended = String(ended);
+      label.textContent = ended ? `${launch}–${year(tr.track.endJd)}` : launch;
+      o.title = ended ? strings().nav.craftEnded(year(tr.track.endJd)) : '';
+    }
   }
 
   private get isOpen(): boolean {
@@ -112,6 +147,7 @@ export class CraftMenu {
   }
 
   private open(): void {
+    this.refresh();
     this.pop.dataset.open = 'true';
     this.button.setAttribute('aria-expanded', 'true');
     this.place();
