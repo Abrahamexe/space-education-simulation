@@ -125,6 +125,11 @@ export class PostFX {
     const smaa = level >= 2;
     this.smaaPass.enabled = smaa;
     this.fxaaPass.enabled = !smaa;
+    // The composer only marks the last pass ADDED (FXAA) as rendering to the
+    // screen; disabling it left SMAA drawing into a buffer and the canvas black
+    // on high / ultra (strong GPUs). Hand the screen to whichever pass is on.
+    this.smaaPass.renderToScreen = smaa;
+    this.fxaaPass.renderToScreen = !smaa;
     if (smaa) this.smaa.applyPreset(level);
   }
 
