@@ -17,7 +17,8 @@
     "deepsky": "node scripts/fetch-deepsky.mjs",
     "extragalactic": "node scripts/fetch-extragalactic.mjs",
     "universe": "node scripts/build-universe.mjs",
-    "test": "node --test \"tests/**/*.test.ts\""
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "bake:dm": "node scripts/bake-darkmatter.ts"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",
