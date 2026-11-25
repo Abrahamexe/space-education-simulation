@@ -1,0 +1,7 @@
+/* Dark-matter 3D stage (lab cards and film). */
+.dm-stage { position: relative; overflow: hidden; background: #02030a; border-radius: 10px; touch-action: none; }
+.dm-stage .dm-stage-canvas { display: block; width: 100%; height: 100%; }
+.dm-stage-full { position: fixed !important; inset: 0; z-index: 1000; border-radius: 0; aspect-ratio: auto !important; max-width: none !important; margin: 0 !important; }
+.dm-stage .dm-overlay { position: absolute; left: 10px; top: 8px; right: 90px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; font: 12px/1.35 var(--font-mono, monospace); color: rgba(235, 240, 255, 0.85); text-shadow: 0 1px 3px #000; }
+.dm-stage .dm-overlay .dm-scale { opacity: 0.6; font-size: 11px; }
+.dm-stage .dm-full { position: absolute; right: 8px; top: 8px; }

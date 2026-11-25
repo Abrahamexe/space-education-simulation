@@ -1,5 +1,5 @@
 /* Bullet Cluster lab scene: only what the shared .lab-* classes do not already cover. */
-.bullet .bullet-canvas { display: block; width: 100%; max-width: 460px; height: auto; aspect-ratio: 460 / 300; margin: var(--s-2) 0; border-radius: 8px; background: #000; }
+.bullet .bullet-stage { width: 100%; aspect-ratio: 16 / 9; margin: var(--s-2) 0; }
 .bullet .bullet-layers { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .bullet .bullet-layers .lab-check { display: inline-block; margin: 4px 0; }
 .bullet .bullet-sw { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }

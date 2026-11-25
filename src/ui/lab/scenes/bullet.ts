@@ -1,28 +1,33 @@
 import './bullet.css';
-import type { BulletDiag, BulletFrame, BulletReady, FromWorker, ToWorker } from './bullet.worker';
+import { BufferGeometry, Float32BufferAttribute, GridHelper, LineBasicMaterial, LineSegments } from 'three';
+import { Stage } from '../../darkmatter/render/Stage';
+import { ParticleLayer } from '../../darkmatter/render/ParticleLayer';
+import { DM, GAS, STAR } from '../../darkmatter/render/palette';
+import { cicDensity, sampleDensity } from '../../darkmatter/bake/density';
+import { COUNTS, type BulletDiag, type BulletFrame, type BulletReady, type FromWorker, type ToWorker } from './bullet.worker';
 
 /**
  * Lab scene: a Bullet Cluster (1E 0657-56) style collision of two galaxy clusters. The physics runs
  * in bullet.worker.ts (PM gravity, simplified gas, Monte Carlo self-interacting dark matter); this
- * file draws the sky projection on a 2D canvas and explains what the offsets mean.
+ * file draws the clusters in 3D (dark-matter Stage) and explains what the offsets mean.
  */
 
 /** Allowed sigma/m values, cm^2/g (slider steps). */
 const SIGMAS = [0, 0.1, 0.3, 1, 3, 10];
 
-// Canvas in CSS px and the map grid (4 CSS px per cell). The view is 5.6 Mpc wide, centred on the origin.
-const CW = 460;
-const CH = 300;
+// Total-mass map on the sky plane (x, y) for the lensing contours: 5.6 Mpc wide, centred on the origin.
 const GW = 115;
 const GH = 75;
 const VIEW_W = 5.6;
 const CELL = VIEW_W / GW; // Mpc per map cell
 const X0 = -VIEW_W / 2;
 const Y0 = (-GH * CELL) / 2;
-const PX_PER_MPC = CW / VIEW_W;
 
-const BLUE = [0x3d, 0x7b, 0xff] as const;
-const PINK = [0xff, 0x6f, 0xc8] as const;
+/** Wall-clock time between worker frames (bullet.worker STEP_MS): the GPU blends across it. */
+const STEP_MS = 66;
+/** Gas density grid for the per-particle X-ray brightness (same as the film bake). */
+const RHO_N = 64;
+const RHO_HALF = 3;
 
 /** Contour levels of the total (lensing) mass map, as fractions of the initial main-cluster peak. */
 const CONTOUR_LEVELS = [0.06, 0.12, 0.25, 0.5];
@@ -75,17 +80,28 @@ function blur(g: Float32Array, tmp: Float32Array, passes: number): void {
   }
 }
 
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+/** q-quantile of the positive values (0 if none). */
+function percentile(a: Float32Array, q: number): number {
+  const v = Array.from(a).filter((x) => x > 0).sort((x, y) => x - y);
+  return v.length ? v[Math.min(v.length - 1, Math.floor(q * v.length))] : 0;
+}
+
+const DM_OPACITY = 0.004;
+const GAS_OPACITY = 0.16;
+const GAL_OPACITY = 2.2;
 
 export function mountBullet(container: HTMLElement): void {
   container.classList.add('bullet');
   container.innerHTML = `
     <p class="bullet-intro">İki galaksi kümesi çarpışıyor (Mermi Kümesi, 1E 0657-56, benzeri). Sıcak gaz çarpışmada birbirine sürtünüp yavaşlar; galaksiler ve (çarpışmasızsa) karanlık madde ise birbirinin içinden geçer. Kütlenin gazla birlikte olmaması, karanlık maddenin kanıtlarından biridir.</p>
-    <canvas class="bullet-canvas" width="${CW}" height="${CH}" role="img" aria-label="İki galaksi kümesinin çarpışması: karanlık madde, sıcak gaz, galaksiler"></canvas>
+    <div class="bullet-stage" role="img" aria-label="İki galaksi kümesinin çarpışması, üç boyutlu: karanlık madde, sıcak gaz, galaksiler. Sürükleyerek döndür, tekerlekle yaklaş.">
+      <div class="dm-overlay"><span data-clock></span><span class="dm-scale">Izgara karesi 1 Mpc · sürükle: döndür</span></div>
+      <button type="button" class="pill dm-full" data-full>Büyüt</button>
+    </div>
     <div class="bullet-layers">
-      <label class="lab-check"><input type="checkbox" data-layer="dm" checked><span class="bullet-sw" style="background:#3d7bff"></span> Karanlık madde</label>
-      <label class="lab-check"><input type="checkbox" data-layer="gas" checked><span class="bullet-sw" style="background:#ff6fc8"></span> Sıcak gaz (X-ışını)</label>
-      <label class="lab-check"><input type="checkbox" data-layer="gal" checked><span class="bullet-sw" style="background:#fff"></span> Galaksiler</label>
+      <label class="lab-check"><input type="checkbox" data-layer="dm" checked><span class="bullet-sw" style="background:${DM}"></span> Karanlık madde (gerçekte görünmez)</label>
+      <label class="lab-check"><input type="checkbox" data-layer="gas" checked><span class="bullet-sw" style="background:${GAS}"></span> Sıcak gaz: X-ışını parlaklığı (∝ ρ²)</label>
+      <label class="lab-check"><input type="checkbox" data-layer="gal" checked><span class="bullet-sw" style="background:${STAR}"></span> Galaksiler</label>
       <label class="lab-check"><input type="checkbox" data-layer="lens" checked><span class="bullet-sw bullet-sw-ring"></span> Mercek konturları</label>
     </div>
     <div class="lab-acts">
@@ -98,7 +114,9 @@ export function mountBullet(container: HTMLElement): void {
     <p class="note">Kaynaklar: <a href="https://arxiv.org/abs/astro-ph/0608407" target="_blank" rel="noopener">Clowe ve ark. 2006</a> (gaz ve kütle tepeleri ayrık), <a href="https://arxiv.org/abs/0704.0261" target="_blank" rel="noopener">Randall ve ark. 2008</a> (σ/m &lt; 1,25 cm²/g).</p>
     <p class="note" data-simple>Basitleştirmeler: kütleçekimi parçacık-ağ (PM) yöntemiyle, ağ hücresi 0,16 Mpc, etkin yumuşatma ≈ 0,1 Mpc (küçük kümenin çekirdeği buna yakın, bu yüzden biraz yayılır) ve 10 Mpc’lik periyodik bir kutuda hesaplanır. Gaz “basitleştirilmiş hidrodinamik” ile modellenir: gaz başlangıçta kendi kütleçekimi potansiyelinde eşısıl hidrostatik dengededir; basınç eşısıl, komşu gaza sürtünme var; şok ısınması ve soğuma yoktur, gaz sıcaklığı (≈ 1600 ve 700 km/s ses hızı) temsili bir değerdir. Karanlık madde etkileşimi Monte Carlo ile, sabit ve yönden bağımsız σ/m ile yapılır; momentum yalnızca ortalamada korunur. Yaklaşık 12 000 parçacık kullanıldığından konumlar ±20 kpc kadar gürültülüdür. Kütleler ve boyutlar Mermi Kümesi’ni temsil eden değerlerdir (ana küme 1,5×10¹⁵ M☉, mermi 1,5×10¹⁴ M☉); başlangıç mesafesi ve hızı, en yakın geçişin ~0,5 milyar yılda olması için seçilmiştir.</p>`;
 
-  const canvas = container.querySelector<HTMLCanvasElement>('.bullet-canvas')!;
+  const stageEl = container.querySelector<HTMLElement>('.bullet-stage')!;
+  const clock = container.querySelector<HTMLElement>('[data-clock]')!;
+  const fullBtn = container.querySelector<HTMLButtonElement>('[data-full]')!;
   const playBtn = container.querySelector<HTMLButtonElement>('[data-play]')!;
   const resetBtn = container.querySelector<HTMLButtonElement>('[data-reset]')!;
   const slider = container.querySelector<HTMLInputElement>('[data-sigma]')!;
@@ -107,26 +125,44 @@ export function mountBullet(container: HTMLElement): void {
   const explain = container.querySelector<HTMLElement>('[data-explain]')!;
   const layerBoxes = Array.from(container.querySelectorAll<HTMLInputElement>('[data-layer]'));
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(CW * dpr);
-  canvas.height = Math.round(CH * dpr);
-  const ctx = canvas.getContext('2d')!;
-  const mapCanvas = document.createElement('canvas');
-  mapCanvas.width = GW;
-  mapCanvas.height = GH;
-  const mapCtx = mapCanvas.getContext('2d')!;
-  const image = mapCtx.createImageData(GW, GH);
+  const stage = new Stage(stageEl);
+  const nDm = COUNTS.dmMain + COUNTS.dmSub;
+  const nGas = COUNTS.gasMain + COUNTS.gasSub;
+  const dmLayer = new ParticleLayer({ count: nDm, color: DM, size: 0.42, opacity: DM_OPACITY, kind: 'dm' });
+  const gasLayer = new ParticleLayer({ count: nGas, color: GAS, size: 0.2, opacity: GAS_OPACITY, kind: 'gas' });
+  const galLayer = new ParticleLayer({ count: COUNTS.galMain + COUNTS.galSub, color: STAR, size: 0.025, opacity: GAL_OPACITY, kind: 'star' });
+  const grid = new GridHelper(10, 10, 0x2a3350, 0x161c2e);
+  grid.position.y = -2.2;
+  const contourGeo = new BufferGeometry();
+  const contourLines = new LineSegments(contourGeo, new LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthTest: false }));
+  stage.scene.add(grid, dmLayer.points, gasLayer.points, galLayer.points, contourLines);
+  const rhoGrid = new Float32Array(RHO_N ** 3);
+  type Snap = { dm: Float32Array; gas: Float32Array; gal: Float32Array; rho: Float32Array };
+  let prev: Snap | null = null;
+  let cur: Snap | null = null;
+  let arrived = 0;
+  let rhoRef = 0;
+  stage.onUpdate(() => {
+    if (!prev || !cur) return;
+    const mix = Math.min(1, (performance.now() - arrived) / STEP_MS);
+    dmLayer.setFrames(prev.dm, cur.dm, mix);
+    gasLayer.setFrames(prev.gas, cur.gas, mix);
+    gasLayer.setRho(prev.rho, cur.rho, rhoRef);
+    galLayer.setFrames(prev.gal, cur.gal, mix);
+  });
 
   const layers = { dm: true, gas: true, gal: true, lens: true };
   const dm = new Float32Array(GW * GH);
+  const segs: number[] = [];
   const gasMap = new Float32Array(GW * GH);
   const total = new Float32Array(GW * GH);
   const tmp = new Float32Array(GW * GH);
   // Brightness references (the peaks of the first frame), kept across resets so runs compare.
-  let ref: { dm: number; xray: number; total: number } | null = null;
+  let ref: { total: number } | null = null;
 
   let info: BulletReady | null = null;
   let frame: BulletFrame | null = null;
+  let lastT: number | null = null;
   let history: BulletDiag[] = [];
   let minSep = Infinity;
   let contact = false;
@@ -136,7 +172,6 @@ export function mountBullet(container: HTMLElement): void {
   let finished = false;
   let intersecting = true;
   let disposed = false;
-  let rafId = 0;
   let lastReadout = '';
 
   const worker = new Worker(new URL('./bullet.worker.ts', import.meta.url), { type: 'module' });
@@ -146,11 +181,15 @@ export function mountBullet(container: HTMLElement): void {
 
   // ---- Visibility ----------------------------------------------------------------------------
 
-  const shown = (): boolean => container.isConnected && container.offsetParent !== null && container.getClientRects().length > 0 && intersecting && !document.hidden;
+  // A closed lab panel stays in the DOM (data-open="false"), so ask it too.
+  const shown = (): boolean =>
+    container.isConnected && container.closest<HTMLElement>('[data-open]')?.dataset.open !== 'false' && container.offsetParent !== null && container.getClientRects().length > 0 && intersecting && !document.hidden;
 
   /** Keep the worker running only while the user wants it and the scene is visible. */
   function sync(): void {
     if (disposed) return;
+    if (shown()) stage.start();
+    else stage.stop();
     const should = wantPlay && !finished && shown();
     if (should !== workerRunning) {
       workerRunning = should;
@@ -162,8 +201,12 @@ export function mountBullet(container: HTMLElement): void {
     if (disposed) return;
     disposed = true;
     clearInterval(timer);
-    cancelAnimationFrame(rafId);
     io?.disconnect();
+    stage.dispose();
+    dmLayer.dispose();
+    gasLayer.dispose();
+    galLayer.dispose();
+    contourGeo.dispose();
     mo.disconnect();
     worker.terminate();
   }
@@ -176,7 +219,7 @@ export function mountBullet(container: HTMLElement): void {
     intersecting = e[e.length - 1].isIntersecting;
     sync();
   }) : null;
-  io?.observe(canvas);
+  io?.observe(stageEl);
   // Removal of the card terminates the worker immediately (the interval is the fallback).
   const mo = new MutationObserver(() => {
     if (!container.isConnected) dispose();
@@ -202,7 +245,7 @@ export function mountBullet(container: HTMLElement): void {
           tContact = m.t;
         }
       }
-      if (!rafId) rafId = requestAnimationFrame(draw);
+      applyFrame(m);
       updateText();
     } else {
       finished = true;
@@ -235,8 +278,6 @@ export function mountBullet(container: HTMLElement): void {
     blur(dm, tmp, 2);
     blur(gasMap, tmp, 3);
     for (let i = 0; i < total.length; i++) total[i] = dm[i] + gasMap[i];
-    // X-ray emission goes as density squared.
-    for (let i = 0; i < gasMap.length; i++) gasMap[i] *= gasMap[i];
   }
 
   function peak(a: Float32Array): number {
@@ -245,14 +286,11 @@ export function mountBullet(container: HTMLElement): void {
     return m;
   }
 
-  /** Marching squares for one level on the total-mass map, drawn as thin line segments. */
+  /** Marching squares for one level on the total-mass map; segments go to `segs` on the sky plane (Mpc, z = 0). */
   function contour(level: number): void {
-    const sx = CW / GW;
-    const sy = CH / GH;
     const v = (i: number, j: number): number => total[j * GW + i];
     // Edge crossing coordinates (in map cells, cell centres at +0.5).
     const lerp = (a: number, b: number): number => (level - a) / (b - a);
-    ctx.beginPath();
     for (let j = 0; j < GH - 1; j++) {
       for (let i = 0; i < GW - 1; i++) {
         const a = v(i, j); // top-left
@@ -266,8 +304,7 @@ export function mountBullet(container: HTMLElement): void {
         const bottom: [number, number] = [i + lerp(d, c), j + 1];
         const left: [number, number] = [i, j + lerp(a, d)];
         const seg = (p: [number, number], q: [number, number]): void => {
-          ctx.moveTo((p[0] + 0.5) * sx, (p[1] + 0.5) * sy);
-          ctx.lineTo((q[0] + 0.5) * sx, (q[1] + 0.5) * sy);
+          segs.push(X0 + (p[0] + 0.5) * CELL, Y0 + (p[1] + 0.5) * CELL, 0, X0 + (q[0] + 0.5) * CELL, Y0 + (q[1] + 0.5) * CELL, 0);
         };
         switch (idx) {
           case 1: case 14: seg(left, bottom); break;
@@ -281,78 +318,41 @@ export function mountBullet(container: HTMLElement): void {
         }
       }
     }
-    ctx.stroke();
   }
 
-  function draw(): void {
-    rafId = 0;
-    if (disposed || !frame || !info) return;
-    buildMaps(frame, info);
-    // References a bit below the main-cluster peaks so the small cluster is bright enough too.
-    if (!ref) ref = { dm: 0.3 * peak(dm), xray: 0.25 * peak(gasMap), total: peak(total) };
+  /** A new worker frame: GPU buffers (previous -> this one), gas density, lensing contours, clock. */
+  function applyFrame(f: BulletFrame): void {
+    if (disposed || !info) return;
+    const dmAll = new Float32Array(nDm * 3);
+    dmAll.set(f.dmMain, 0);
+    dmAll.set(f.dmSub, f.dmMain.length);
+    rhoGrid.fill(0);
+    cicDensity(f.gas, 0, info.nGasMain, info.mGasMain, rhoGrid, RHO_N, RHO_HALF);
+    cicDensity(f.gas, info.nGasMain, nGas, info.mGasSub, rhoGrid, RHO_N, RHO_HALF);
+    const rho = new Float32Array(nGas);
+    for (let i = 0; i < nGas; i++) rho[i] = sampleDensity(rhoGrid, RHO_N, RHO_HALF, f.gas[3 * i], f.gas[3 * i + 1], f.gas[3 * i + 2]);
+    if (!rhoRef) rhoRef = percentile(rho, 0.99);
+    const next: Snap = { dm: dmAll, gas: f.gas, gal: f.gal, rho };
+    // A reset jumps back in time: do not blend across it.
+    prev = cur && lastT !== null && f.t > lastT - 1e-9 ? cur : next;
+    cur = next;
+    lastT = f.t;
+    arrived = performance.now();
+    clock.textContent = `t = ${num(f.t, 2)} milyar yıl`;
 
-    // Like the published composite: the X-ray gas (pink) is drawn first with a capped asinh stretch
-    // (rho^2 spans many decades), then the lensing mass (blue) is laid over it with partial alpha, so
-    // the blue stays visible on top of the dense gas and the pink shows where the mass is absent.
-    const px = image.data;
-    const r = ref;
-    const asinhNorm = Math.asinh(30);
-    const xrayTone = (v: number): number => Math.min(0.8, Math.asinh((30 * v) / r.xray) / asinhNorm);
-    // Logarithmic curve for the mass: `decades` orders of magnitude below the reference fade out.
-    const massTone = (v: number): number => (v <= 0 ? 0 : clamp01(1 + Math.log10(v / r.dm) / 1.3)) ** 1.6;
-    for (let i = 0; i < dm.length; i++) {
-      const g = layers.gas ? xrayTone(gasMap[i]) : 0;
-      const a = layers.dm ? 0.85 * massTone(dm[i]) : 0;
-      px[4 * i] = PINK[0] * g * (1 - a) + BLUE[0] * a;
-      px[4 * i + 1] = PINK[1] * g * (1 - a) + BLUE[1] * a;
-      px[4 * i + 2] = PINK[2] * g * (1 - a) + BLUE[2] * a;
-      px[4 * i + 3] = 255;
-    }
-    mapCtx.putImageData(image, 0, 0);
+    buildMaps(f, info);
+    if (!ref) ref = { total: peak(total) };
+    segs.length = 0;
+    for (const l of CONTOUR_LEVELS) contour(l * ref.total);
+    contourGeo.setAttribute('position', new Float32BufferAttribute(segs, 3));
+    applyLayers();
+  }
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(mapCanvas, 0, 0, CW, CH);
-
-    if (layers.lens) {
-      ctx.lineWidth = 0.8;
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-      for (const l of CONTOUR_LEVELS) contour(l * ref.total);
-    }
-    if (layers.gal) {
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      const g = frame.gal;
-      for (let i = 0; i < g.length / 3; i++) {
-        const x = (g[3 * i] - X0) * PX_PER_MPC;
-        const y = (g[3 * i + 1] - Y0) * PX_PER_MPC;
-        if (x < 0 || y < 0 || x > CW || y > CH) continue;
-        ctx.beginPath();
-        ctx.arc(x, y, 1.1, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-
-    // Scale bar and clock.
-    ctx.strokeStyle = '#fff';
-    ctx.fillStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(12, CH - 16);
-    ctx.lineTo(12 + PX_PER_MPC, CH - 16);
-    ctx.moveTo(12, CH - 20);
-    ctx.lineTo(12, CH - 12);
-    ctx.moveTo(12 + PX_PER_MPC, CH - 20);
-    ctx.lineTo(12 + PX_PER_MPC, CH - 12);
-    ctx.stroke();
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('1 Mpc', 12 + PX_PER_MPC / 2, CH - 22);
-    ctx.textAlign = 'left';
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.fillText(`t = ${num(frame.t, 2)} milyar yıl`, 12, 18);
+  function applyLayers(): void {
+    dmLayer.setOpacity(layers.dm ? DM_OPACITY : 0);
+    gasLayer.setOpacity(layers.gas ? GAS_OPACITY : 0);
+    galLayer.setOpacity(layers.gal ? GAL_OPACITY : 0);
+    contourLines.visible = layers.lens;
   }
 
   // ---- Text ----------------------------------------------------------------------------------
@@ -415,9 +415,12 @@ export function mountBullet(container: HTMLElement): void {
   for (const box of layerBoxes) {
     box.addEventListener('change', () => {
       layers[box.dataset.layer as keyof typeof layers] = box.checked;
-      if (!rafId) rafId = requestAnimationFrame(draw);
+      applyLayers();
     });
   }
+
+  stage.onFullscreen = (on) => (fullBtn.textContent = on ? 'Küçült' : 'Büyüt');
+  fullBtn.addEventListener('click', () => stage.setFullscreen(!stage.fullscreen));
 
   updateButtons();
   updateText();
