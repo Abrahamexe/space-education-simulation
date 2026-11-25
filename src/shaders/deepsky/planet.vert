@@ -2,11 +2,13 @@
 #include <logdepthbuf_pars_vertex>
 
 varying vec3 vPos;
+varying vec2 vUv;
 varying vec3 vNormalV;
 varying vec3 vViewPos;
 
 void main() {
   vPos = position;
+  vUv = uv;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vViewPos = mv.xyz;
   vNormalV = normalize(normalMatrix * normal);

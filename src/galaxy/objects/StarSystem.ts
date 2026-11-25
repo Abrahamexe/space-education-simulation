@@ -14,6 +14,9 @@ import {
   RingGeometry,
   ShaderMaterial,
   SphereGeometry,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
   Vector3,
   Quaternion,
   type PlaneGeometry,
@@ -45,9 +48,45 @@ import { habitableZone, luminosity } from '../../physics/habitable';
 import { science } from '../../core/Science';
 import { Matrix4 as M4 } from 'three';
 import { PulsarBeams } from './PulsarBeams';
+import { PLANET_TYPE_NAME, equilibriumK, planetType, type PlanetType } from './exoplanetType';
 import { AnimatedStar, starKind } from './AnimatedStar';
 
 const SPHERE = new SphereGeometry(1, 96, 64);
+
+/** Surface detail for exoplanet classes: real Solar System maps, recoloured in the shader. */
+const PLANET_TEX: Record<PlanetType, string> = {
+  lava: 'mercury/2k_mercury.jpg',
+  barren: 'mercury/2k_mercury.jpg',
+  temperate: 'moon/2k_moon.jpg',
+  eyeball: 'moon/2k_moon.jpg',
+  icy: 'moon/2k_moon.jpg',
+  subNeptune: 'neptune/2k_neptune.jpg',
+  giant: 'jupiter/2k_jupiter.jpg',
+  hotJupiter: 'jupiter/2k_jupiter.jpg',
+};
+const PLANET_TYPE_INDEX: Record<PlanetType, number> = { lava: 0, barren: 1, temperate: 2, eyeball: 3, icy: 4, subNeptune: 5, giant: 6, hotJupiter: 7 };
+/** Tint choices per class (picked by a per-planet seed); dots far away use the first. */
+const PLANET_TINTS: Record<PlanetType, readonly (readonly [number, number, number])[]> = {
+  lava: [[0.9, 0.4, 0.2]],
+  barren: [[0.95, 0.72, 0.5], [0.85, 0.62, 0.48], [0.9, 0.8, 0.62]],
+  temperate: [[0.45, 0.6, 0.85]],
+  eyeball: [[0.6, 0.72, 0.9]],
+  icy: [[0.85, 0.9, 1]],
+  subNeptune: [[0.55, 0.75, 0.95], [0.6, 0.85, 0.85], [0.7, 0.72, 0.95]],
+  giant: [[1, 0.85, 0.65], [0.9, 0.78, 0.6], [0.8, 0.85, 1]],
+  hotJupiter: [[0.55, 0.35, 0.3]],
+};
+const textureCache = new Map<string, Texture>();
+function planetTexture(path: string): Texture {
+  let t = textureCache.get(path);
+  if (!t) {
+    t = new TextureLoader().load(`${import.meta.env.BASE_URL}textures/${path}`);
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = 4;
+    textureCache.set(path, t);
+  }
+  return t;
+}
 
 /** Days per real second for a system: its fastest orbit takes ~14 s. */
 function rateFor(def: SystemDef): number {
@@ -114,6 +153,7 @@ export class StarSystem implements DeepObject {
   readonly frame: Matrix4;
   private readonly frameRot: Matrix3;
   private readonly bodies: Body[] = [];
+  private readonly planetTypes = new Map<string, PlanetType>();
   private readonly planets: { mesh: Mesh<SphereGeometry, ShaderMaterial>; def: NonNullable<SystemDef['planets']>[number]; phase: number }[] = [];
   private planetPoints: StarPoints | null = null;
   private readonly planetFrame = new Matrix3();
@@ -324,24 +364,37 @@ export class StarSystem implements DeepObject {
     const size: number[] = [];
     (this.def.planets ?? []).forEach((p, i) => {
       const R = p.radiusEarth * EARTH_RADIUS_AU;
+      const type = planetType(p, star);
+      const seed = ((this.def.id.length * 37 + i * 101) % 97) / 97;
+      const tints = PLANET_TINTS[type];
+      const tint = tints[Math.floor(seed * tints.length) % tints.length];
+      const teq = equilibriumK(star.tempK, star.radiusSun, p.aAu);
+      const glow = type === 'lava' ? 1 : type === 'hotJupiter' ? Math.min(1, Math.max(0.2, (teq - 900) / 1000)) : 0;
       const mesh = new Mesh(
         SPHERE,
         new ShaderMaterial({
           vertexShader: planetVert,
           fragmentShader: planetFrag,
           uniforms: {
-            uColor: { value: new Color(p.color[0], p.color[1], p.color[2]) },
+            uTex: { value: planetTexture(PLANET_TEX[type]) },
+            uType: { value: PLANET_TYPE_INDEX[type] },
+            uTint: { value: new Color(tint[0], tint[1], tint[2]) },
+            uSeed: { value: seed },
+            uGlow: { value: glow },
             uLightColor: { value: light.clone().multiplyScalar(1.4) },
             uLightPosV: { value: new Vector3() },
           },
         }),
       );
+      this.planetTypes.set(p.name, type);
       mesh.scale.setScalar(R);
       mesh.frustumCulled = false;
       this.group.add(mesh);
       this.planets.push({ mesh, def: p, phase: (i * 2.399) % (Math.PI * 2) });
       pos.push(0, 0, 0);
-      col.push(p.color[0] * 0.9, p.color[1] * 0.9, p.color[2] * 0.9);
+      // Seen as a dot from far away: the class's colour.
+      const dot = type === 'temperate' || type === 'eyeball' ? [0.5, 0.65, 0.9] : type === 'lava' ? [1, 0.45, 0.25] : tint;
+      col.push(dot[0] * 0.9, dot[1] * 0.9, dot[2] * 0.9);
       size.push(R * 2);
       // Orbit line.
       const seg = 256;
@@ -527,9 +580,9 @@ export class StarSystem implements DeepObject {
         name: def.id === 'trappist1' ? `TRAPPIST-1${p.name}` : p.name,
         swatch: hex(new Color(p.color[0], p.color[1], p.color[2])),
         facts: {
-          type: p.radiusEarth < 1.6 ? 'Kayalık ötegezegen' : p.radiusEarth < 4 ? 'Süper Dünya / mini Neptün' : 'Dev ötegezegen',
+          type: `${PLANET_TYPE_NAME[this.planetTypes.get(p.name) ?? 'barren']} (tahmini tür)`,
           stats,
-          text: `${host.name} çevresinde dolanıyor.${note} Denge sıcaklığı, ışığın %30'unu yansıtan ve sera etkisi olmayan bir yüzey için hesaplandı.`,
+          text: `${host.name} çevresinde dolanıyor.${note} Denge sıcaklığı, ışığın %30'unu yansıtan ve sera etkisi olmayan bir yüzey için hesaplandı. Görünüm temsilidir: hiçbir ötegezegenin yüzeyi henüz görüntülenemedi; tür, yarıçapından ve aldığı ışıktan tahmin edildi.`,
         },
       });
     }
