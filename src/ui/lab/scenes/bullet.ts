@@ -2,6 +2,8 @@ import './bullet.css';
 import { BufferGeometry, Float32BufferAttribute, GridHelper, LineBasicMaterial, LineSegments } from 'three';
 import { Stage } from '../../darkmatter/render/Stage';
 import { ParticleLayer } from '../../darkmatter/render/ParticleLayer';
+import { LensedBackground } from '../../darkmatter/render/LensedBackground';
+import { deflectionField, projectSigma } from '../../darkmatter/lensing';
 import { DM, GAS, STAR } from '../../darkmatter/render/palette';
 import { cicDensity, sampleDensity } from '../../darkmatter/bake/density';
 import { COUNTS, type BulletDiag, type BulletFrame, type BulletReady, type FromWorker, type ToWorker } from './bullet.worker';
@@ -28,6 +30,11 @@ const STEP_MS = 66;
 /** Gas density grid for the per-particle X-ray brightness (same as the film bake). */
 const RHO_N = 64;
 const RHO_HALF = 3;
+/** Lensing field: n×n cells over ±LENS_HALF Mpc, refreshed every LENS_EVERY Gyr; drawn shift for |α| = 1. */
+const LENS_N = 48;
+const LENS_HALF = 3;
+const LENS_EVERY = 0.05;
+const LENS_SHIFT = 0.12;
 
 /** Contour levels of the total (lensing) mass map, as fractions of the initial main-cluster peak. */
 const CONTOUR_LEVELS = [0.06, 0.12, 0.25, 0.5];
@@ -102,13 +109,14 @@ export function mountBullet(container: HTMLElement): void {
       <label class="lab-check"><input type="checkbox" data-layer="dm" checked><span class="bullet-sw" style="background:${DM}"></span> Karanlık madde (gerçekte görünmez)</label>
       <label class="lab-check"><input type="checkbox" data-layer="gas" checked><span class="bullet-sw" style="background:${GAS}"></span> Sıcak gaz: X-ışını parlaklığı (∝ ρ²)</label>
       <label class="lab-check"><input type="checkbox" data-layer="gal" checked><span class="bullet-sw" style="background:${STAR}"></span> Galaksiler</label>
-      <label class="lab-check"><input type="checkbox" data-layer="lens" checked><span class="bullet-sw bullet-sw-ring"></span> Mercek konturları</label>
+      <label class="lab-check"><input type="checkbox" data-layer="lens" checked><span class="bullet-sw bullet-sw-ring"></span> Kütleçekimsel mercek (konturlar ve bükülen arka plan galaksileri)</label>
     </div>
     <div class="lab-acts">
       <button type="button" class="pill pill-accent" data-play>Oynat</button>
       <button type="button" class="pill" data-reset>Baştan</button>
     </div>
     <label class="lab-slider bullet-slider"><span class="bullet-slider-label">Karanlık maddenin kendi kendine çarpışması σ/m</span><input type="range" min="0" max="${SIGMAS.length - 1}" step="1" value="0" data-sigma aria-label="Karanlık maddenin kendi kendine çarpışması σ/m"><output data-sigma-out></output></label>
+    <p class="note">Arka plandaki soluk galaksiler kümelerin kütlesiyle bükülür; bu yalnızca kümelere gözlemcinin yönünden (önden) bakınca görünür. Bükülme görünür olsun diye büyütüldü; yönü ve şekli kütle haritasından hesaplanır.</p>
     <p class="lab-readout" data-readout></p>
     <p data-explain></p>
     <p class="note">Kaynaklar: <a href="https://arxiv.org/abs/astro-ph/0608407" target="_blank" rel="noopener">Clowe ve ark. 2006</a> (gaz ve kütle tepeleri ayrık), <a href="https://arxiv.org/abs/0704.0261" target="_blank" rel="noopener">Randall ve ark. 2008</a> (σ/m &lt; 1,25 cm²/g).</p>
@@ -135,7 +143,10 @@ export function mountBullet(container: HTMLElement): void {
   grid.position.y = -2.2;
   const contourGeo = new BufferGeometry();
   const contourLines = new LineSegments(contourGeo, new LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthTest: false }));
-  stage.scene.add(grid, dmLayer.points, gasLayer.points, galLayer.points, contourLines);
+  const lensed = new LensedBackground({ count: 5000, seed: 7, half: LENS_HALF, depth: 5 });
+  lensed.setStrength(LENS_SHIFT);
+  let lensT = -Infinity;
+  stage.scene.add(lensed.object, grid, dmLayer.points, gasLayer.points, galLayer.points, contourLines);
   const rhoGrid = new Float32Array(RHO_N ** 3);
   type Snap = { dm: Float32Array; gas: Float32Array; gal: Float32Array; rho: Float32Array };
   let prev: Snap | null = null;
@@ -206,6 +217,7 @@ export function mountBullet(container: HTMLElement): void {
     dmLayer.dispose();
     gasLayer.dispose();
     galLayer.dispose();
+    lensed.dispose();
     contourGeo.dispose();
     mo.disconnect();
     worker.terminate();
@@ -345,6 +357,13 @@ export function mountBullet(container: HTMLElement): void {
     segs.length = 0;
     for (const l of CONTOUR_LEVELS) contour(l * ref.total);
     contourGeo.setAttribute('position', new Float32BufferAttribute(segs, 3));
+    if (Math.abs(f.t - lensT) >= LENS_EVERY - 1e-9) {
+      lensT = f.t;
+      const sDm = projectSigma(dmAll, [{ from: 0, to: COUNTS.dmMain, mass: info.mDmMain }, { from: COUNTS.dmMain, to: nDm, mass: info.mDmSub }], LENS_N, LENS_HALF);
+      const sGas = projectSigma(f.gas, [{ from: 0, to: info.nGasMain, mass: info.mGasMain }, { from: info.nGasMain, to: nGas, mass: info.mGasSub }], LENS_N, LENS_HALF);
+      for (let i = 0; i < sDm.length; i++) sDm[i] += sGas[i];
+      lensed.setField(deflectionField(sDm, LENS_N, LENS_HALF, 0.08), LENS_N, LENS_HALF);
+    }
     applyLayers();
   }
 
@@ -353,6 +372,7 @@ export function mountBullet(container: HTMLElement): void {
     gasLayer.setOpacity(layers.gas ? GAS_OPACITY : 0);
     galLayer.setOpacity(layers.gal ? GAL_OPACITY : 0);
     contourLines.visible = layers.lens;
+    lensed.setOpacity(layers.lens ? 1 : 0);
   }
 
   // ---- Text ----------------------------------------------------------------------------------
