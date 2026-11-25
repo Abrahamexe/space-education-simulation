@@ -126,9 +126,14 @@ export class Hud {
     this.path.el.style.setProperty('--i', '3');
     this.path.set('solar');
     bottom.append(new TimeControls(ctx).el, this.path.el, new Toolbar(ctx).el);
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') ctx.views.cancelRoute();
-    });
+    // Capture phase: a focused field that keeps Esc for itself still stops the trip.
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape') ctx.views.cancelRoute();
+      },
+      true,
+    );
 
     const vignette = document.createElement('div');
     vignette.className = 'vignette';

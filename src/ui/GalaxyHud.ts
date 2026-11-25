@@ -6,6 +6,8 @@ import type { Engine } from '../core/Engine';
 import type { GalaxyTarget, GalaxyView } from '../galaxy/GalaxyView';
 import { icon } from './icons';
 import { isTypingOrChord } from './Toolbar';
+import { ScalePathBar } from './ScalePathBar';
+import type { Level } from './scalePath';
 import { science } from '../core/Science';
 import { StarSystem, type SystemMember } from '../galaxy/objects/StarSystem';
 
@@ -76,6 +78,7 @@ export class GalaxyHud {
     engine: Engine,
     private readonly view: GalaxyView,
     toUniverse?: () => void,
+    onPath?: (level: Level) => void,
   ) {
     const g = strings().galaxy;
     this.labels = document.createElement('div');
@@ -105,13 +108,13 @@ export class GalaxyHud {
       <button type="button" class="btn-icon" data-pause aria-label="${g.pause}" title="${g.pause} (Boşluk)">${icon('pause')}</button>
       <button type="button" class="galaxy-speed" data-speed title="${g.speed}">1×</button>
       <p class="galaxy-readout" aria-live="off"></p>
-      <button type="button" class="btn-icon" data-orbits aria-pressed="true" aria-label="${strings().tools.orbits}" title="${strings().tools.orbits} (Y)">${icon('orbits')}</button>
-      <button type="button" class="btn-icon" data-labels aria-pressed="true" aria-label="${strings().tools.labels}" title="${strings().tools.labels} (E)">${icon('labels')}</button>
+      <button type="button" class="btn-icon" data-orbits aria-pressed="true" aria-label="${strings().tools.orbits}" title="${strings().tools.orbits} (Y)">${icon('orbits')}<span class="layer-label">${strings().tools.orbits}</span></button>
+      <button type="button" class="btn-icon" data-labels aria-pressed="true" aria-label="${strings().tools.labels}" title="${strings().tools.labels} (E)">${icon('labels')}<span class="layer-label">${strings().tools.labels}</span></button>
       <div class="segmented galaxy-cam" role="radiogroup" aria-label="${strings().tools.camera}">
         <button type="button" role="radio" data-cam="orbit" title="${strings().tools.cameraOrbit}">${strings().tools.cameraOrbit}</button>
         <button type="button" role="radio" data-cam="free" title="${strings().tools.cameraFree} (M)">${icon('hand')}${strings().tools.cameraFree}</button>
       </div>
-      <button type="button" class="btn-icon" data-hz aria-pressed="false" aria-label="${strings().tools.habitable}" title="${strings().tools.habitable} (B)">${icon('habitable')}</button>
+      <button type="button" class="btn-icon" data-hz aria-pressed="false" aria-label="${strings().tools.habitable}" title="${strings().tools.habitable} (B)">${icon('habitable')}<span class="layer-label">${strings().tools.habitable}</span></button>
       <button type="button" class="btn-icon" data-info aria-label="${g.aboutMilkyWay}" title="${g.aboutMilkyWay}">${icon('help')}</button>
       <button type="button" class="btn-icon" data-overview aria-label="${g.overview}" title="${g.overview} (H)">${icon('home')}</button>`;
     this.readout = this.bar.querySelector('.galaxy-readout') as HTMLElement;
@@ -301,9 +304,25 @@ export class GalaxyHud {
     this.credit.className = 'galaxy-credit';
     this.credit.textContent = g.credit;
 
+    // Mission layout: readout and view toggles on the top line, the scale path in the bottom band
+    // (it carries "Güneş Sistemi'ne dön" and "Evrene çık"; their buttons stay for the narrow layout).
+    const top = document.createElement('div');
+    top.className = 'gx-top';
+    const toggles = document.createElement('div');
+    toggles.className = 'gx-toggles';
+    toggles.append(...(['[data-orbits]', '[data-labels]', '[data-hz]'] as const).map((q) => this.bar.querySelector(q) as HTMLElement));
+    const rule = document.createElement('span');
+    rule.className = 'hud-rule';
+    rule.setAttribute('aria-hidden', 'true');
+    top.append(this.readout, rule, toggles, this.bar.querySelector('[data-info]') as HTMLElement);
+    const path = new ScalePathBar((level) => onPath?.(level));
+    path.set('milkyWay');
+    path.el.classList.add('gx-path');
+    this.bar.querySelector('.galaxy-speed')?.after(path.el);
+
     const root = document.createElement('div');
     root.className = 'galaxy-hud';
-    root.append(this.explore, this.sysNav, this.bar, this.card, this.credit);
+    root.append(this.explore, this.sysNav, this.bar, top, this.card, this.credit);
     document.body.append(this.labels, root);
 
     window.addEventListener('keydown', (e) => {

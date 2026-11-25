@@ -25,6 +25,8 @@ function ageText(t: number): string {
   return `${t.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} milyar yıl`;
 }
 import { isTypingOrChord } from './Toolbar';
+import { ScalePathBar } from './ScalePathBar';
+import type { Level, UniverseScale } from './scalePath';
 
 const CHAR_PX = 6.4;
 const LABEL_H = 18;
@@ -67,9 +69,12 @@ export class UniverseHud {
   private labelsOn = true;
   private lastReadout = 0;
 
+  private readonly path: ScalePathBar;
+
   constructor(
     engine: Engine,
     private readonly view: UniverseView,
+    onPath?: (level: Level) => void,
   ) {
     // Landmarks plus the brighter Local Group members.
     const local: UniverseTarget[] = data.localGroup
@@ -304,7 +309,36 @@ export class UniverseHud {
     this.lab = new Lab(view, (a) => this.runLab(a), (html) => this.showHtml('Seçilen galaksi', '2MRS kataloğu', html));
     this.q('[data-lab]').addEventListener('click', () => this.lab.toggle());
     this.q('[data-film]').addEventListener('click', () => void this.lab.openFilm());
-    this.root.append(this.simPanel, this.bar, this.card, credit, this.lab.el);
+    // Mission layout: readout and map toggles on the top line; the scales and the learning
+    // doors in the left column; the scale path and the look in the bottom band.
+    const top = document.createElement('div');
+    top.className = 'gx-top ux-top';
+    const rule = document.createElement('span');
+    rule.className = 'hud-rule';
+    rule.setAttribute('aria-hidden', 'true');
+    const toggles = document.createElement('div');
+    toggles.className = 'gx-toggles';
+    const layersWrap = this.q('[data-layers]').parentElement as HTMLElement;
+    toggles.append(this.q('[data-labels]'), layersWrap, this.q('[data-composition]'));
+    top.append(this.readout, rule, toggles, this.q('[data-info]'));
+    const left = document.createElement('div');
+    left.className = 'ux-left';
+    const head = (text: string) => {
+      const h = document.createElement('p');
+      h.className = 'ux-head';
+      h.textContent = text;
+      return h;
+    };
+    const learn = document.createElement('div');
+    learn.className = 'ux-learn';
+    learn.append(this.q('[data-sim]'), this.q('[data-lab]'), this.q('[data-film]'), this.q('[data-evidence-btn]').parentElement as HTMLElement);
+    left.append(head('Ölçek'), this.q('.universe-scales'), head('Öğren'), learn);
+    this.path = new ScalePathBar((level) => onPath?.(level));
+    this.path.el.classList.add('gx-path');
+    this.path.set(view.currentScale().id as UniverseScale);
+    this.q('[data-back]').after(this.path.el);
+
+    this.root.append(this.simPanel, this.bar, top, left, this.card, credit, this.lab.el);
     document.body.append(this.labels, this.root);
 
     window.addEventListener('keydown', (e) => {
@@ -553,6 +587,15 @@ export class UniverseHud {
       this.lastReadout = now;
       this.readout.textContent = `Samanyolu’na ${lightYears(Math.max(d, 0.001))}`;
       this.syncScale();
+      this.path.set(this.view.currentScale().id as UniverseScale);
     }
+  }
+
+  /** Scale-path leg: fly to a scale and show its card, as its button does. */
+  selectScale(id: UniverseScale): Promise<void> {
+    const s = SCALES.find((x) => x.id === id);
+    if (!s) return Promise.resolve();
+    this.showScaleCard(s.id);
+    return this.view.goScale(s);
   }
 }

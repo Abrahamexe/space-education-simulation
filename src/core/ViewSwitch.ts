@@ -114,7 +114,7 @@ export class ViewSwitch {
 
   /** Where the camera is on the scale path. */
   get level(): Level {
-    if (this.universe?.active) return this.universe.scaleId as UniverseScale;
+    if (this.universe?.active) return this.universe.currentScale().id as UniverseScale;
     return this.galaxy.active ? 'milkyWay' : 'solar';
   }
 
@@ -139,7 +139,14 @@ export class ViewSwitch {
       {
         toGalaxy: () => (this.goToGalaxy(), settled(() => this.galaxy.active)),
         toUniverse: () => (this.goToUniverse(), settled(() => this.inUniverse)),
-        toSolar: () => (void this.galaxy.returnToSun(), settled(() => !this.galaxy.active && !this.inUniverse)),
+        // The galaxy may still be settling from the universe hand-over: ask again until it goes.
+        toSolar: async () => {
+          for (let i = 0; i < 4 && this.galaxy.active && token === this.routeToken; i++) {
+            void this.galaxy.returnToSun();
+            await this.waitUntil(() => !this.galaxy.active && !this.swapping, 4000);
+          }
+          await settled(() => !this.galaxy.active && !this.inUniverse);
+        },
         toGalaxyFromUniverse: () => (void this.universe?.returnHome(), settled(() => this.galaxy.active && !this.inUniverse)),
         scale: (id) => {
           if (this.scaleHandler) return this.scaleHandler(id);

@@ -389,3 +389,429 @@ body.mode-universe .vignette {
   font-size: 9px;
   opacity: 0.6;
 }
+
+/* ---- Galaxy and universe overlays (desktop) ---------------------------------------------------------- */
+
+/* Bottom band: one rule above; time · scale path · view tools. */
+:root:not(.vw-760) .galaxy-bar {
+  left: max(44px, env(safe-area-inset-left));
+  right: max(44px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  transform: none;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  max-width: none;
+  gap: 6px;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--c-hairline-strong);
+  background: none;
+}
+
+:root:not(.vw-760) .galaxy-bar :is([data-back], [data-explore], [data-universe]) {
+  display: none;
+}
+
+:root:not(.vw-760) .galaxy-bar .gx-path {
+  flex: 1;
+  margin: 0 14px;
+  padding: 0 20px;
+  border-left: 1px solid var(--c-hairline);
+  border-right: 1px solid var(--c-hairline);
+}
+
+:root:not(.vw-760) :is(.galaxy-bar, .gx-top) .btn-icon,
+:root:not(.vw-760) .galaxy-speed {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--c-hairline-strong);
+}
+
+:root:not(.vw-760) .galaxy-speed {
+  width: auto;
+  min-width: 40px;
+  padding: 0 10px;
+}
+
+:root:not(.vw-760) .galaxy-bar .segmented {
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--c-hairline-strong);
+}
+
+:root:not(.vw-760) .galaxy-bar .segmented button {
+  height: 32px;
+  padding: 0 11px;
+  border-left: 1px solid var(--c-hairline);
+  font: var(--t-cap-xs);
+}
+
+:root:not(.vw-760) .galaxy-bar .segmented button:first-child {
+  border-left: 0;
+}
+
+/* Top line: readout after the brand, then the view toggles (help and settings stay on the right). */
+.gx-top {
+  display: none;
+}
+
+:root:not(.vw-760) .gx-top {
+  position: absolute;
+  top: max(26px, env(safe-area-inset-top));
+  left: 216px;
+  right: calc(max(44px, env(safe-area-inset-right)) + 80px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 32px;
+}
+
+:root:not(.vw-760) .gx-top .galaxy-readout {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: var(--t-cap-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-ink-2);
+}
+
+.gx-toggles {
+  display: flex;
+  flex: none;
+  border: 1px solid var(--c-hairline-strong);
+  pointer-events: auto;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-left: 1px solid var(--c-hairline);
+  color: var(--c-ink-3);
+  font: var(--t-cap-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon:first-child {
+  border-left: 0;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon .icon {
+  display: none;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon[aria-pressed='true'] {
+  background: none;
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon[aria-pressed='true']::before {
+  background: var(--c-ink);
+}
+
+:root.vw-760 .gx-toggles .layer-label {
+  display: none;
+}
+
+/* Right column: the card, no surface. */
+:root:not(.vw-760) .galaxy-card {
+  left: auto;
+  right: max(44px, env(safe-area-inset-right));
+  top: 92px;
+  bottom: auto;
+  width: min(388px, calc(var(--vw) - 88px));
+  max-height: calc(var(--vh) - 200px);
+  padding: 0 16px 0 0;
+  border: 0;
+  background: transparent;
+}
+
+:root:not(.vw-760) .galaxy-credit {
+  top: auto;
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 62px);
+  right: max(44px, env(safe-area-inset-right));
+  max-width: 420px;
+  font: 400 9px/1.5 var(--f-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-ink-3);
+}
+
+/* Left column: the explore list stays open on wide screens. */
+:root:not(.vw-760) .galaxy-explore {
+  left: max(44px, env(safe-area-inset-left));
+  top: 92px;
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 70px);
+  width: 272px;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto !important;
+}
+
+:root:not(.vw-760) .galaxy-explore .galaxy-explore-head {
+  display: none;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-search {
+  height: 32px;
+  margin-top: 0;
+  background: none;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-search:focus-within {
+  border-color: var(--c-ink);
+}
+
+:root:not(.vw-760) .galaxy-explore .galaxy-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--c-hairline-strong);
+}
+
+:root:not(.vw-760) .galaxy-explore .galaxy-tabs button {
+  flex: 1;
+  height: 30px;
+  padding: 0 8px;
+  font: var(--t-cap-xs);
+  font-size: 9px;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-order,
+:root:not(.vw-760) .galaxy-explore .xp-hint {
+  display: none;
+}
+
+:root:not(.vw-760) .galaxy-explore h3 {
+  margin: 18px 0 6px;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-body {
+  margin: 8px 0 0;
+  padding: 0 10px 0 0;
+  -webkit-mask: linear-gradient(#000 calc(100% - 40px), transparent);
+  mask: linear-gradient(#000 calc(100% - 40px), transparent);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item {
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--c-hairline);
+  background: none;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item:hover,
+:root:not(.vw-760) .galaxy-explore .xp-item:focus-visible {
+  background: none;
+  border-color: var(--c-hairline);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item:hover .xp-name {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-name {
+  font: var(--t-cap-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-ink-2);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-meta {
+  font: 400 10px/1.4 var(--f-label);
+  color: var(--c-ink-3);
+}
+
+/* Inside a star system, its planets line up above the band. */
+:root:not(.vw-760) .galaxy-system {
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 66px);
+}
+
+:root:not(.vw-760) .galaxy-explore .galaxy-tabs button {
+  height: auto;
+  min-height: 30px;
+  padding: 6px;
+  white-space: normal;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+}
+
+:root:not(.vw-760) .galaxy-card .galaxy-card-head h3 {
+  font: var(--t-title);
+  letter-spacing: var(--track-title);
+  text-transform: none;
+}
+
+:root:not(.vw-760) .galaxy-tabs button[aria-checked='true'] .xp-count {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* "About the Milky Way": a worded button, not a second question mark beside Help. */
+:root:not(.vw-760) .gx-top [data-info] {
+  width: auto;
+  padding: 0 12px;
+  color: var(--c-ink-2);
+  font: var(--t-cap-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+:root:not(.vw-760) .gx-top [data-info] .icon {
+  display: none;
+}
+
+:root:not(.vw-760) .gx-top [data-info]::after {
+  content: attr(aria-label);
+}
+
+/* ---- Universe (desktop) ------------------------------------------------------------------------------- */
+
+.ux-left {
+  display: none;
+}
+
+:root:not(.vw-760) .ux-left {
+  position: absolute;
+  left: max(44px, env(safe-area-inset-left));
+  top: 92px;
+  display: block;
+  width: 200px;
+  pointer-events: auto;
+}
+
+.ux-head {
+  margin: 0 0 8px;
+  color: var(--c-ink-3);
+  font: 400 9px/1.2 var(--f-label);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.ux-head ~ .ux-head {
+  margin-top: 26px;
+}
+
+:root:not(.vw-760) .ux-left .universe-scales {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border: 0;
+}
+
+:root:not(.vw-760) .ux-left :is(.universe-scales button, .ux-learn > button, .ux-learn .universe-layers > button) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  padding: 9px 0;
+  border: 0;
+  border-top: 1px solid var(--c-hairline);
+  background: none;
+  color: var(--c-ink-3);
+  font: var(--t-cap-xs);
+  letter-spacing: var(--track-caps);
+  text-align: left;
+}
+
+:root:not(.vw-760) .ux-left .universe-scales button[aria-checked='true'],
+:root:not(.vw-760) .ux-left :is(.ux-learn button[aria-pressed='true'], .ux-learn button[aria-expanded='true']) {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .ux-left .universe-scales button[aria-checked='true']::after {
+  content: '\25C2';
+  margin-left: auto;
+}
+
+:root:not(.vw-760) .ux-learn {
+  display: grid;
+}
+
+:root:not(.vw-760) .ux-learn .universe-layers > button::after {
+  content: '\25B8';
+  margin-left: auto;
+}
+
+/* Learning doors' pop-outs open to the right of the column. */
+:root:not(.vw-760) .ux-learn .universe-layers-pop {
+  top: 0;
+  bottom: auto;
+  left: calc(100% + 16px);
+  transform: translateX(-6px);
+}
+
+:root:not(.vw-760) .ux-learn .universe-layers-pop[data-open='true'] {
+  transform: none;
+}
+
+/* Top-line toggles: worded cells; pop-overs open downwards. */
+:root:not(.vw-760) .gx-toggles :is(.pill, .universe-layers > .pill) {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-left: 1px solid var(--c-hairline);
+  background: none;
+  color: var(--c-ink-2);
+  font: var(--t-cap-xs);
+  letter-spacing: 0.12em;
+}
+
+:root:not(.vw-760) .gx-toggles .universe-layers > .pill::after {
+  content: '\25BE';
+  margin-left: 6px;
+  color: var(--c-ink-3);
+}
+
+:root:not(.vw-760) .gx-toggles .universe-layers-pop {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+:root:not(.vw-760) .gx-toggles .btn-icon:not(:has(.layer-label))::after {
+  content: attr(aria-label);
+}
+
+/* Formation time-lapse: map controls step back, as before. */
+.universe-hud[data-sim='true'] :is(.ux-top .gx-toggles, .ux-left .universe-scales, .ux-left .ux-head:first-child) {
+  opacity: 0.25;
+  pointer-events: none !important;
+}
+
+:root:not(.vw-760) .universe-bar .gx-path {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+}

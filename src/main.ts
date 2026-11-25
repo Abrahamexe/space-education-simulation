@@ -121,8 +121,9 @@ async function boot(): Promise<void> {
   const views = new ViewSwitch(engine, galaxy, sun, nav, selection);
   const universe = new UniverseView(engine);
   views.attachUniverse(universe);
-  new GalaxyHud(engine, galaxy, () => views.goToUniverse());
-  new UniverseHud(engine, universe);
+  new GalaxyHud(engine, galaxy, () => views.goToUniverse(), (level) => views.navigateTo(level));
+  const universeHud = new UniverseHud(engine, universe, (level) => views.navigateTo(level));
+  views.scaleHandler = (id) => universeHud.selectScale(id);
 
   const quality = new QualityManager(engine, system, starfield);
   const syncGalaxyQuality = () => (galaxy.discSlices = QUALITY_PRESETS[quality.level].discSlices);
