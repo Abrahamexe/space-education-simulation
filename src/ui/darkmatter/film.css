@@ -10,12 +10,13 @@
   text-shadow: 0 2px 12px #000, 0 0 2px #000; pointer-events: none;
 }
 .dm-film-status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; max-width: calc(100vw - 32px); text-align: center; font-size: 16px; opacity: 0.85; }
-.dm-film-method { position: absolute; left: 16px; right: 16px; bottom: 10px; margin: 0; font: 11.5px/1.4 var(--font-mono, monospace); opacity: 0.55; pointer-events: none; }
+.dm-film-foot { position: absolute; left: 16px; right: 16px; bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.dm-film-method { margin: 0; font: 11.5px/1.4 var(--font-mono, monospace); opacity: 0.55; pointer-events: none; }
+.dm-film-next { position: absolute; left: 50%; bottom: 168px; transform: translateX(-50%); margin: 0; max-width: calc(100vw - 32px); padding: 5px 12px; border-radius: 999px; background: rgba(8, 10, 24, 0.75); font-size: 13px; text-align: center; }
 
-.dm-film-bar {
-  position: absolute; left: 16px; right: 16px; bottom: 36px;
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-}
+.dm-film-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dm-film-bar .dm-film-close { order: 9; }
+.dm-film-bar [data-film-try] { order: 8; }
 .dm-film-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .dm-film-chips .pill[aria-selected='true'] { border-color: rgba(255, 255, 255, 0.6); color: #fff; }
 .dm-film-progress { flex: 1 1 120px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
@@ -39,10 +40,19 @@
 }
 .dm-card h2 { margin: 0 0 8px; font-size: 20px; }
 
+@media (max-width: 760px) {
+  /* Chapter chips shrink to their numbers (names stay in title / aria-label). */
+  .dm-film-chips .pill span { display: none; }
+  .dm-film-chips .pill { min-width: 34px; justify-content: center; }
+}
 @media (max-width: 560px) {
-  .dm-film-caption { top: 92px; bottom: auto; }
-  .dm-film-bar { bottom: 44px; }
+  .dm-film-caption { top: 92px; bottom: auto; font-size: 16px; }
   .dm-legend { font-size: 11.5px; }
+  .dm-film-method { font-size: 10px; }
+  .dm-film-bar .dm-film-close { order: 2; }
+  .dm-film-bar .dm-film-progress { order: 3; flex: 1 1 40px; }
+  .dm-film-bar [data-film-try] { order: 4; width: 100%; justify-content: center; }
+  .dm-film-next { bottom: auto; top: 170px; }
 }
 .dm-film [hidden] { display: none !important; }
 .dm-legend .dm-legend-temp { width: 18px; border-radius: 3px; background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); }
@@ -53,4 +63,4 @@
 .dm-rot-chart path { fill: none; stroke-width: 2.2; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
 .dm-rot-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 4px 0 0; padding: 0; list-style: none; font-size: 11.5px; }
 .dm-rot-legend i { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: 3px; }
-@media (max-width: 560px) { .dm-rot { bottom: 200px; width: calc(100vw - 32px); } }
+@media (max-width: 560px) { .dm-rot { bottom: auto; top: 178px; width: calc(100vw - 32px); } }

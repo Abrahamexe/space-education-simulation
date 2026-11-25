@@ -1,4 +1,4 @@
-import { AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, LinearFilter, Object3D, Points, RGFormat, ShaderMaterial, Vector2, Vector3, type Camera } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, LinearFilter, NearestFilter, Object3D, Points, RGFormat, ShaderMaterial, Vector2, Vector3, type Camera } from 'three';
 import vertexShader from '../../../shaders/darkmatter/lensed.vert?raw';
 import fragmentShader from '../../../shaders/darkmatter/lensed.frag?raw';
 
@@ -31,6 +31,7 @@ export class LensedBackground {
   private readonly points: Points;
   private opacity = 1;
   private n = 0;
+  private filterChecked = false;
 
   constructor(opts: { count: number; seed: number; half: number; depth: number }) {
     const r = rng(opts.seed);
@@ -80,6 +81,14 @@ export class LensedBackground {
     this.points = new Points(this.geometry, this.material);
     this.points.frustumCulled = false;
     this.points.onBeforeRender = (renderer, _scene, camera) => {
+      // Float textures can only be filtered linearly with OES_texture_float_linear; otherwise sample nearest.
+      if (!this.filterChecked) {
+        this.filterChecked = true;
+        if (!renderer.extensions.has('OES_texture_float_linear')) {
+          this.texture.magFilter = this.texture.minFilter = NearestFilter;
+          this.texture.needsUpdate = true;
+        }
+      }
       const fov = (camera as { fov?: number }).fov ?? 50;
       this.material.uniforms.uScale.value = renderer.getDrawingBufferSize(SIZE).y / (2 * Math.tan((fov * Math.PI) / 360));
       this.facing(camera);

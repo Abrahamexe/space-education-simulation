@@ -1,6 +1,6 @@
 import { cosmicAge, fieldsAt, RADII } from '../../lab/scenes/baoModel';
 import { makeWeb, positionsAt } from '../cosmicWeb';
-import { cicDensity, sampleDensity } from '../bake/density';
+import { cicDensity } from '../bake/density';
 import { ParticleLayer } from '../render/ParticleLayer';
 import { DM } from '../render/palette';
 import { SHELL_COLORS, ShellView } from '../render/ShellView';
@@ -14,6 +14,9 @@ const N = 32;
 
 /** Density grid for the brightness (filaments glow, voids go dark). */
 const RHO_N = 48;
+const RHO_EVERY = 6;
+/** Largest growth factor reached (end of the chapter). */
+const D_MAX = 1.1;
 
 /**
  * Time of the shell phase as log10(1+z): quick to the drag epoch (z ≈ 1060, 8 s), slow while the
@@ -57,8 +60,31 @@ export async function buildWeb(stage: Stage, overlay: HTMLElement): Promise<Chap
   const rhoDm = new Float32Array(count);
   const rhoGas = new Float32Array(count);
   const meanRho = count / BOX ** 3;
-  const bufs = [0, 1].map(() => ({ dm: new Float32Array(3 * count), gas: new Float32Array(3 * count) }));
-  let flip = 0;
+  let rhoAge = 0;
+  let rhoReady = false;
+  const cellInv = RHO_N / BOX;
+  /** (ρ/ρ̄)² at each particle from the nearest density cell, faded near the box faces. */
+  const shade = (pos: Float32Array, out: Float32Array) => {
+    for (let i = 0; i < count; i++) {
+      const x = pos[3 * i];
+      const y = pos[3 * i + 1];
+      const z = pos[3 * i + 2];
+      const gx = Math.min(RHO_N - 1, Math.max(0, Math.floor((x + BOX / 2) * cellInv)));
+      const gy = Math.min(RHO_N - 1, Math.max(0, Math.floor((y + BOX / 2) * cellInv)));
+      const gz = Math.min(RHO_N - 1, Math.max(0, Math.floor((z + BOX / 2) * cellInv)));
+      const r = rhoGrid[(gz * RHO_N + gy) * RHO_N + gx] / meanRho;
+      const m = Math.max(Math.abs(x), Math.abs(y), Math.abs(z)) / (BOX / 2);
+      out[i] = r * r * (m < 0.75 ? 1 : Math.max(0, 1 - (m - 0.75) / 0.25));
+    }
+  };
+  const bufs = [{ dm: new Float32Array(3 * count), gas: new Float32Array(3 * count) }];
+  const webStart = web.q.slice();
+  const dmEnd = new Float32Array(3 * count);
+  const gasEnd = new Float32Array(3 * count);
+  for (let i = 0; i < 3 * count; i++) {
+    dmEnd[i] = web.q[i] + D_MAX * web.psi[i];
+    gasEnd[i] = web.q[i] + D_MAX * web.psiGas[i];
+  }
   const dm = new ParticleLayer({ count, color: DM, size: 0.13, opacity: 0, kind: 'dm', scale: SCALE, maxPx: 60 });
   const gas = new ParticleLayer({ count, color: SHELL_COLORS.baryon, size: 0.08, opacity: 0, kind: 'gas', scale: SCALE, maxPx: 40 });
   stage.scene.add(shells.object, dm.points, gas.points);
@@ -93,33 +119,32 @@ export async function buildWeb(stage: Stage, overlay: HTMLElement): Promise<Chap
       // 18 s on: the web. D grows smoothly; the gas lags behind until ~30 s, then catches up.
       const webIn = ramp(t, 18, 22);
       if (webIn > 0) {
-        const D = 0.05 + 1.05 * ramp(t, 20, 44);
+        const D = 0.05 + (D_MAX - 0.05) * ramp(t, 20, 44);
         const lag = 0.35 + 0.65 * ramp(t, 22, 32);
-        flip ^= 1;
-        const b = bufs[flip];
-        positionsAt(web, D, D * lag, b.dm, b.gas);
-        dm.setFrames(b.dm, b.dm, 0);
-        gas.setFrames(b.gas, b.gas, 0);
-        // Brightness from the local dark-matter density (both layers sample the same grid).
-        rhoGrid.fill(0);
-        cicDensity(b.dm, 0, count, 1, rhoGrid, RHO_N, BOX / 2);
-        // Brightness ∝ (ρ/ρ̄)²: filaments and knots glow, voids go dark; soft fade near the box faces.
-        const edge = (x: number, y: number, z: number) => {
-          const m = Math.max(Math.abs(x), Math.abs(y), Math.abs(z)) / (BOX / 2);
-          return m < 0.75 ? 1 : Math.max(0, 1 - (m - 0.75) / 0.25);
-        };
-        for (let i = 0; i < count; i++) {
-          const x = b.dm[3 * i], y = b.dm[3 * i + 1], z = b.dm[3 * i + 2];
-          const rd = sampleDensity(rhoGrid, RHO_N, BOX / 2, x, y, z) / meanRho;
-          rhoDm[i] = rd * rd * edge(x, y, z);
-          const gx = b.gas[3 * i], gy = b.gas[3 * i + 1], gz = b.gas[3 * i + 2];
-          const rg = sampleDensity(rhoGrid, RHO_N, BOX / 2, gx, gy, gz) / meanRho;
-          rhoGas[i] = rg * rg * edge(gx, gy, gz);
+        // Zel'dovich positions are linear in D: the GPU blends q -> q + D_MAX·ψ, nothing is uploaded per frame.
+        dm.setFrames(webStart, dmEnd, D / D_MAX);
+        gas.setFrames(webStart, gasEnd, (D * lag) / D_MAX);
+        const b = bufs[0];
+        // Brightness from the local dark-matter density (both layers sample the same grid). It changes
+        // slowly, so it is refreshed every RHO_EVERY frames and not at all while paused.
+        // Brightness ∝ (ρ/ρ̄)² from the dark-matter density: filaments and knots glow, voids go dark,
+        // soft fade near the box faces. It changes slowly, so it is refreshed in two slices (dark
+        // matter on one frame, gas three frames later) every RHO_EVERY frames, and not while paused.
+        const phase = rhoAge++ % RHO_EVERY;
+        if ((dt > 0 || !rhoReady) && (phase === 0 || !rhoReady)) {
+          positionsAt(web, D, D * lag, b.dm, b.gas);
+          rhoGrid.fill(0);
+          cicDensity(b.dm, 0, count, 1, rhoGrid, RHO_N, BOX / 2);
+          shade(b.dm, rhoDm);
+          const rd = rhoDm.slice();
+          dm.setRho(rd, rd, 6);
         }
-        const rd = rhoDm.slice();
-        const rg = rhoGas.slice();
-        dm.setRho(rd, rd, 6);
-        gas.setRho(rg, rg, 6);
+        if ((dt > 0 || !rhoReady) && (phase === 3 || !rhoReady)) {
+          shade(b.gas, rhoGas);
+          const rg = rhoGas.slice();
+          gas.setRho(rg, rg, 6);
+        }
+        rhoReady = true;
         dm.setOpacity(0.12 * webIn);
         gas.setOpacity(0.16 * webIn);
         if (shellFade <= 0) clock.textContent = `Yapılar büyüyor · büyüme çarpanı D = ${D.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

@@ -74,13 +74,16 @@ export async function buildRotation(stage: Stage, overlay: HTMLElement): Promise
     phi[i] = 2 * Math.PI * r();
     zz[i] = 0.3 * Math.sqrt(-2 * Math.log(Math.max(r(), 1e-9))) * Math.cos(2 * Math.PI * r());
   }
+  // Radii never change: each star's angular speed (rad per Myr, from the measured curve) is fixed.
+  const omega = new Float32Array(nStars);
+  for (let i = 0; i < nStars; i++) omega[i] = advance(0, R[i], vAt(obs, R[i]), 1);
   const starBuf = [new Float32Array(3 * nStars), new Float32Array(3 * nStars)];
   let flip = 0;
   const stars = new ParticleLayer({ count: nStars, color: STAR, size: 0.05, opacity: 0.9, kind: 'star', scale: SCALE });
 
   // Halo: NFW-like radii (dense centre, long tail) out to ~40 kpc.
   const nHalo = 5000;
-  const halo = new ParticleLayer({ count: nHalo, color: DM, size: 2.2, opacity: 0, kind: 'dm', scale: SCALE, maxPx: 90 });
+  const halo = new ParticleLayer({ count: nHalo, color: DM, size: 2.2, opacity: 0, kind: 'dm', scale: SCALE, maxPx: 56 });
   const hp = new Float32Array(3 * nHalo);
   for (let i = 0; i < nHalo; i++) {
     const rad = 1 + 39 * r() ** 1.8;
@@ -148,15 +151,17 @@ export async function buildRotation(stage: Stage, overlay: HTMLElement): Promise
       const dMyr = dt * MYR_PER_S;
       myr += dMyr;
       clock.textContent = `t = ${Math.round(myr).toLocaleString('tr-TR')} milyon yıl`;
-      flip ^= 1;
-      const sb = starBuf[flip];
-      for (let i = 0; i < nStars; i++) {
-        phi[i] = advance(phi[i], R[i], vAt(obs, R[i]), dMyr);
-        sb[3 * i] = R[i] * Math.cos(phi[i]);
-        sb[3 * i + 1] = zz[i];
-        sb[3 * i + 2] = R[i] * Math.sin(phi[i]);
+      if (dMyr > 0 || myr === 0) {
+        flip ^= 1;
+        const sb = starBuf[flip];
+        for (let i = 0; i < nStars; i++) {
+          phi[i] += omega[i] * dMyr;
+          sb[3 * i] = R[i] * Math.cos(phi[i]);
+          sb[3 * i + 1] = zz[i];
+          sb[3 * i + 2] = R[i] * Math.sin(phi[i]);
+        }
+        stars.setFrames(sb, sb, 0);
       }
-      stars.setFrames(sb, sb, 0);
 
       // From 6 s: both tracers of each pair start together, then run at their own speeds.
       if (t >= 6 && !split) {

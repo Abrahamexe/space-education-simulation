@@ -5,6 +5,8 @@ import { Stage } from './render/Stage';
 import { CHAPTERS, type Chapter, type ChapterRuntime } from './film/chapters';
 import { captionAt, poseAt } from './film/timeline';
 
+/** Pause at the end of a chapter before the next one starts by itself. */
+const AUTO_NEXT_MS = 5000;
 const LOAD_ERROR = 'Film verisi yüklenemedi. İnternet bağlantını kontrol edip tekrar dene.';
 
 /**
@@ -32,7 +34,10 @@ export class Film {
     progress: HTMLElement;
     recenter: HTMLButtonElement;
     tryBtn: HTMLButtonElement;
+    next: HTMLElement;
   };
+  /** When a chapter ends by itself, the next one starts at this time (ms) unless the viewer acts. */
+  private autoNextAt = 0;
 
   constructor(private readonly opts: { onTry: (tab: 'interaction' | 'experiments', anchor: string) => void }) {}
 
@@ -70,15 +75,18 @@ export class Film {
       <div class="dm-film-overlay"></div>
       <p class="dm-film-caption" aria-live="polite"></p>
       <p class="dm-film-status" hidden></p>
-      <div class="dm-film-bar">
-        <button type="button" class="btn-icon" data-film-play aria-label="Oynat">${icon('play')}</button>
-        <div class="dm-film-chips" role="tablist">${CHAPTERS.map((c, i) => `<button type="button" class="pill" role="tab" data-film-chip="${c.id}">${i + 1} · ${c.title}</button>`).join('')}</div>
-        <div class="dm-film-progress"><i></i></div>
-        <button type="button" class="pill" data-film-recenter hidden>Kameraya dön</button>
-        <button type="button" class="pill pill-accent" data-film-try hidden>Gerçek simülasyonda dene</button>
-        <button type="button" class="btn-icon" data-film-close aria-label="Kapat">${icon('close')}</button>
+      <div class="dm-film-foot">
+        <div class="dm-film-bar">
+          <button type="button" class="btn-icon" data-film-play aria-label="Oynat">${icon('play')}</button>
+          <div class="dm-film-chips" role="tablist">${CHAPTERS.map((c, i) => `<button type="button" class="pill" role="tab" title="${c.title}" aria-label="${i + 1}. bölüm: ${c.title}" data-film-chip="${c.id}"><b>${i + 1}</b><span> · ${c.title}</span></button>`).join('')}</div>
+          <div class="dm-film-progress"><i></i></div>
+          <button type="button" class="pill" data-film-recenter hidden>Kameraya dön</button>
+          <button type="button" class="btn-icon dm-film-close" data-film-close aria-label="Kapat">${icon('close')}</button>
+          <button type="button" class="pill pill-accent" data-film-try hidden>Gerçek simülasyonda dene</button>
+        </div>
+        <p class="dm-film-method"></p>
       </div>
-      <p class="dm-film-method"></p>`;
+      <p class="dm-film-next" hidden></p>`;
     document.body.appendChild(root);
     this.root = root;
     const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
@@ -92,11 +100,16 @@ export class Film {
       progress: q('.dm-film-progress i'),
       recenter: q('[data-film-recenter]'),
       tryBtn: q('[data-film-try]'),
+      next: q('.dm-film-next'),
     };
-    this.els.play.addEventListener('click', () => this.setPlaying(!this.playing));
+    this.els.play.addEventListener('click', () => {
+      this.cancelAutoNext();
+      this.setPlaying(!this.playing);
+    });
     q('[data-film-close]').addEventListener('click', () => this.close());
     this.els.recenter.addEventListener('click', () => this.setUserCam(false));
     this.els.tryBtn.addEventListener('click', () => {
+      this.cancelAutoNext();
       const lab = this.chapter.lab;
       if (!lab) return;
       this.close();
@@ -115,7 +128,12 @@ export class Film {
 
   private readonly onKey = (e: KeyboardEvent): void => {
     if (!this.root) return;
-    if (e.key === 'Escape') {
+    // The film covers everything: keys must not reach the app's shortcuts behind it (Tab still moves focus).
+    if (e.key !== 'Tab') e.stopPropagation();
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this.step(e.key === 'ArrowRight' ? 1 : -1);
+    } else if (e.key === 'Escape') {
       e.stopPropagation();
       e.preventDefault();
       this.close();
@@ -126,9 +144,21 @@ export class Film {
     }
   };
 
+  /** Next / previous chapter (no wrap-around). */
+  private step(d: number): void {
+    const i = CHAPTERS.indexOf(this.chapter) + d;
+    if (i >= 0 && i < CHAPTERS.length) void this.load(CHAPTERS[i]);
+  }
+
+  private cancelAutoNext(): void {
+    this.autoNextAt = 0;
+    this.els.next.hidden = true;
+  }
+
   private async load(chapter: Chapter): Promise<void> {
     const stage = this.stage;
     if (!stage) return;
+    this.cancelAutoNext();
     const id = ++this.loadId;
     this.runtime?.dispose();
     this.runtime = null;
@@ -186,6 +216,11 @@ export class Film {
         this.t = c.duration;
         this.setPlaying(false);
         this.els.tryBtn.classList.add('dm-film-glow');
+        const i = CHAPTERS.indexOf(c);
+        if (i < CHAPTERS.length - 1) {
+          this.autoNextAt = performance.now() + AUTO_NEXT_MS;
+          this.els.next.hidden = false;
+        }
       }
     }
     this.runtime.update(this.t, this.playing ? dt : 0);
@@ -199,6 +234,12 @@ export class Film {
     const cap = captionAt(c.captions, this.t);
     const text = cap?.text ?? '';
     if (this.els.caption.textContent !== text) this.els.caption.textContent = text;
+    if (this.autoNextAt) {
+      const left = Math.ceil((this.autoNextAt - performance.now()) / 1000);
+      const next = CHAPTERS[CHAPTERS.indexOf(c) + 1];
+      this.els.next.textContent = `Sıradaki: ${next.title} · ${Math.max(0, left)} s (durdurmak için herhangi bir düğme)`;
+      if (left <= 0) this.step(1);
+    }
     if (Number.isFinite(c.duration)) this.els.progress.style.width = `${(100 * this.t) / c.duration}%`;
   }
 }
