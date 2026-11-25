@@ -57,6 +57,8 @@ const N_GAS_MAIN = 3000;
 const N_GAS_SUB = 1000;
 const N_GAL_MAIN = 300;
 const N_GAL_SUB = 100;
+/** Particles per population, in the order the frame arrays use. */
+export const COUNTS = { dmMain: N_DM_MAIN, dmSub: N_DM_SUB, gasMain: N_GAS_MAIN, gasSub: N_GAS_SUB, galMain: N_GAL_MAIN, galSub: N_GAL_SUB } as const;
 const N = N_DM_MAIN + N_DM_SUB + N_GAS_MAIN + N_GAS_SUB + N_GAL_MAIN + N_GAL_SUB;
 // Contiguous index ranges (start, end) per population.
 const R_DM_MAIN: [number, number] = [0, N_DM_MAIN];
@@ -871,12 +873,14 @@ export class BulletSim {
     };
   }
 
-  /** Sky projection (x, y) of one population as a fresh Float32Array. */
+  /** Positions (x, y, z triplets, Mpc) of one population as a fresh Float32Array; the sky plane is (x, y). */
   project(from: number, to: number): Float32Array {
-    const out = new Float32Array((to - from) * 2);
+    const out = new Float32Array((to - from) * 3);
     for (let i = from; i < to; i++) {
-      out[(i - from) * 2] = this.x[i];
-      out[(i - from) * 2 + 1] = this.y[i];
+      const k = (i - from) * 3;
+      out[k] = this.x[i];
+      out[k + 1] = this.y[i];
+      out[k + 2] = this.z[i];
     }
     return out;
   }

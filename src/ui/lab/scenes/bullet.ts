@@ -36,8 +36,8 @@ function sigmaText(s: number): string {
 /** Cloud-in-cell splat of (x, y) pairs onto the map grid, weight w per particle. */
 function splat(grid: Float32Array, pts: Float32Array, from: number, to: number, w: number): void {
   for (let i = from; i < to; i++) {
-    const gx = (pts[2 * i] - X0) / CELL - 0.5;
-    const gy = (pts[2 * i + 1] - Y0) / CELL - 0.5;
+    const gx = (pts[3 * i] - X0) / CELL - 0.5;
+    const gy = (pts[3 * i + 1] - Y0) / CELL - 0.5;
     const i0 = Math.floor(gx);
     const j0 = Math.floor(gy);
     if (i0 < -1 || j0 < -1 || i0 >= GW || j0 >= GH) continue;
@@ -228,10 +228,10 @@ export function mountBullet(container: HTMLElement): void {
   function buildMaps(f: BulletFrame, meta: BulletReady): void {
     dm.fill(0);
     gasMap.fill(0);
-    splat(dm, f.dmMain, 0, f.dmMain.length / 2, meta.mDmMain);
-    splat(dm, f.dmSub, 0, f.dmSub.length / 2, meta.mDmSub);
+    splat(dm, f.dmMain, 0, f.dmMain.length / 3, meta.mDmMain);
+    splat(dm, f.dmSub, 0, f.dmSub.length / 3, meta.mDmSub);
     splat(gasMap, f.gas, 0, meta.nGasMain, meta.mGasMain);
-    splat(gasMap, f.gas, meta.nGasMain, f.gas.length / 2, meta.mGasSub);
+    splat(gasMap, f.gas, meta.nGasMain, f.gas.length / 3, meta.mGasSub);
     blur(dm, tmp, 2);
     blur(gasMap, tmp, 3);
     for (let i = 0; i < total.length; i++) total[i] = dm[i] + gasMap[i];
@@ -325,9 +325,9 @@ export function mountBullet(container: HTMLElement): void {
     if (layers.gal) {
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       const g = frame.gal;
-      for (let i = 0; i < g.length / 2; i++) {
-        const x = (g[2 * i] - X0) * PX_PER_MPC;
-        const y = (g[2 * i + 1] - Y0) * PX_PER_MPC;
+      for (let i = 0; i < g.length / 3; i++) {
+        const x = (g[3 * i] - X0) * PX_PER_MPC;
+        const y = (g[3 * i + 1] - Y0) * PX_PER_MPC;
         if (x < 0 || y < 0 || x > CW || y > CH) continue;
         ctx.beginPath();
         ctx.arc(x, y, 1.1, 0, 2 * Math.PI);
