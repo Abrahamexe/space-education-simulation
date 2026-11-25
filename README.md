@@ -51,6 +51,7 @@ Tarayıcıda çalışan, sinematik kalitede bir 3D evren keşif uygulaması. Gü
 - **Gerçek uzaklıklarda 17 nesne**: Andromeda, Üçgen, Girdap, Fırıldak, Sombrero, M87, Erboğa A, Puro, NGC 1300, Antenler, Stephan Beşlisi, Araba Tekerleği, Hoag Nesnesi, 3C 273 kuasarı ve Webb'in İlk Derin Alanı.
 - **Dev kara delikler**: M87*, M31*, Sombrero*, Erboğa A*, 3C 273, Holmberg 15A* ve 5,6 milyar parsek uzaktaki TON 618.
 - **Interstellar tarzı kara delikler**: Schwarzschild jeodeziklerini ışın izleme ile çözen kütleçekimsel merceklenme, ince yığılma diski ve foton halkası.
+- **Karanlık madde filmi ve 3D laboratuvar**: evren haritasındaki "Film" düğmesi, Mermi Kümesi çarpışmasını sinematik olarak anlatır. Gaz çarpışıp yavaşlar, karanlık madde içinden geçer, yeri kütleçekimsel mercekle bulunur. Laboratuvardaki sahne aynı çarpışmayı 3D olarak canlı simüle eder.
 
 ### Fizik oyun alanı (`P`)
 Güneş Sistemi'ne yeni cisimler ekleyip ne olacağını gerçek fizikle izleyin.

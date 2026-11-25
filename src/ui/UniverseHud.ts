@@ -135,6 +135,7 @@ export class UniverseHud {
       <button type="button" class="pill" data-composition title="Evren neyden yapılmış?">Bileşim</button>
       <button type="button" class="pill pill-accent" data-sim title="Kozmik ağ nasıl oluştu? (O)">Oluşum</button>
       <button type="button" class="pill pill-lab" data-lab title="Laboratuvar: denklemler, deneyler, grafikler, veri (T)">Laboratuvar</button>
+      <button type="button" class="pill" data-film title="Film: karanlık madde ile normal madde nerede etkileşir?">Film</button>
       <div class="universe-layers">
         <button type="button" class="pill" data-evidence-btn aria-haspopup="true" aria-expanded="false" title="Karanlık maddeyi nereden biliyoruz?">Kanıtlar</button>
         <div class="universe-layers-pop" role="group" aria-label="Karanlık madde kanıtları" data-open="false" data-evidence-pop>
@@ -302,6 +303,7 @@ export class UniverseHud {
     // The student lab: its own drawer, apart from the map's controls.
     this.lab = new Lab(view, (a) => this.runLab(a), (html) => this.showHtml('Seçilen galaksi', '2MRS kataloğu', html));
     this.q('[data-lab]').addEventListener('click', () => this.lab.toggle());
+    this.q('[data-film]').addEventListener('click', () => void this.lab.openFilm());
     this.root.append(this.simPanel, this.bar, this.card, credit, this.lab.el);
     document.body.append(this.labels, this.root);
 

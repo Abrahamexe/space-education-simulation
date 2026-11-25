@@ -64,6 +64,7 @@ export class Lab {
   private readonly body: HTMLElement;
   private tab: LabTab = 'concepts';
   private readonly rendered = new Set<LabTab>();
+  private readonly ready = new Map<LabTab, Promise<void>>();
   private readonly panes = new Map<LabTab, HTMLElement>();
   private inspector = false;
 
@@ -133,10 +134,14 @@ export class Lab {
     for (const [id, p] of this.panes) p.hidden = id !== tab;
     if (!this.rendered.has(tab)) {
       this.rendered.add(tab);
-      void this.render(tab);
+      this.ready.set(tab, this.render(tab));
     }
-    if (anchor) requestAnimationFrame(() => this.panes.get(tab)!.querySelector(`[data-anchor="${anchor}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-    else this.body.scrollTop = 0;
+    if (anchor) {
+      const scroll = () => this.panes.get(tab)!.querySelector(`[data-anchor="${anchor}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      requestAnimationFrame(scroll);
+      // A first render mounts scenes that change the height above the anchor: scroll again when done.
+      void this.ready.get(tab)?.then(() => requestAnimationFrame(scroll));
+    } else this.body.scrollTop = 0;
   }
 
   private act(a: LabAction): void {
@@ -163,14 +168,31 @@ export class Lab {
 
   // ---- Dark matter ↔ ordinary matter ------------------------------------------------------
 
+  private film: import('../darkmatter/Film').Film | null = null;
+
+  /**
+   * The dark-matter film, full screen. The lab closes meanwhile (one heavy 3D scene at a time);
+   * the film's "try it" button reopens it at the matching scene.
+   */
+  async openFilm(chapterId?: string): Promise<void> {
+    if (!this.film) {
+      const { Film } = await import('../darkmatter/Film');
+      this.film = new Film({ onTry: (tab, anchor) => this.open(tab, anchor) });
+    }
+    this.close();
+    await this.film.open(chapterId);
+  }
+
   /** Four scenes; the heavy ones (simulations in workers) load only when this tab opens. */
   private async renderInteraction(p: HTMLElement): Promise<void> {
     p.innerHTML = `
+      <section class="lab-card lab-film-card" data-anchor="film"><h3>Film · Karanlık madde ile normal madde</h3><p>İki galaksi kümesi çarpışıyor: gaz yavaşlıyor, karanlık madde geçip gidiyor ve onu yalnızca ışığın bükülmesinden buluyoruz. 40 saniyelik sinematik anlatım, gerçek simülasyondan.</p><div class="lab-acts"><button type="button" class="pill pill-accent" data-film-open>Filmi izle</button></div></section>
       <p class="lab-intro">Karanlık madde ile normal madde yalnızca kütleçekimiyle etkileşir; bütün farkı normal maddenin çarpışabilmesi, ışınım yapıp soğuyabilmesi ve basınç oluşturabilmesi yaratır. Dört sahnede bunun sonuçlarını izle.</p>
       <section class="lab-card" data-anchor="bao"><h3>Sahne 1 · Erken evren: ses dalgası ve çukur</h3><div data-scene="bao"></div></section>
       <section class="lab-card" data-anchor="bullet"><h3>Sahne 2 · Mermi Kümesi: kim çarpışır, kim geçer?</h3><div data-scene="bullet"></div></section>
       <section class="lab-card" data-anchor="galaxy"><h3>Sahne 3 · Bir halede galaksi doğuyor</h3><div data-scene="galaxy"><p class="note">Yükleniyor…</p></div></section>
       <section class="lab-card" data-anchor="unknowns"><h3>Sahne 4 · Bildiklerimiz ve bilmediklerimiz</h3>${DM_UNKNOWNS}</section>`;
+    p.querySelector('[data-film-open]')!.addEventListener('click', () => void this.openFilm());
     const slot = (k: string) => p.querySelector(`[data-scene="${k}"]`) as HTMLElement;
     const [{ mountBao }, { mountBullet }] = await Promise.all([import('./scenes/bao'), import('./scenes/bullet')]);
     mountBao(slot('bao'));
