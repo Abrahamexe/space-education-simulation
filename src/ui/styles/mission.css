@@ -815,3 +815,117 @@ body.mode-universe .vignette {
   padding-left: 0;
   border-left: 0;
 }
+
+/* ---- Galaxy and universe overlays (phones) ----------------------------------------------------------- */
+
+:root.vw-760 .gx-top {
+  position: absolute;
+  top: max(var(--s-4), env(safe-area-inset-top));
+  left: max(var(--s-2), env(safe-area-inset-left));
+  right: 100px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 40px;
+}
+
+:root.vw-760 .gx-top .hud-rule {
+  display: none;
+}
+
+:root.vw-760 .gx-top .galaxy-readout {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: var(--t-cap-xs);
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-ink-2);
+}
+
+:root.vw-760 .ux-top .galaxy-readout {
+  display: none;
+}
+
+:root.vw-760 .gx-toggles :is(.pill, .universe-layers > .pill) {
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-left: 1px solid var(--c-hairline);
+  font: var(--t-cap-xs);
+}
+
+:root.vw-760 .ux-left {
+  position: absolute;
+  top: calc(max(var(--s-4), env(safe-area-inset-top)) + 48px);
+  left: max(var(--s-2), env(safe-area-inset-left));
+  right: max(var(--s-2), env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+
+:root.vw-760 .ux-left::-webkit-scrollbar {
+  display: none;
+}
+
+:root.vw-760 .ux-head {
+  display: none;
+}
+
+:root.vw-760 .ux-learn {
+  display: contents;
+}
+
+:root.vw-760 .ux-left :is(.pill, .universe-scales) {
+  flex: none;
+}
+
+/* Pop-overs can't hang off a scrolling strip: they open from the window edge. */
+:root.vw-760 .universe-hud .universe-layers-pop {
+  position: fixed;
+  top: calc(max(var(--s-4), env(safe-area-inset-top)) + 96px);
+  bottom: auto;
+  left: max(var(--s-2), env(safe-area-inset-left));
+  right: max(var(--s-2), env(safe-area-inset-right));
+  transform: none;
+}
+
+/* ---- Phones: solar ---------------------------------------------------------------------------------- */
+
+/* The body list sits right above the bottom band, one scrolling line. */
+:root.vw-760 .hud-left {
+  align-self: end;
+  width: auto;
+  margin: 0 0 var(--s-2);
+  min-width: 0;
+}
+
+/* Scale path on phones: the level above and the current one. */
+:root.vw-760 .scale-path > * {
+  display: none;
+}
+
+:root.vw-760 .scale-path > :is([aria-current], :has(+ .sp-sep + [aria-current]), .sp-sep:has(+ [aria-current])) {
+  display: inline-block;
+}
+
+:root.vw-760 .galaxy-card {
+  bottom: 150px;
+}
+
+/* The lab drawer needs its own ground now that panels have none. */
+.lab {
+  background: var(--c-pop);
+}
+
+/* One right-hand surface at a time: the lab drawer covers the scale card. */
+.universe-hud:has(.lab[data-open='true']) .galaxy-card {
+  opacity: 0;
+  pointer-events: none !important;
+}

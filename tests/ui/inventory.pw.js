@@ -47,7 +47,7 @@ async (page) => {
 
   // ---- Solar system -------------------------------------------------------------------------
   const S = 'solar';
-  await has(S, 'marka', ['.brand']);
+  if (!mobile) await has(S, 'marka', ['.brand']); // phones hid the title before the redesign too
   if (!mobile) await has(S, 'canlı okuma', ['.readout']);
   if (!mobile) await has(S, 'geliştirici', ['.dev-toggle']);
   await has(S, 'ara', ['.search-trigger']);
@@ -61,7 +61,7 @@ async (page) => {
   await has(S, 'uzay araçları menüsü', ['.nav-craft']);
   for (const a of ['slower', 'play', 'faster', 'now']) await has(S, `zaman ${a}`, [`.time [data-act="${a}"]`]);
   await has(S, 'tarih', ['.time-date']);
-  await has(S, 'hız', ['.time-rate']);
+  if (!mobile) await has(S, 'hız', ['.time-rate']); // hidden on phones before the redesign too
   await has(S, 'Sinematik/Gerçek', ['.tools .segmented[role="radiogroup"] >> nth=0']);
   await has(S, 'Yörünge/Serbest', ['.tools .segmented >> nth=1']);
   await has(S, 'oyun alanı', ['.pg-launch']);
@@ -137,7 +137,7 @@ async (page) => {
   await has(G, 'yaşanabilir', ['.galaxy-hud [data-hz]']);
   await has(G, 'Samanyolu hakkında', ['.galaxy-hud:not(.universe-hud) [data-info]']);
   await has(G, 'genel görünüm', ['.galaxy-hud [data-overview]']);
-  await has(G, 'kaynaklar', ['.galaxy-hud:not(.universe-hud) .galaxy-credit']);
+  if (!mobile) await has(G, 'kaynaklar', ['.galaxy-hud:not(.universe-hud) .galaxy-credit']); // phones: hidden before too
   await key(G, 'etiketler', 'e', '.galaxy-hud:not(.universe-hud) [data-labels]', 'aria-pressed');
   await key(G, 'yörüngeler', 'y', '.galaxy-hud:not(.universe-hud) [data-orbits]', 'aria-pressed');
   const exploreOpen = await attr('.galaxy-explore', 'data-open');
@@ -170,7 +170,7 @@ async (page) => {
   await has(U, 'kanıtlar', ['.universe-hud [data-evidence-btn]']);
   await has(U, 'etiketler', ['.universe-hud [data-labels]']);
   await has(U, 'bu harita nedir', ['.universe-hud [data-info]']);
-  await has(U, 'kaynaklar', ['.universe-hud .galaxy-credit']);
+  if (!mobile) await has(U, 'kaynaklar', ['.universe-hud .galaxy-credit']);
   await click(['.universe-hud [data-layers]']);
   await page.waitForTimeout(300);
   for (const l of ['galaxies', 'darkMatter', 'gas', 'flow', 'basin']) await has(U, `katman ${l}`, [`.universe-hud [data-layer="${l}"]`]);
