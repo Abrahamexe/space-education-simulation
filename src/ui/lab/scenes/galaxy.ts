@@ -11,6 +11,7 @@ import './galaxy.css';
 import { plot, type Axis, type Series } from '../plot';
 import { num, sci } from '../physics';
 import type { FromWorker, Stats, ToWorker } from './galaxy.worker';
+import { T_STOPS } from '../../darkmatter/render/temperature';
 
 // ---------------------------------------------------------------- constants
 
@@ -28,14 +29,6 @@ const RESOLUTIONS: Record<string, { nDm: number; nGas: number; label: string }> 
 };
 const DEFAULT_RES = 'fast';
 
-// log10 T -> colour of a gas particle: cold white-blue, warm violet, hot pink
-const T_STOPS: [number, [number, number, number]][] = [
-  [4.0, [226, 244, 255]],
-  [4.6, [105, 190, 255]],
-  [5.3, [172, 140, 255]],
-  [6.0, [255, 111, 200]],
-  [7.0, [255, 111, 200]],
-];
 const T_BUCKETS = 28;
 const T_COLOURS: string[] = Array.from({ length: T_BUCKETS }, (_, k) => {
   const lt = 4 + (k / (T_BUCKETS - 1)) * 3;

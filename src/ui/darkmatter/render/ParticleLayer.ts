@@ -1,6 +1,7 @@
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial, Vector2 } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial, Vector2, Vector4 } from 'three';
 import vertexShader from '../../../shaders/darkmatter/particle.vert?raw';
 import fragmentShader from '../../../shaders/darkmatter/particle.frag?raw';
+import { T_STOPS } from './temperature';
 
 export type ParticleKind = 'dm' | 'gas' | 'star';
 
@@ -25,21 +26,30 @@ export class ParticleLayer {
   private readonly b: BufferAttribute;
   private readonly ra: BufferAttribute;
   private readonly rb: BufferAttribute;
+  private readonly ta: BufferAttribute;
+  private readonly tb: BufferAttribute;
+  private lastTa: Float32Array | null = null;
+  private lastTb: Float32Array | null = null;
   private lastA: Float32Array | null = null;
   private lastB: Float32Array | null = null;
   private lastRa: Float32Array | null = null;
   private lastRb: Float32Array | null = null;
 
-  constructor(opts: { count: number; color: Color | string; size: number; opacity: number; kind: ParticleKind }) {
+  /** `scale`: object scale (scene units per data unit), e.g. 0.1 to draw kpc data at 10 kpc per unit. */
+  constructor(opts: { count: number; color: Color | string; size: number; opacity: number; kind: ParticleKind; scale?: number }) {
     const n = opts.count;
     this.a = new BufferAttribute(new Float32Array(n * 3), 3);
     this.b = new BufferAttribute(new Float32Array(n * 3), 3);
     this.ra = new BufferAttribute(new Float32Array(n).fill(1), 1);
     this.rb = new BufferAttribute(new Float32Array(n).fill(1), 1);
+    this.ta = new BufferAttribute(new Float32Array(n).fill(4), 1);
+    this.tb = new BufferAttribute(new Float32Array(n).fill(4), 1);
     this.geometry.setAttribute('position', this.a);
     this.geometry.setAttribute('positionB', this.b);
     this.geometry.setAttribute('rhoA', this.ra);
     this.geometry.setAttribute('rhoB', this.rb);
+    this.geometry.setAttribute('tA', this.ta);
+    this.geometry.setAttribute('tB', this.tb);
     const look = LOOK[opts.kind];
     this.material = new ShaderMaterial({
       vertexShader,
@@ -55,6 +65,8 @@ export class ParticleLayer {
         uColor: { value: new Color(opts.color) },
         uOpacity: { value: opts.opacity },
         uSharp: { value: look.sharp },
+        uTemp: { value: 0 },
+        uStops: { value: T_STOPS.map(([lt, c]) => new Vector4(lt, c[0] / 255, c[1] / 255, c[2] / 255)) },
       },
       blending: AdditiveBlending,
       depthWrite: false,
@@ -63,6 +75,7 @@ export class ParticleLayer {
     });
     this.points = new Points(this.geometry, this.material);
     this.points.frustumCulled = false;
+    if (opts.scale) this.points.scale.setScalar(opts.scale);
     // Keep uScale in step with the drawing buffer and the camera.
     this.points.onBeforeRender = (renderer, _scene, camera) => {
       const fov = (camera as { fov?: number }).fov ?? 50;
@@ -98,6 +111,27 @@ export class ParticleLayer {
       this.lastRb = b;
     }
     this.material.uniforms.uRhoRef.value = ref;
+  }
+
+  /** Per-particle visibility 0..1 for both frames (e.g. "is gas" / "is a star"); replaces density brightness. */
+  setVisibility(a: Float32Array, b: Float32Array): void {
+    this.setRho(a, b, 1);
+    this.material.uniforms.uRhoMax.value = 1;
+  }
+
+  /** Per-particle log10 T for both frames; colours the layer with the temperature stops. */
+  setTemperature(a: Float32Array, b: Float32Array): void {
+    if (a !== this.lastTa) {
+      (this.ta.array as Float32Array).set(a.subarray(0, this.ta.array.length));
+      this.ta.needsUpdate = true;
+      this.lastTa = a;
+    }
+    if (b !== this.lastTb) {
+      (this.tb.array as Float32Array).set(b.subarray(0, this.tb.array.length));
+      this.tb.needsUpdate = true;
+      this.lastTb = b;
+    }
+    this.material.uniforms.uTemp.value = 1;
   }
 
   setOpacity(v: number): void {

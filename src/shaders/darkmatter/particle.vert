@@ -2,6 +2,8 @@
 attribute vec3 positionB;
 attribute float rhoA;
 attribute float rhoB;
+attribute float tA;       // log10 T (gas), used when uTemp = 1
+attribute float tB;
 
 uniform float uMix;
 uniform float uSize;     // world size (Mpc)
@@ -10,8 +12,22 @@ uniform float uMinPx;
 uniform float uMaxPx;
 uniform float uRhoRef;   // > 0: brightness follows density / uRhoRef
 uniform float uRhoMax;
+uniform float uTemp;     // 1: colour from temperature stops
+uniform vec4 uStops[5];  // x: log10 T, yzw: RGB 0–1
 
 varying float vBright;
+varying vec3 vTint;
+
+vec3 tempColour(float lt) {
+  vec3 c = uStops[0].yzw;
+  for (int i = 0; i < 4; i++) {
+    float a = uStops[i].x;
+    float b = uStops[i + 1].x;
+    float w = clamp((lt - a) / max(b - a, 1e-3), 0.0, 1.0);
+    if (lt >= a) c = mix(uStops[i].yzw, uStops[i + 1].yzw, w);
+  }
+  return c;
+}
 
 void main() {
   vec3 p = mix(position, positionB, uMix);
@@ -23,5 +39,6 @@ void main() {
   float shrink = px / gl_PointSize;
   vBright = clamp(shrink * shrink, 0.0, 1.0);
   if (uRhoRef > 0.0) vBright *= min(mix(rhoA, rhoB, uMix) / uRhoRef, uRhoMax);
+  vTint = uTemp > 0.5 ? tempColour(mix(tA, tB, uMix)) : vec3(1.0);
   gl_Position = projectionMatrix * mv;
 }

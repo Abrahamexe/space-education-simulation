@@ -23,3 +23,24 @@ test('locate clamps and interpolates', () => {
 test('bad magic throws a Turkish error', () => {
   assert.throws(() => decodeBake(new Uint8Array(16).buffer), /Geçersiz karanlık madde veri dosyası/);
 });
+
+test('channels round trip per group and frame', () => {
+  const h: BakeHeader = { version: 1, times: [0, 1], groups: [{ name: 'a', count: 1 }, { name: 'b', count: 2 }], half: 1, channels: [{ name: 'kind', group: 'b', lo: 0, hi: 2 }, { name: 'logT', group: 'b', lo: 4, hi: 7 }] };
+  const f = [new Float32Array(9), new Float32Array(9)];
+  const ch = { kind: [new Float32Array([1, 1]), new Float32Array([1, 2])], logT: [new Float32Array([4, 7]), new Float32Array([5.5, 4])] };
+  const d = decodeBake(encodeBake(h, f, undefined, ch).buffer as ArrayBuffer);
+  assert.deepEqual(Array.from(d.channel('kind', 1)!, Math.round), [1, 2]); // integer channels are read with rounding
+  assert.ok(Math.abs(d.channel('logT', 1)![0] - 5.5) < 3 / 255 + 1e-6);
+  assert.equal(d.channel('nope', 0), null);
+});
+
+test('files without channels still decode, with rho and channels together', () => {
+  const h: BakeHeader = { version: 1, times: [0], groups: [{ name: 'a', count: 2 }], half: 2, rho: { group: 'a', lo: 0, hi: 2 } };
+  const d = decodeBake(encodeBake(h, [new Float32Array([1, 0, 0, 0, 1, 0])], [new Float32Array([10, 100])]).buffer as ArrayBuffer);
+  assert.equal(d.channel('kind', 0), null);
+  assert.ok(Math.abs(d.positions(0)[4] - 1) < 1e-3);
+  const h2: BakeHeader = { ...h, channels: [{ name: 'k', group: 'a', lo: 0, hi: 1 }] };
+  const d2 = decodeBake(encodeBake(h2, [new Float32Array(6)], [new Float32Array([10, 100])], { k: [new Float32Array([0, 1])] }).buffer as ArrayBuffer);
+  assert.ok(Math.abs(d2.rho(0)![1] - 100) < 3);
+  assert.deepEqual(Array.from(d2.channel('k', 0)!, Math.round), [0, 1]);
+});

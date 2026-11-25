@@ -4,7 +4,8 @@
  * Layout: ASCII "DMB1", uint32 LE header length, UTF-8 JSON header, zero padding to a multiple
  * of 4 bytes, then per frame all groups' int16 x, y, z (x_q = round(x / half * 32767)), then,
  * if the header has `rho`, per frame one uint8 per particle of that group holding log10 density
- * quantised between `lo` and `hi`.
+ * quantised between `lo` and `hi`, then each of `channels` in header order: per frame one uint8
+ * per particle of its group, linear between `lo` and `hi`.
  */
 
 export interface BakeGroup {
@@ -22,6 +23,8 @@ export interface BakeHeader {
   /** Per-particle density of one group, log10 quantised to uint8 between lo and hi. */
   rho?: { group: string; lo: number; hi: number };
   meta?: Record<string, string | number>;
+  /** Extra per-particle values of one group (e.g. kind, log T), uint8 linear between lo and hi. */
+  channels?: { name: string; group: string; lo: number; hi: number }[];
 }
 
 export interface Baked {
@@ -30,6 +33,8 @@ export interface Baked {
   positions(i: number): Float32Array;
   /** Linear density of the `rho` group (fresh array), or null when the file has none. */
   rho(i: number): Float32Array | null;
+  /** Linear values of a channel for frame i (fresh array), or null if the file has no such channel. */
+  channel(name: string, i: number): Float32Array | null;
   /** Frames around time t and the blend between them; clamped to the first / last frame. */
   locate(t: number): { i: number; j: number; mix: number };
 }
@@ -54,13 +59,20 @@ function rhoCount(h: BakeHeader): number {
   return b - a;
 }
 
-export function encodeBake(h: BakeHeader, frames: Float32Array[], rho?: Float32Array[]): Uint8Array {
+const groupCount = (h: BakeHeader, name: string): number => {
+  const [a, b] = groupRange(h, name);
+  return b - a;
+};
+
+export function encodeBake(h: BakeHeader, frames: Float32Array[], rho?: Float32Array[], channels?: Record<string, Float32Array[]>): Uint8Array {
   const n = total(h);
   const nr = rhoCount(h);
   const json = new TextEncoder().encode(JSON.stringify(h));
   const head = (8 + json.length + 3) & ~3;
   const posBytes = frames.length * n * 3 * 2;
-  const out = new Uint8Array(head + posBytes + (h.rho ? frames.length * nr : 0));
+  const rhoBytes = h.rho ? frames.length * nr : 0;
+  const chBytes = (h.channels ?? []).reduce((s, c) => s + frames.length * groupCount(h, c.group), 0);
+  const out = new Uint8Array(head + posBytes + rhoBytes + chBytes);
   out.set(new TextEncoder().encode(MAGIC), 0);
   new DataView(out.buffer).setUint32(4, json.length, true);
   out.set(json, 8);
@@ -78,6 +90,16 @@ export function encodeBake(h: BakeHeader, frames: Float32Array[], rho?: Float32A
       }
     });
   }
+  let o = head + posBytes + rhoBytes;
+  for (const c of h.channels ?? []) {
+    const n = groupCount(h, c.group);
+    const data = channels?.[c.name];
+    for (let i = 0; i < frames.length; i++) {
+      const v = data?.[i];
+      for (let k = 0; k < n; k++) out[o + k] = v ? Math.max(0, Math.min(255, Math.round(((v[k] - c.lo) / (c.hi - c.lo)) * 255))) : 0;
+      o += n;
+    }
+  }
   return out;
 }
 
@@ -93,6 +115,14 @@ export function decodeBake(buf: ArrayBuffer): Baked {
   const pos = new Int16Array(buf, head, nf * n * 3);
   const r8 = header.rho ? new Uint8Array(buf, head + nf * n * 6, nf * nr) : null;
   const scale = header.half / Q;
+  // Byte offset of each channel block (all frames).
+  const chAt = new Map<string, { off: number; n: number; lo: number; hi: number }>();
+  let off = head + nf * n * 6 + (header.rho ? nf * nr : 0);
+  for (const c of header.channels ?? []) {
+    const cn = groupCount(header, c.group);
+    chAt.set(c.name, { off, n: cn, lo: c.lo, hi: c.hi });
+    off += nf * cn;
+  }
   return {
     header,
     positions(i) {
@@ -106,6 +136,14 @@ export function decodeBake(buf: ArrayBuffer): Baked {
       const { lo, hi } = header.rho;
       const out = new Float32Array(nr);
       for (let k = 0; k < nr; k++) out[k] = 10 ** (lo + (r8[i * nr + k] / 255) * (hi - lo));
+      return out;
+    },
+    channel(name, i) {
+      const c = chAt.get(name);
+      if (!c) return null;
+      const out = new Float32Array(c.n);
+      const src = new Uint8Array(buf, c.off + i * c.n, c.n);
+      for (let k = 0; k < c.n; k++) out[k] = c.lo + (src[k] / 255) * (c.hi - c.lo);
       return out;
     },
     locate(t) {
