@@ -229,7 +229,15 @@ export class StarSystem implements DeepObject {
     } else if (s.pulsar) {
       body.pulsar = new PulsarBeams(s.pulsar, s.pulsar.beamLengthPc * AU_PER_PC, [0.6, 0.78, 1.0], 2e-5);
       body.group.add(body.pulsar.group);
-    } else {
+    }
+    // Jets (SS 433): the same cone geometry as pulsar beams, precessing (shown sped up).
+    const jets = index === 0 ? this.def.jets : undefined;
+    if (jets) {
+      const spin = { positionAngleDeg: jets.positionAngleDeg, inclinationDeg: jets.inclinationDeg, magneticDeg: jets.coneDeg, periodS: jets.precessionDays * 86400, shownPeriodS: 8, beamLengthPc: jets.lengthAu / AU_PER_PC };
+      body.pulsar = new PulsarBeams(spin, jets.lengthAu, [0.75, 0.85, 1.0], 2e-5);
+      body.group.add(body.pulsar.group);
+    }
+    if (!s.blackHole && !s.pulsar) {
       const R = s.radiusSun * SUN_RADIUS_AU;
       const color = temperatureColor(s.tempK);
       const giant = !!this.def.supergiant;

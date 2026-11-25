@@ -155,6 +155,11 @@ export interface SystemDef extends Base {
   accretion?: { outerAu: number };
   /** Boiling, giant-cell surface. */
   supergiant?: boolean;
+  /**
+   * Twin jets from the first body (SS 433): drawn like pulsar beams, precessing round the axis set
+   * by positionAngleDeg / inclinationDeg on the sky (cone half-angle coneDeg, period precessionDays).
+   */
+  jets?: { positionAngleDeg: number; inclinationDeg: number; coneDeg: number; precessionDays: number; lengthAu: number; speedC: number };
 }
 
 export interface PulsarDef extends Base {
