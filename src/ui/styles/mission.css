@@ -1333,3 +1333,113 @@ body.mode-universe .vignette {
 :root:not(.vw-760) .ux-view .universe-layers > .pill {
   padding: 6px 0;
 }
+
+/* ---- Universe left menu: the old bottom bar, one item per line --------------------------------------- */
+
+:root:not(.vw-760) .ux-left > .pill:not([data-back]),
+:root:not(.vw-760) .ux-left > .btn-icon,
+:root:not(.vw-760) .ux-left > .universe-layers > .pill {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: auto;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--c-hairline);
+  background: none;
+  color: var(--c-ink-2);
+  font: var(--t-cap-xs);
+  letter-spacing: var(--track-caps);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+:root:not(.vw-760) .ux-left > .pill:not([data-back])[aria-pressed='true'],
+:root:not(.vw-760) .ux-left > .universe-layers > .pill[aria-expanded='true'] {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers {
+  display: block;
+}
+
+:root:not(.vw-760) .ux-left > .universe-scales {
+  margin-bottom: 10px;
+}
+
+:root:not(.vw-760) .ux-left > .segmented:not(.universe-scales) {
+  display: flex;
+  margin: 0 0 6px;
+  padding: 0;
+  gap: 0;
+  border: 1px solid var(--c-hairline-strong);
+}
+
+:root:not(.vw-760) .ux-left > .segmented:not(.universe-scales) button {
+  flex: 1;
+  height: 30px;
+  border-left: 1px solid var(--c-hairline);
+  font: var(--t-cap-xs);
+}
+
+:root:not(.vw-760) .ux-left > .segmented:not(.universe-scales) button:first-child {
+  border-left: 0;
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .pill::after {
+  content: '\25B8';
+  margin-left: auto;
+  color: var(--c-ink-3);
+}
+
+:root:not(.vw-760) .ux-left > .btn-icon .icon {
+  display: none;
+}
+
+:root:not(.vw-760) .ux-left > [data-labels]::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+}
+
+:root:not(.vw-760) .ux-left > [data-labels][aria-pressed='true'] {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .ux-left > [data-labels][aria-pressed='true']::before {
+  background: var(--c-ink);
+}
+
+:root:not(.vw-760) .ux-left > [data-info]::before {
+  content: '?';
+  width: 6px;
+  text-align: center;
+}
+
+:root:not(.vw-760) .ux-left .ux-word {
+  font: inherit;
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .universe-layers-pop {
+  top: 0;
+  bottom: auto;
+  left: calc(100% + 16px);
+  transform: translateX(-6px);
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .universe-layers-pop[data-open='true'] {
+  transform: none;
+}
+
+:root:not(.vw-760) .ux-left {
+  overflow-x: hidden;
+}
+
+/* No scroll box: the Layers / Evidence pop-outs open beside the menu and must not be clipped. */
+:root:not(.vw-760) .ux-left {
+  bottom: auto;
+  overflow: visible;
+}

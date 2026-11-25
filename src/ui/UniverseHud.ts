@@ -318,53 +318,28 @@ export class UniverseHud {
     rule.setAttribute('aria-hidden', 'true');
     top.append(this.readout, rule);
 
-    // Left menu: what used to sit in the bottom bar, in three groups that each look their own way:
-    // where you are looking (a pick-one list), what the map shows (switches), and doors to learn.
+    // Left menu: the old bottom bar, as it was (same order, same names), one item per line.
     const left = document.createElement('div');
     left.className = 'ux-left';
-    const group = (n: string, title: string, hint: string, kind: string, items: HTMLElement[]) => {
-      const g = document.createElement('section');
-      g.className = `ux-group ux-${kind}`;
-      const h = document.createElement('p');
-      h.className = 'ux-head';
-      h.innerHTML = `<b>${n}</b>${esc(title)}<small>${esc(hint)}</small>`;
-      g.append(h, ...items);
-      return g;
-    };
     const worded = (el: HTMLElement, text: string) => {
-      const s = document.createElement('span');
-      s.className = 'ux-word';
-      s.textContent = text;
-      el.append(s);
+      const w = document.createElement('span');
+      w.className = 'ux-word';
+      w.textContent = text;
+      el.append(w);
       return el;
     };
-    const door = (el: HTMLElement, desc: string) => {
-      const d = document.createElement('small');
-      d.className = 'ux-desc';
-      d.textContent = desc;
-      el.append(d);
-      return el;
-    };
-    const look = this.q('[data-look]').parentElement as HTMLElement;
-    const layersWrap = this.q('[data-layers]').parentElement as HTMLElement;
-    const evidenceWrap = this.q('[data-evidence-btn]').parentElement as HTMLElement;
-    door(this.q('[data-evidence-btn]'), 'Karanlık maddeyi nereden biliyoruz?');
     left.append(
       this.q('[data-back]'),
-      group('01', 'Ölçek', 'Nereye bakıyorsun', 'scales', [this.q('.universe-scales')]),
-      group('02', 'Görünüm', 'Haritada ne görünsün', 'view', [
-        look,
-        worded(this.q('[data-labels]'), 'Etiketler'),
-        layersWrap,
-        this.q('[data-composition]'),
-        worded(this.q('[data-info]'), 'Bu harita nedir?'),
-      ]),
-      group('03', 'Öğren', 'Karanlık madde ve evrenin yapısı', 'learn', [
-        door(this.q('[data-sim]'), 'Kozmik ağ nasıl oluştu?'),
-        door(this.q('[data-lab]'), 'Denklemler, deneyler, grafikler'),
-        door(this.q('[data-film]'), 'Karanlık madde nerede etkileşir?'),
-        evidenceWrap,
-      ]),
+      this.q('.universe-scales'),
+      this.q('[data-look]').parentElement as HTMLElement,
+      this.q('[data-layers]').parentElement as HTMLElement,
+      this.q('[data-composition]'),
+      this.q('[data-sim]'),
+      this.q('[data-lab]'),
+      this.q('[data-film]'),
+      this.q('[data-evidence-btn]').parentElement as HTMLElement,
+      worded(this.q('[data-labels]'), 'Etiketler'),
+      worded(this.q('[data-info]'), 'Bu harita nedir?'),
     );
     this.path = new ScalePathBar((level) => onPath?.(level));
     this.path.el.classList.add('gx-path');
