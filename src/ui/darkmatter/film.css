@@ -1,0 +1,47 @@
+/* Dark-matter film: full-screen layer over everything. */
+.dm-film { position: fixed; inset: 0; z-index: 1000; background: #02030a; color: #eef1ff; font-family: var(--font-body, system-ui, sans-serif); }
+.dm-film .dm-film-stage { position: absolute; inset: 0; border-radius: 0; }
+.dm-film-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.dm-film-caption {
+  position: absolute; left: 50%; bottom: 112px; transform: translateX(-50%);
+  width: min(880px, calc(100vw - 32px)); margin: 0; text-align: center;
+  font-size: clamp(17px, 2.1vw, 26px); line-height: 1.35; font-weight: 500;
+  text-shadow: 0 2px 12px #000, 0 0 2px #000; pointer-events: none;
+}
+.dm-film-status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; max-width: calc(100vw - 32px); text-align: center; font-size: 16px; opacity: 0.85; }
+.dm-film-method { position: absolute; left: 16px; right: 16px; bottom: 10px; margin: 0; font: 11.5px/1.4 var(--font-mono, monospace); opacity: 0.55; pointer-events: none; }
+
+.dm-film-bar {
+  position: absolute; left: 16px; right: 16px; bottom: 36px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.dm-film-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-film-chips .pill[aria-selected='true'] { border-color: rgba(255, 255, 255, 0.6); color: #fff; }
+.dm-film-progress { flex: 1 1 120px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+.dm-film-progress i { display: block; height: 100%; width: 0; background: #ff6fc8; }
+.dm-film-glow { box-shadow: 0 0 0 2px rgba(255, 111, 200, 0.55), 0 0 18px rgba(255, 111, 200, 0.45); }
+
+.dm-legend { position: absolute; left: 16px; top: 14px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.6; text-shadow: 0 1px 4px #000; }
+.dm-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; vertical-align: -1px; }
+.dm-clock { position: absolute; right: 16px; top: 14px; font: 13px var(--font-mono, monospace); opacity: 0.8; }
+.dm-tag {
+  position: absolute; left: 0; top: 0; opacity: 0; white-space: nowrap; padding: 3px 8px; border-radius: 4px;
+  font-size: 13px; background: rgba(122, 92, 255, 0.28); border: 1px solid rgba(160, 140, 255, 0.7);
+  translate: -50% -170%;
+}
+.dm-tag-gas { background: rgba(255, 111, 200, 0.22); border-color: rgba(255, 140, 210, 0.75); translate: -50% 70%; }
+.dm-card {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -55%);
+  width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 220px); overflow: auto; pointer-events: auto;
+  padding: 20px 24px; border-radius: 12px; background: rgba(8, 10, 24, 0.78); border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 15px; line-height: 1.5;
+}
+.dm-card h2 { margin: 0 0 8px; font-size: 20px; }
+
+@media (max-width: 560px) {
+  .dm-film-caption { top: 92px; bottom: auto; }
+  .dm-film-bar { bottom: 44px; }
+  .dm-legend { font-size: 11.5px; }
+}
+.dm-film [hidden] { display: none !important; }

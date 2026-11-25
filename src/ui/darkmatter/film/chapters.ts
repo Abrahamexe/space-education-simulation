@@ -1,0 +1,58 @@
+import type { Stage } from '../render/Stage';
+import type { Caption, CamKey } from './timeline';
+
+export interface ChapterRuntime {
+  /** t: chapter time (s), dt: frame step (s, 0 while paused). */
+  update(t: number, dt: number): void;
+  dispose(): void;
+}
+
+export interface Chapter {
+  id: string;
+  title: string;
+  /** Seconds; Infinity for a card that stays until the viewer moves on. */
+  duration: number;
+  captions: Caption[];
+  /** Camera path; absent = the viewer orbits freely. */
+  camera?: CamKey[];
+  /** One line: method and simplifications, always on screen. */
+  method: string;
+  lab?: { tab: 'interaction'; anchor: string };
+  /** Builds the scene into the stage; `overlay` is a DOM layer over the canvas for labels. */
+  build(stage: Stage, overlay: HTMLElement): Promise<ChapterRuntime>;
+}
+
+export const CHAPTERS: Chapter[] = [
+  {
+    id: 'bullet',
+    title: 'Mermi Kümesi',
+    duration: 40,
+    captions: [
+      { at: 0, until: 8, text: 'İki galaksi kümesi saatte milyonlarca kilometre hızla birbirine yaklaşıyor.' },
+      { at: 8, until: 18, text: 'Sıcak gaz bulutları çarpışıyor: birbirine sürtünüp yavaşlıyorlar.' },
+      { at: 18, until: 26, text: 'Karanlık madde ve galaksiler ise neredeyse hiç çarpışmadan birbirinin içinden geçiyor.' },
+      { at: 26, until: 33, text: 'Karanlık madde gerçekte görünmez. Onu, arkadaki galaksilerin ışığını nasıl büktüğünden buluruz.' },
+      { at: 33, until: 40.01, text: 'Kütle ile gaz ayrı yerlerde: kütlenin çoğu görünmeyen maddede.' },
+    ],
+    camera: [
+      { at: 0, pos: [0, 3, 11] },
+      { at: 8, pos: [0, 1.5, 7] },
+      { at: 18, pos: [1.2, 0.8, 4.5] },
+      { at: 22, pos: [0.4, 0.4, 6] },
+      { at: 26, pos: [0, 0.4, 6] },
+      { at: 33, pos: [0, 0, 8] },
+      { at: 40, pos: [0, 0, 7.6] },
+    ],
+    method: 'Parçacık-ağ kütleçekimi + basitleştirilmiş gaz, σ/m = 0. Parlaklık X-ışını (∝ ρ²), sıcaklık değil. Zaman hızlandırılmış: 1,2 milyar yıl ≈ 26 s.',
+    lab: { tab: 'interaction', anchor: 'bullet' },
+    build: async (stage, overlay) => (await import('./bulletChapter')).buildBullet(stage, overlay),
+  },
+  {
+    id: 'unknowns',
+    title: 'Bildiklerimiz, bilmediklerimiz',
+    duration: Infinity,
+    captions: [],
+    method: 'Kapanış kartı. Arka plandaki sis, bir karanlık madde halesinin temsili çizimidir.',
+    build: async (stage, overlay) => (await import('./unknownsChapter')).buildUnknowns(stage, overlay),
+  },
+];
