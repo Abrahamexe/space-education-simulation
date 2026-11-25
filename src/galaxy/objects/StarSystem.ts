@@ -234,7 +234,7 @@ export class StarSystem implements DeepObject {
     const jets = index === 0 ? this.def.jets : undefined;
     if (jets) {
       const spin = { positionAngleDeg: jets.positionAngleDeg, inclinationDeg: jets.inclinationDeg, magneticDeg: jets.coneDeg, periodS: jets.precessionDays * 86400, shownPeriodS: 8, beamLengthPc: jets.lengthAu / AU_PER_PC };
-      body.pulsar = new PulsarBeams(spin, jets.lengthAu, [0.75, 0.85, 1.0], 2e-5);
+      body.pulsar = new PulsarBeams(spin, jets.lengthAu, [0.75, 0.85, 1.0], 2e-5, 1.5);
       body.group.add(body.pulsar.group);
     }
     if (!s.blackHole && !s.pulsar) {

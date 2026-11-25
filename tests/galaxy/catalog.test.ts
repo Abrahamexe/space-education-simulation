@@ -42,3 +42,10 @@ test('orbits and planets are physical', () => {
 test('clusters have a size and stars', () => {
   for (const d of DEEP_SKY) if (d.kind === 'cluster') assert.ok(d.scalePc > 0 && d.stars > 0, d.id);
 });
+
+test('deep-sky ids do not collide with the neighbourhood and satellite markers', async () => {
+  const { NEIGHBOURHOOD, SATELLITES } = await import('../../src/config/galaxy.ts');
+  const deep = new Set(DEEP_SKY.map((d) => d.id));
+  const clash = [...NEIGHBOURHOOD, ...SATELLITES].map((m) => m.id).filter((id) => deep.has(id));
+  assert.deepEqual(clash, []);
+});

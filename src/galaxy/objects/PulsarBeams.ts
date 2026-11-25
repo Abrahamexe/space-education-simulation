@@ -28,6 +28,8 @@ export class PulsarBeams {
     length: number,
     color: readonly [number, number, number] = [0.6, 0.78, 1.0],
     glowRadius = length * 0.01,
+    /** Half opening angle of each beam (deg); jets are much narrower than pulsar beams. */
+    halfAngleDeg = 6,
   ) {
     this.baseIntensity = 1.6;
     this.glow = makeGlow(color, glowRadius, this.baseIntensity, 9, 0.35);
@@ -45,7 +47,7 @@ export class PulsarBeams {
     this.rotor.add(tilt);
 
     for (const sign of [1, -1]) {
-      const g = new ConeGeometry(Math.tan(6 * DEG) * length, length, 48, 1, true);
+      const g = new ConeGeometry(Math.tan(halfAngleDeg * DEG) * length, length, 48, 1, true);
       g.translate(0, -length / 2, 0); // apex at the origin, opening towards −Y
       if (sign > 0) g.rotateX(Math.PI);
       const m = new Mesh(
