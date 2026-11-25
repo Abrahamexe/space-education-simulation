@@ -149,6 +149,10 @@ export class Engine {
     cancelAnimationFrame(this.rafId);
   }
 
+  isRunning(): boolean {
+    return this.running;
+  }
+
   /**
    * Which scene the frame shows: the solar scene (default) or another view
    * with its own camera (the galaxy). Post-processing follows.

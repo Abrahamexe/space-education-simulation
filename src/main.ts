@@ -26,6 +26,7 @@ import { Navigator } from './core/Navigator';
 import { Input } from './core/Input';
 import { ScaleTransition } from './core/ScaleTransition';
 import { QualityManager } from './core/QualityManager';
+import { bindMainRender } from './ui/darkmatter/gate';
 import { Hud } from './ui/Hud';
 import { LoadingScreen } from './ui/LoadingScreen';
 import { strings } from './i18n';
@@ -126,6 +127,7 @@ async function boot(): Promise<void> {
   const syncGalaxyQuality = () => (galaxy.discSlices = QUALITY_PRESETS[quality.level].discSlices);
   quality.onChange(syncGalaxyQuality);
   syncGalaxyQuality();
+  bindMainRender({ start: () => engine.start(), stop: () => engine.stop(), isRunning: () => engine.isRunning(), level: () => quality.level });
   const scaleTransition = new ScaleTransition();
   // Before bodies move this frame, so positions use the new blend.
   engine.add(scaleTransition, -10);
