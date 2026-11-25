@@ -24,6 +24,28 @@ export interface Chapter {
 
 export const CHAPTERS: Chapter[] = [
   {
+    id: 'web',
+    title: 'Karanlık ağ',
+    duration: 46,
+    captions: [
+      { at: 0, until: 9, text: "Büyük Patlama'dan hemen sonra: madde neredeyse pürüzsüz. Küçük bir fazlalıkta ses dalgası dışarı yayılıyor." },
+      { at: 9, until: 18, text: 'Gaz ışıkla birlikte sürüklenip kabuk oluyor. Karanlık madde ışıkla etkileşmez, merkezde kalıp çökmeye başlıyor.' },
+      { at: 18, until: 28, text: 'Karanlık madde ışıkla etkileşmez, bu yüzden ilk çöken o olur. Gaz önce geride kalır.' },
+      { at: 28, until: 38, text: 'Karanlık madde ince iplikler ve düğümlerden bir ağ örüyor; gaz kütleçekimiyle bu kuyulara akıyor.' },
+      { at: 38, until: 46.01, text: 'Galaksiler bu ağın düğümlerinde doğacak. İskeleti görünmeyen madde kuruyor.' },
+    ],
+    camera: [
+      { at: 0, pos: [0, 3, 22] },
+      { at: 18, pos: [0, 2, 14] },
+      { at: 22, pos: [0, 5, 17] },
+      { at: 34, pos: [7, 4, 13] },
+      { at: 46, pos: [4, 3, 10] },
+    ],
+    method: "Ses kabuğu: yarı-analitik model (Eisenstein, Seo & White 2007), simülasyon değil. Ağ: Zel'dovich yaklaşımı, BBKS güç tayfı; gaz basınç ölçeğinde (4 Mpc) süzülmüş ve gecikmeli izliyor (basitleştirme). Parlaklık yoğunluğun karesiyle çizildi.",
+    lab: { tab: 'interaction', anchor: 'bao' },
+    build: async (stage, overlay) => (await import('./webChapter')).buildWeb(stage, overlay),
+  },
+  {
     id: 'galaxy',
     title: 'Halede bir galaksi',
     duration: 44,

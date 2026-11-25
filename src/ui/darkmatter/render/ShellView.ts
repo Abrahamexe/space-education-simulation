@@ -53,6 +53,9 @@ export class ShellView {
     }
   }
 
+  /** Per-component brightness multipliers (the film lifts the shells and dims the core). */
+  gain: Partial<Record<ShellComponent, number>> = {};
+
   /** Redraws every component from its profile r²·δ (Mpc grid `radii`). `fade` scales all opacities. */
   set(fields: ShellFields, fade = 1): void {
     for (const [k, l] of this.layers) {
@@ -72,7 +75,7 @@ export class ShellView {
       l.layer.setFrames(out, out, 0);
       // Brightness follows how much of the component is in the perturbation (photons fade away).
       const rel = Math.min(1, area / ((this.areas0.get(k) ?? area) || 1));
-      l.layer.setOpacity(this.visible.get(k) ? OPACITY[k] * fade * Math.max(0.15, rel) : 0);
+      l.layer.setOpacity(this.visible.get(k) ? OPACITY[k] * (this.gain[k] ?? 1) * fade * Math.max(0.15, rel) : 0);
     }
   }
 
