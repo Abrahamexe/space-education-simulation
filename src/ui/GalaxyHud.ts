@@ -200,12 +200,13 @@ export class GalaxyHud {
       const dist = lightYears(distOf(r));
       const meta = [type, dist].filter(Boolean).join(' · ');
       const search = `${r.name} ${t.name} ${type}`.toLocaleLowerCase('tr-TR');
-      return `<button type="button" class="xp-item" data-go="${r.id}" data-search="${esc(search)}" >
-        <span class="xp-name">${esc(r.name)}</span><span class="xp-meta">${esc(meta)}</span></button>`;
+      const short = dist.replace(/ışık yılı$/, 'IY');
+      return `<button type="button" class="xp-item" data-go="${r.id}" data-search="${esc(search)}" title="${esc(meta)}">
+        <span class="xp-name">${esc(r.name)}</span><span class="xp-meta">${esc(meta)}</span><span class="xp-dist">${esc(short)}</span></button>`;
     };
     const section = (tab: 'in' | 'out', title: string, hint: string, rows: Row[]) =>
       rows.length
-        ? `<section data-tab="${tab}"><h3>${esc(title)}<span class="xp-hint">${esc(hint)}</span></h3><div class="xp-grid">${[...rows]
+        ? `<section data-tab="${tab}"><h3>${esc(title)}<span class="xp-n">${rows.length}</span><span class="xp-hint">${esc(hint)}</span></h3><div class="xp-grid">${[...rows]
             .sort((x, y) => distOf(x) - distOf(y))
             .map(rowHtml)
             .join('')}</div></section>`
@@ -234,7 +235,8 @@ export class GalaxyHud {
     ];
     const count = (html: string[]) => html.join('').split('class="xp-item"').length - 1;
     this.explore.dataset.tab = 'in';
-    this.explore.innerHTML = `<div class="galaxy-explore-head"><h2>${g.explore}</h2><button type="button" class="btn-icon" data-close aria-label="${g.closeCard}">${icon('close')}</button></div>
+    this.explore.innerHTML = `<div class="galaxy-explore-head"><h2>${g.explore}<span class="xp-total">${count(inside) + count(outside)} hedef</span></h2><button type="button" class="btn-icon" data-close aria-label="${g.closeCard}">${icon('close')}</button></div>
+      <p class="xp-lead">Bir hedefe tıkla, oraya uç</p>
       <label class="xp-search">${icon('search')}<input type="search" data-xp-search placeholder="Ara: ad ya da tür (ör. bulutsu, kuasar)" aria-label="Keşfet içinde ara" autocomplete="off" spellcheck="false"></label>
       <div class="segmented galaxy-tabs" role="tablist">
         <button type="button" role="tab" data-tab-btn="in" aria-selected="true" aria-checked="true">Samanyolu içinde <span class="xp-count">${count(inside)}</span></button>
