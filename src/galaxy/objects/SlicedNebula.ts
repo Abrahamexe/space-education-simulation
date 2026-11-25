@@ -116,6 +116,7 @@ export class SlicedNebula implements DeepObject {
       uEye: { value: 0 },
       uAnchor: { value: anchorLocal },
       uCollapse: { value: 0 },
+      uSky: { value: new Vector3() },
       // Slices fade at grazing views; a tilted disc is seen at a grazing angle
       // even from Earth, so it fades only when nearly edge-on.
       uFacing: { value: def.depth.model === 'disc' ? new Vector2(0.02, 0.1) : new Vector2(0.5, 0.88) },
@@ -285,6 +286,7 @@ export class SlicedNebula implements DeepObject {
     depthTex.needsUpdate = true;
     this.sliceUniforms.uDepth.value = depthTex;
     this.sliceUniforms.uZRange.value = out.zRange * this.W;
+    (this.sliceUniforms.uSky.value as Vector3).set(...out.sky);
     // uZ is in units of the range; the shader compares it with z1/z2/th, same units.
     for (const m of this.slices) m.visible = true;
     this.depthReady = true;

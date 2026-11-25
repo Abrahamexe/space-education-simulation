@@ -1,6 +1,7 @@
 import { DataUtils, MathUtils } from 'three';
 import type { DepthSpec } from '../../config/deepsky';
 import { Random } from '../../utils/random';
+import { edgeAlpha } from './edgeMask';
 
 const DEG = Math.PI / 180;
 
@@ -144,6 +145,8 @@ export interface NebulaBuildInput {
 export interface NebulaBuildOutput {
   /** N×N half floats RGBA: z1, z2, thickness, 1 / sum of slice weights (rows bottom-up). */
   depth: Uint16Array;
+  /** The photo's sky colour (linear RGB), subtracted in the shader. */
+  sky: [number, number, number];
   zRange: number;
   pos: Float32Array;
   col: Float32Array;
@@ -164,6 +167,14 @@ export function computeNebula(inp: NebulaBuildInput): NebulaBuildOutput {
   const LIN = new Float32Array(256);
   for (let i = 0; i < 256; i++) LIN[i] = Math.pow(i / 255, 2.2);
   const yScale = 1 / inp.aspect;
+  // Organic edge: sky removed, picture fading along its own structure instead of its frame.
+  const lin = new Float32Array(N * N * 3);
+  for (let k = 0; k < N * N; k++) {
+    lin[3 * k] = LIN[px[k * 4]];
+    lin[3 * k + 1] = LIN[px[k * 4 + 1]];
+    lin[3 * k + 2] = LIN[px[k * 4 + 2]];
+  }
+  const { alpha, sky } = edgeAlpha(lin, N);
 
   // Raw layers (image widths).
   const raw = new Float32Array(N * N * 3);
@@ -180,7 +191,7 @@ export function computeNebula(inp: NebulaBuildInput): NebulaBuildOutput {
       p.b = LIN[px[k * 4 + 2]];
       p.l = (px[k * 4] + px[k * 4 + 1] + px[k * 4 + 2]) / 765 / maxL;
       const [z1, z2, th] = layers(d, p, ax, ay);
-      mask[k] = galaxyMask(d, p, ax, ay);
+      mask[k] = galaxyMask(d, p, ax, ay) * alpha[k];
       raw[k * 3] = z1;
       raw[k * 3 + 1] = z2;
       raw[k * 3 + 2] = th;
@@ -227,15 +238,14 @@ export function computeNebula(inp: NebulaBuildInput): NebulaBuildOutput {
     const j = Math.min(N - 1, Math.floor(fy * N));
     const k = j * N + i;
     const l = (px[k * 4] + px[k * 4 + 1] + px[k * 4 + 2]) / 765 / maxL;
-    const edge = MathUtils.smoothstep(Math.min(fx, 1 - fx), 0, 0.12) * MathUtils.smoothstep(Math.min(fy, 1 - fy), 0, 0.12);
-    if (l < 0.07 || rnd.next() > Math.pow(l, 1.3) * edge * mask[k]) continue;
+    if (l < 0.07 || rnd.next() > Math.pow(l, 1.3) * mask[k]) continue;
     const z = (rnd.next() < 0.5 ? raw[k * 3] : raw[k * 3 + 1]) + rnd.gaussian() * raw[k * 3 + 2];
     pos[n * 3] = (fx - 0.5) * W;
     pos[n * 3 + 1] = (0.5 - fy) * H;
     pos[n * 3 + 2] = z * W;
-    const r = LIN[px[k * 4]];
-    const g = LIN[px[k * 4 + 1]];
-    const b = LIN[px[k * 4 + 2]];
+    const r = Math.max(0, LIN[px[k * 4]] - 0.9 * sky[0]);
+    const g = Math.max(0, LIN[px[k * 4 + 1]] - 0.9 * sky[1]);
+    const b = Math.max(0, LIN[px[k * 4 + 2]] - 0.9 * sky[2]);
     const m = Math.max(r, g, b, 1e-4);
     const kk = 0.5 + 0.5 * l;
     col[n * 3] = (r / m) * kk;
@@ -244,7 +254,7 @@ export function computeNebula(inp: NebulaBuildInput): NebulaBuildOutput {
     size[n] = W * inp.particleSize * rnd.range(0.6, 1.4);
     n++;
   }
-  return { depth, zRange, pos: pos.slice(0, n * 3), col: col.slice(0, n * 3), size: size.slice(0, n) };
+  return { depth, sky, zRange, pos: pos.slice(0, n * 3), col: col.slice(0, n * 3), size: size.slice(0, n) };
 }
 
 let worker: Worker | null = null;

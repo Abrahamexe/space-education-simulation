@@ -18,6 +18,7 @@ uniform float uZ;           // this slice's depth (units of uZRange, −1..1)
 uniform float uZRange;
 uniform vec2 uFacing;       // facing fade range (|cos| of the view to the plane normal)
 uniform float uCollapse;    // 1: on the Earth-side axis, one slice carries the whole stack
+uniform vec3 uSky;          // the photo's sky colour (linear), removed
 
 #define SLICES 16
 
@@ -47,16 +48,17 @@ void main() {
   }
   vec3 v = normalize(-vView);
   float facing = smoothstep(uFacing.x, uFacing.y, abs(dot(v, normalize(vNormalV))));
-  vec2 e = smoothstep(vec2(0.0), vec2(0.14), vUv) * smoothstep(vec2(0.0), vec2(0.14), 1.0 - vUv);
+  // The organic edge (sky removed, structure-following fade) lives in the depth map's weights.
   // Most slices carry almost nothing at a given pixel: skip the colour fetch.
-  if (w * facing * e.x * e.y < 0.003) discard;
+  if (w * facing < 0.003) discard;
   vec3 map = texture2D(uMap, vUv).rgb;
   if (uDetailMix > 0.0) {
     vec2 d = (vUv - uDetailRect.xy) / (uDetailRect.zw - uDetailRect.xy);
     vec2 f = smoothstep(vec2(0.0), vec2(0.02), d) * smoothstep(vec2(0.0), vec2(0.02), 1.0 - d);
     map = mix(map, texture2D(uDetail, d).rgb, uDetailMix * f.x * f.y);
   }
-  vec3 c = map * uIntensity * w * facing * e.x * e.y;
+  map = max(map - 0.9 * uSky, vec3(0.0));
+  vec3 c = map * uIntensity * w * facing;
   if (!(max(c.r, max(c.g, c.b)) >= 0.0004)) discard;
   gl_FragColor = vec4(c, 1.0);
 }
