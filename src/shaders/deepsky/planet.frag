@@ -45,19 +45,28 @@ void main() {
   } else if (isType(1.0)) {
     base = h * uTint * 1.4;
   } else if (isType(2.0) || isType(3.0)) {
-    float land = smoothstep(0.47, 0.53, h * 0.8 + 0.12 + 0.28 * snoise(p * 1.8 + uSeed * 5.0));
-    vec3 ground = mix(vec3(0.32, 0.27, 0.18), vec3(0.2, 0.3, 0.14), 0.5 + 0.5 * snoise(p * 4.0 + uSeed));
-    vec3 ocean = vec3(0.02, 0.08, 0.2);
-    base = mix(ocean, ground * (0.7 + 0.6 * h), land);
-    float cloud = smoothstep(0.15, 0.65, snoise(p * 2.6 + uSeed * 3.0) * 0.7 + snoise(p * 7.0 - uSeed) * 0.35 + 0.2);
-    float ice = smoothstep(0.78, 0.9, abs(p.y));
+    // Continents from several noise scales plus the map's detail; sharp coasts, lighter shelves.
+    float cont = 0.55 * snoise(p * 1.3 + uSeed * 5.0) + 0.3 * snoise(p * 3.1 + uSeed * 2.0) + 0.15 * snoise(p * 7.5 - uSeed) + 0.3 * (h - 0.45);
+    float land = smoothstep(0.02, 0.05, cont);
+    vec3 lowland = mix(vec3(0.16, 0.24, 0.1), vec3(0.42, 0.36, 0.22), smoothstep(-0.3, 0.6, snoise(p * 2.2 + uSeed * 9.0)));
+    vec3 ground = mix(lowland, vec3(0.5, 0.46, 0.4), smoothstep(0.25, 0.5, cont)) * (0.75 + 0.5 * h);
+    vec3 ocean = mix(vec3(0.008, 0.035, 0.11), vec3(0.03, 0.12, 0.22), smoothstep(-0.18, 0.02, cont));
+    base = mix(ocean, ground, land);
+    // Clouds: domain-warped, layered, thin streaks rather than blobs.
+    vec3 q = p * 2.0 + 0.7 * vec3(snoise(p * 1.4 + uSeed), snoise(p * 1.4 + 3.1), snoise(p * 1.4 - 2.2));
+    float cl = 0.5 * snoise(q * vec3(1.6, 3.2, 1.6)) + 0.3 * snoise(q * 4.6) + 0.2 * snoise(q * 10.0);
+    float cloud = smoothstep(0.18, 0.62, cl) * 0.9;
+    float ice = smoothstep(0.82, 0.93, abs(p.y) + 0.05 * snoise(p * 6.0 + uSeed));
     if (isType(3.0)) {
       // Tidally locked: open water only near the point under the star, ice elsewhere.
-      ice = 1.0 - smoothstep(0.25, 0.55, ndl);
+      ice = 1.0 - smoothstep(0.25, 0.55, ndl + 0.08 * snoise(p * 5.0));
       cloud *= smoothstep(-0.1, 0.4, ndl);
     }
     base = mix(base, vec3(0.86, 0.9, 0.95), ice);
-    base = mix(base, vec3(0.92), cloud * 0.75);
+    // Sun glint on open water.
+    float glint = pow(max(dot(reflect(-l, n), v), 0.0), 60.0) * (1.0 - land) * (1.0 - ice) * (1.0 - cloud);
+    emit += uLightColor * glint * 0.5 * diff;
+    base = mix(base, vec3(0.93), cloud);
     atm = vec3(0.35, 0.55, 1.0);
   } else if (isType(4.0)) {
     base = mix(vec3(0.62, 0.72, 0.82), vec3(0.95, 0.97, 1.0), h);
