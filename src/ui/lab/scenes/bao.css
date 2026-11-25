@@ -20,3 +20,4 @@
 .bao .bao-sw-neutrino { background: #9ad9c4; }
 .bao .bao-stage { min-height: 4.2em; }
 .bao .lab-slider output { width: 84px; }
+.bao .bao-stage3d { width: 100%; aspect-ratio: 16 / 9; margin: var(--s-2) 0; }

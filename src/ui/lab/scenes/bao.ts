@@ -10,6 +10,9 @@
 import './bao.css';
 import { plot, project, type Axis, type Series } from '../plot';
 import { num } from '../physics';
+import { GridHelper } from 'three';
+import { Stage } from '../../darkmatter/render/Stage';
+import { ShellView, type ShellComponent } from '../../darkmatter/render/ShellView';
 import { EH98_RS, OB, OM, RADII, R_MAX, Z_D, cosmicAge, fieldsAt, h, soundHorizon } from './baoModel';
 
 // ----------------------------------------------------------- text and units
@@ -57,6 +60,10 @@ export function mountBao(container: HTMLElement): void {
   root.innerHTML = `
     <p class="note">Evrenin ilk anında tek bir noktada küçük bir yoğunluk fazlalığı olsun. Karanlık madde basınçsızdır ve olduğu yerde kalır; baryonlar ise fotonlara bağlı olduğundan baryon–foton akışkanı bir ses dalgası gibi dışa yayılır. Saydamlaşmada dalga durur ve geride yaklaşık ${num(rD, 0)} Mpc yarıçaplı bir kabuk bırakır: BAO ölçeği.</p>
     <p class="lab-readout bao-stage" data-stage></p>
+    <div class="bao-stage3d" role="img" aria-label="Ses kabuğu, üç boyutlu: karanlık madde, baryonlar, fotonlar ve nötrinolar. Sürükleyerek döndür.">
+      <div class="dm-overlay"><span data-age></span><span class="dm-scale">Bu bir simülasyon değil: modelin kütle profilinin 3D çizimi. · Izgara karesi 60 Mpc</span></div>
+      <button type="button" class="pill dm-full" data-full>Büyüt</button>
+    </div>
     <div data-plot></div>
     <div class="bao-legend">${COMPONENTS.map((c) => `<label class="lab-check bao-leg"><input type="checkbox" data-comp="${c.key}" checked><i class="bao-sw bao-sw-${c.key}"></i>${c.label}</label>`).join('')}</div>
     <div class="lab-acts"><button type="button" class="pill pill-accent" data-play>▶ Oynat</button><button type="button" class="pill" data-rewind>Başa sar</button></div>
@@ -76,6 +83,43 @@ export function mountBao(container: HTMLElement): void {
   const readout = q<HTMLElement>('[data-readout]');
   const zoomBox = q<HTMLInputElement>('[data-zoom]');
   const checks = [...root.querySelectorAll<HTMLInputElement>('[data-comp]')];
+  const stageHost = q<HTMLElement>('.bao-stage3d');
+  const ageEl = q<HTMLElement>('[data-age]');
+  const fullBtn = q<HTMLButtonElement>('[data-full]');
+
+  // 3D shells: 1 scene unit = 30 Mpc; the view is redrawn at most once per frame.
+  const stage = new Stage(stageHost);
+  stage.camera.position.set(0, 4, 13);
+  stage.controls.maxDistance = 30;
+  const grid = new GridHelper(16, 8, 0x2a3350, 0x161c2e);
+  grid.position.y = -7.5;
+  const shells = new ShellView(RADII, 3000, 1 / 30);
+  stage.scene.add(grid, shells.object);
+  let pending: ReturnType<typeof fieldsAt> | null = null;
+  stage.onUpdate((dt) => {
+    shells.object.rotation.y += dt * 0.04;
+    if (!pending) return;
+    shells.set(pending);
+    pending = null;
+  });
+  stage.onFullscreen = (on) => (fullBtn.textContent = on ? 'Küçült' : 'Büyüt');
+  fullBtn.addEventListener('click', () => stage.setFullscreen(!stage.fullscreen));
+  let intersecting = true;
+  const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((e) => (intersecting = e[e.length - 1].isIntersecting)) : null;
+  io?.observe(stageHost);
+  const shown = (): boolean =>
+    root.isConnected && root.closest<HTMLElement>('[data-open]')?.dataset.open !== 'false' && root.offsetParent !== null && intersecting && !document.hidden;
+  const watch = window.setInterval(() => {
+    if (!root.isConnected) {
+      window.clearInterval(watch);
+      io?.disconnect();
+      stage.dispose();
+      shells.dispose();
+      return;
+    }
+    if (shown()) stage.start();
+    else stage.stop();
+  }, 400);
 
   // Time coordinate s = log10(1+z) runs 5 → 0; the slider shows progress 0 → 5.
   let progress = S_START - Math.log10(1 + Z_D);
@@ -102,6 +146,9 @@ export function mountBao(container: HTMLElement): void {
     const bottom = project(xa, ya, rD, 0)[1];
     const mark = `<line class="bao-mark" x1="${mx}" x2="${mx}" y1="${top}" y2="${bottom}"/><text class="bao-mark-label" x="${mx - 4}" y="${top + 11}" text-anchor="end">r_d ≈ ${num(rD, 0)} Mpc</text>`;
     plotEl.innerHTML = plot(xa, ya, series, 'Kütle profili r²·δ ile yarıçap: karanlık madde, baryonlar, fotonlar ve nötrinolar', mark);
+    for (const c of checks) shells.setVisible(c.dataset.comp as ShellComponent, c.checked);
+    pending = f;
+    ageEl.textContent = `Evren ${formatAge(cosmicAge(z))} yaşında · z = ${formatZ(z)}`;
 
     slider.value = String(progress);
     zOut.textContent = `z = ${formatZ(z)}`;
@@ -122,7 +169,7 @@ export function mountBao(container: HTMLElement): void {
 
   // The loop runs only while playing, attached and visible, so a hidden panel costs nothing.
   function tick(ts: number): void {
-    if (!root.isConnected || root.offsetParent === null) {
+    if (!root.isConnected || (root.offsetParent === null && !stage.fullscreen)) {
       setPlaying(false);
       return;
     }
