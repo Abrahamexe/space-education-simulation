@@ -17,7 +17,7 @@ export interface Chapter {
   camera?: CamKey[];
   /** One line: method and simplifications, always on screen. */
   method: string;
-  lab?: { tab: 'interaction'; anchor: string };
+  lab?: { tab: 'interaction' | 'experiments'; anchor: string };
   /** Builds the scene into the stage; `overlay` is a DOM layer over the canvas for labels. */
   build(stage: Stage, overlay: HTMLElement): Promise<ChapterRuntime>;
 }
@@ -67,6 +67,28 @@ export const CHAPTERS: Chapter[] = [
     method: 'Barnes-Hut kütleçekimi + SPH gaz, ışınımla soğuma, yıldız oluşumu ve süpernova geri beslemesi; 12 000 karanlık madde + 10 000 gaz parçacığı. Zaman hızlandırılmış: 3 milyar yıl ≈ 36 s.',
     lab: { tab: 'interaction', anchor: 'galaxy' },
     build: async (stage, overlay) => (await import('./galaxyChapter')).buildGalaxy(stage, overlay),
+  },
+  {
+    id: 'rotation',
+    title: 'Fazla hızlı dönen yıldızlar',
+    duration: 42,
+    captions: [
+      { at: 0, until: 6, text: 'Bir sarmal galaksi (M33) dönüyor. Her yıldız, içinde kalan kütlenin çekimiyle yörüngede.' },
+      { at: 6, until: 14, text: 'Görünen yıldız ve gaza göre dıştaki yıldızlar daha yavaş dönmeli (mavi).' },
+      { at: 14, until: 24, text: 'Ama ölçülen hızlar dışarıda düşmüyor (beyaz). Dış yıldızlar beklenenden çok daha hızlı.' },
+      { at: 24, until: 34, text: 'Bunu açıklayan görünmeyen bir kütle: galaksiyi saran karanlık madde halesi.' },
+      { at: 34, until: 42.01, text: "Vera Rubin ve diğerleri 1970'lerde bunu yüzlerce galakside ölçtü: düz dönme eğrileri karanlık maddenin ilk güçlü kanıtlarından." },
+    ],
+    camera: [
+      { at: 0, pos: [0, 5, 9] },
+      { at: 14, pos: [0, 7, 6] },
+      { at: 24, pos: [6, 3, 8] },
+      { at: 34, pos: [0, 2.5, 11] },
+      { at: 42, pos: [0, 6, 9] },
+    ],
+    method: 'Veri: M33 ölçülen dönme eğrisi ve yalnız yıldız + gazdan beklenen eğri (temsili ±6 km/s). Disk ve hale çizimi temsilî; yıldızlar ölçülen hızla döner. Zaman: 1 s = 10 milyon yıl.',
+    lab: { tab: 'experiments', anchor: 'rotation' },
+    build: async (stage, overlay) => (await import('./rotationChapter')).buildRotation(stage, overlay),
   },
   {
     id: 'bullet',

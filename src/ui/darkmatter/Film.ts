@@ -34,7 +34,7 @@ export class Film {
     tryBtn: HTMLButtonElement;
   };
 
-  constructor(private readonly opts: { onTry: (tab: 'interaction', anchor: string) => void }) {}
+  constructor(private readonly opts: { onTry: (tab: 'interaction' | 'experiments', anchor: string) => void }) {}
 
   get isOpen(): boolean {
     return this.root !== null;
