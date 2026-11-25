@@ -70,7 +70,16 @@ async (page) => {
   await key(S, 'yörüngeler', 'y', '.layers .layer[title^="Yörüngeler"]', 'aria-pressed');
   await key(S, 'etiketler', 'e', '.layers .layer[title^="Etiketler"]', 'aria-pressed');
   await key(S, 'yaşanabilir bölge', 'b', '.layers .layer[title^="Yaşanabilir"]', 'aria-pressed');
-  await key(S, 'zaman', 'Space', '.time [data-act="play"]', 'data-playing');
+  {
+    // The play button's state follows the clock on the next (throttled) frame: read the clock itself.
+    checked++;
+    const paused = () => page.evaluate(() => window.__space.engine.time.paused);
+    const before = await paused();
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(250);
+    if ((await paused()) === before) missing.push(`${S}: kısayol Space (zaman)`);
+    await page.keyboard.press('Space');
+  }
   await key(S, 'kamera', 'm', '.tools .segmented >> nth=1', 'class').catch(() => {});
 
   // Info panel (Mars).

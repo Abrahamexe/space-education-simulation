@@ -121,7 +121,7 @@ class UiScale {
         if (ok()) return;
       }
     };
-    const brand = top.querySelector('.brand');
+    const brand = top.querySelector('.hud-id') ?? top.querySelector('.brand');
     const right = top.querySelector('.top-right');
     if (brand && right) step(TOP_STEPS, () => fits(top, [brand, right]));
     const parts = [...bottom.children];

@@ -12,6 +12,7 @@ import { Help } from './Help';
 import { Search } from './Search';
 import { Layers, Settings, Toolbar } from './Toolbar';
 import { uiScale } from './UiScale';
+import { ScalePathBar } from './ScalePathBar';
 import type { UiContext } from './context';
 
 const READOUT_REFRESH_MS = 250;
@@ -30,6 +31,7 @@ export class Hud {
   readonly root: HTMLElement;
   readonly labels: Labels;
   private readonly readout: HTMLElement;
+  private readonly path: ScalePathBar;
   private readonly hint = new Hint();
   private readonly notice: HTMLElement;
   private lastReadout = 0;
@@ -102,16 +104,37 @@ export class Hud {
       layers.sync();
       if (on) this.showNotice(t.tools.galaxyNotice);
     });
-    right.append(this.readout, new Search(ctx).el, layers.el, new Help().el, new Settings(ctx).el);
-    top.append(brand, right);
+    right.append(new Search(ctx).el, layers.el, new Help().el, new Settings(ctx).el);
+    const id = document.createElement('div');
+    id.className = 'hud-id';
+    id.append(brand, this.readout);
+    const rule = document.createElement('span');
+    rule.className = 'hud-rule';
+    rule.setAttribute('aria-hidden', 'true');
+    top.append(id, rule, right);
 
     // ---- Bottom ------------------------------------------------------------------
     const bottom = document.createElement('div');
     bottom.className = 'hud-bottom';
-    bottom.append(new TimeControls(ctx).el, new NavBar(ctx, () => setCraftMode(true)).el, new Toolbar(ctx).el);
+    // Left column: the bodies (and spacecraft). Bottom band: time · scale path · view tools.
+    const left = document.createElement('div');
+    left.className = 'hud-left';
+    left.append(new NavBar(ctx, () => setCraftMode(true)).el);
+    this.path = new ScalePathBar((level) => ctx.views.navigateTo(level));
+    this.path.el.classList.add('cluster');
+    this.path.el.dataset.reveal = '';
+    this.path.el.style.setProperty('--i', '3');
+    this.path.set('solar');
+    bottom.append(new TimeControls(ctx).el, this.path.el, new Toolbar(ctx).el);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') ctx.views.cancelRoute();
+    });
 
-    const spacer = document.createElement('div');
-    root.append(top, spacer, bottom);
+    const vignette = document.createElement('div');
+    vignette.className = 'vignette';
+    vignette.setAttribute('aria-hidden', 'true');
+    document.body.append(vignette);
+    root.append(top, left, bottom);
 
     this.notice = document.createElement('div');
     this.notice.className = 'notice';
@@ -176,6 +199,7 @@ export class Hud {
     const focus = this.ctx.engine.rig.focusTarget;
     const entry = this.ctx.system.focusables.find((f) => f.body === focus);
     let text = '';
+    this.path.set('solar', entry?.name ?? '');
     if (entry && focus instanceof CelestialBody) {
       const d = focus.heliocentricDistanceKm;
       text = `<b>${entry.name}</b>${r.toSun} ${au(d / KM_PER_AU)} · ${r.byLight} ${lightTime(d)}`;

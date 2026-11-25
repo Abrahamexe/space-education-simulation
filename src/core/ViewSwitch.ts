@@ -9,6 +9,8 @@ import type { Engine } from './Engine';
 import type { Navigator } from './Navigator';
 import { scale } from './scale';
 import type { Selection } from './Selection';
+import { routeTo, runRoute, type Level, type UniverseScale } from '../ui/scalePath';
+import { SCALES } from '../config/universe';
 
 /** Solar camera distance from the Sun where the trip hands over to the galaxy (AU, scene-mapped). */
 const HANDOVER_AU = 8000;
@@ -108,6 +110,58 @@ export class ViewSwitch {
         this.galaxy.resumeFromFar(dir, UNIVERSE_VIEW.entryMpc * 1e6);
       }),
     );
+  }
+
+  /** Where the camera is on the scale path. */
+  get level(): Level {
+    if (this.universe?.active) return this.universe.scaleId as UniverseScale;
+    return this.galaxy.active ? 'milkyWay' : 'solar';
+  }
+
+  private routeToken = 0;
+  /** Scale-path hook for the universe HUD (fly + show the scale card); defaults to a plain flight. */
+  scaleHandler: ((id: UniverseScale) => Promise<void>) | null = null;
+
+  /** Stop a scale-path trip between legs (Esc, a new trip). */
+  cancelRoute(): void {
+    this.routeToken++;
+  }
+
+  /**
+   * Go to any level of the scale path, through as many views as it takes (solar → galaxy →
+   * universe → a scale), one leg after another; a new trip or Esc stops it between legs.
+   */
+  navigateTo(to: Level): void {
+    const token = ++this.routeToken;
+    const settled = (ok: () => boolean) => this.waitUntil(() => ok() && !this.swapping && !this.leaving);
+    void runRoute(
+      routeTo(this.level, to),
+      {
+        toGalaxy: () => (this.goToGalaxy(), settled(() => this.galaxy.active)),
+        toUniverse: () => (this.goToUniverse(), settled(() => this.inUniverse)),
+        toSolar: () => (void this.galaxy.returnToSun(), settled(() => !this.galaxy.active && !this.inUniverse)),
+        toGalaxyFromUniverse: () => (void this.universe?.returnHome(), settled(() => this.galaxy.active && !this.inUniverse)),
+        scale: (id) => {
+          if (this.scaleHandler) return this.scaleHandler(id);
+          const s = SCALES.find((x) => x.id === id);
+          return s && this.universe ? this.universe.goScale(s) : Promise.resolve();
+        },
+      },
+      () => token !== this.routeToken,
+    );
+  }
+
+  /** Resolves once `ok()` holds (checked each frame), or after `timeoutMs`. */
+  private waitUntil(ok: () => boolean, timeoutMs = 45000): Promise<void> {
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      const off = this.engine.onFrame(() => {
+        if (ok() || performance.now() - t0 > timeoutMs) {
+          off();
+          resolve();
+        }
+      });
+    });
   }
 
   get inUniverse(): boolean {

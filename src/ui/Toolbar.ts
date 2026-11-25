@@ -170,14 +170,7 @@ export class Toolbar {
       el.appendChild(pgBtn);
     }
 
-    const galaxy = document.createElement('button');
-    galaxy.type = 'button';
-    galaxy.className = 'btn-icon';
-    galaxy.setAttribute('aria-label', t.galaxyView);
-    galaxy.title = t.galaxyView;
-    galaxy.innerHTML = icon('zoomOut');
-    galaxy.addEventListener('click', () => ctx.views.goToGalaxy());
-    el.appendChild(galaxy);
+    // "Galaksiye çık" lives on the scale path now (bottom band, "Samanyolu").
 
     const home = document.createElement('button');
     home.type = 'button';

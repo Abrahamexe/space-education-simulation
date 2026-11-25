@@ -321,7 +321,11 @@ export class UniverseView implements Updatable {
     return this.flyTo(new Vector3(), UV.entryMpc, dir, 2.5).then(() => this.leave());
   }
 
+  /** The scale last flown to (drives the scale path). */
+  scaleId: Scale['id'] = SCALES[1].id;
+
   goScale(s: Scale, minS = 0): Promise<void> {
+    this.scaleId = s.id;
     const pivot = sceneDir(s.ra, s.dec).multiplyScalar(s.distMpc);
     // From above the supergalactic plane, a little tilted.
     const dir = s.view
