@@ -929,3 +929,59 @@ body.mode-universe .vignette {
   opacity: 0;
   pointer-events: none !important;
 }
+
+/* ---- Target frame -------------------------------------------------------------------------------------- */
+
+.target-frame {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--d-fade) ease;
+}
+
+.target-frame[data-on='true'] {
+  opacity: 1;
+}
+
+.tf-c {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 0 solid rgba(255, 255, 255, 0.55);
+}
+
+.tf-tl { left: 0; top: 0; border-top-width: 1px; border-left-width: 1px; }
+.tf-tr { right: 0; top: 0; border-top-width: 1px; border-right-width: 1px; }
+.tf-bl { left: 0; bottom: 0; border-bottom-width: 1px; border-left-width: 1px; }
+.tf-br { right: 0; bottom: 0; border-bottom-width: 1px; border-right-width: 1px; }
+
+.tf-label {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  color: var(--c-ink-2);
+  font: 400 10px/1 var(--f-label);
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+
+.tf-label::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 9px;
+  border: 1px solid var(--c-ink);
+  transform: rotate(45deg) translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .target-frame { transition: none; }
+}
+
+:root.vw-760 .target-frame {
+  display: none;
+}

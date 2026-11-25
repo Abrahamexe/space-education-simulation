@@ -13,6 +13,7 @@ import { Search } from './Search';
 import { Layers, Settings, Toolbar } from './Toolbar';
 import { uiScale } from './UiScale';
 import { ScalePathBar } from './ScalePathBar';
+import { TargetFrame } from './TargetFrame';
 import type { UiContext } from './context';
 
 const READOUT_REFRESH_MS = 250;
@@ -139,6 +140,7 @@ export class Hud {
     vignette.className = 'vignette';
     vignette.setAttribute('aria-hidden', 'true');
     document.body.append(vignette);
+    new TargetFrame(ctx);
     root.append(top, left, bottom);
 
     this.notice = document.createElement('div');
