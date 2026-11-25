@@ -45,3 +45,4 @@
   .dm-legend { font-size: 11.5px; }
 }
 .dm-film [hidden] { display: none !important; }
+.dm-legend .dm-legend-temp { width: 18px; border-radius: 3px; background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); }

@@ -35,8 +35,8 @@ export class ParticleLayer {
   private lastRa: Float32Array | null = null;
   private lastRb: Float32Array | null = null;
 
-  /** `scale`: object scale (scene units per data unit), e.g. 0.1 to draw kpc data at 10 kpc per unit. */
-  constructor(opts: { count: number; color: Color | string; size: number; opacity: number; kind: ParticleKind; scale?: number }) {
+  /** `scale`: object scale (scene units per data unit), e.g. 0.1 to draw kpc data at 10 kpc per unit; `maxPx` caps sprite size (fill rate up close). */
+  constructor(opts: { count: number; color: Color | string; size: number; opacity: number; kind: ParticleKind; scale?: number; maxPx?: number }) {
     const n = opts.count;
     this.a = new BufferAttribute(new Float32Array(n * 3), 3);
     this.b = new BufferAttribute(new Float32Array(n * 3), 3);
@@ -59,7 +59,7 @@ export class ParticleLayer {
         uSize: { value: opts.size },
         uScale: { value: 500 },
         uMinPx: { value: look.minPx },
-        uMaxPx: { value: look.maxPx },
+        uMaxPx: { value: opts.maxPx ?? look.maxPx },
         uRhoRef: { value: 0 },
         uRhoMax: { value: 2 },
         uColor: { value: new Color(opts.color) },

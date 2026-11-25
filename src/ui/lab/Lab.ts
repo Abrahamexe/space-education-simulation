@@ -186,7 +186,7 @@ export class Lab {
   /** Four scenes; the heavy ones (simulations in workers) load only when this tab opens. */
   private async renderInteraction(p: HTMLElement): Promise<void> {
     p.innerHTML = `
-      <section class="lab-card lab-film-card" data-anchor="film"><h3>Film · Karanlık madde ile normal madde</h3><p>İki galaksi kümesi çarpışıyor: gaz yavaşlıyor, karanlık madde geçip gidiyor ve onu yalnızca ışığın bükülmesinden buluyoruz. 40 saniyelik sinematik anlatım, gerçek simülasyondan.</p><div class="lab-acts"><button type="button" class="pill pill-accent" data-film-open>Filmi izle</button></div></section>
+      <section class="lab-card lab-film-card" data-anchor="film"><h3>Film · Karanlık madde ile normal madde</h3><p>Görünmez bir halenin içinde bir galaksi doğuyor; sonra iki galaksi kümesi çarpışıyor: gaz yavaşlıyor, karanlık madde geçip gidiyor ve onu yalnızca ışığın bükülmesinden buluyoruz. Gerçek simülasyonlardan sinematik anlatım.</p><div class="lab-acts"><button type="button" class="pill pill-accent" data-film-open>Filmi izle</button></div></section>
       <p class="lab-intro">Karanlık madde ile normal madde yalnızca kütleçekimiyle etkileşir; bütün farkı normal maddenin çarpışabilmesi, ışınım yapıp soğuyabilmesi ve basınç oluşturabilmesi yaratır. Dört sahnede bunun sonuçlarını izle.</p>
       <section class="lab-card" data-anchor="bao"><h3>Sahne 1 · Erken evren: ses dalgası ve çukur</h3><div data-scene="bao"></div></section>
       <section class="lab-card" data-anchor="bullet"><h3>Sahne 2 · Mermi Kümesi: kim çarpışır, kim geçer?</h3><div data-scene="bullet"></div></section>

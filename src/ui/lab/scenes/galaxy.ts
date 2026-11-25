@@ -149,8 +149,8 @@ export function mountGalaxyFormation(container: HTMLElement): void {
     }
     layers3d = {
       n,
-      dm: new ParticleLayer({ count: n, color: DM, size: 0.9, opacity: DM_OPACITY, kind: 'dm', scale: 0.1 }),
-      gas: new ParticleLayer({ count: n, color: '#ffffff', size: 0.14, opacity: GAS_OPACITY, kind: 'gas', scale: 0.1 }),
+      dm: new ParticleLayer({ count: n, color: DM, size: 0.9, opacity: DM_OPACITY, kind: 'dm', scale: 0.1, maxPx: 90 }),
+      gas: new ParticleLayer({ count: n, color: '#ffffff', size: 0.14, opacity: GAS_OPACITY, kind: 'gas', scale: 0.1, maxPx: 36 }),
       star: new ParticleLayer({ count: n, color: STAR, size: 0.05, opacity: STAR_OPACITY, kind: 'star', scale: 0.1 }),
     };
     stage.scene.add(layers3d.dm.points, layers3d.gas.points, layers3d.star.points);

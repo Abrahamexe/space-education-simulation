@@ -24,6 +24,29 @@ export interface Chapter {
 
 export const CHAPTERS: Chapter[] = [
   {
+    id: 'galaxy',
+    title: 'Halede bir galaksi',
+    duration: 44,
+    captions: [
+      { at: 0, until: 7, text: 'Bir karanlık madde halesi: görünmez, ama içindeki gazı kütleçekimiyle tutuyor.' },
+      { at: 7, until: 15, text: 'Gaz başta sıcak ve seyrek. Işınım yaptıkça enerji kaybediyor ve soğuyor (mavi).' },
+      { at: 15, until: 24, text: 'Soğuyan gaz merkeze düşüyor ve dönerek bir diske yassılaşıyor. Karanlık madde soğuyamaz: küre olarak kalıyor.' },
+      { at: 24, until: 33, text: 'Diskte gaz yoğunlaşınca yıldızlar doğuyor. Süpernovalar çevredeki gazı yeniden ısıtıyor (pembe).' },
+      { at: 33, until: 44.01, text: "Karanlık maddeyi gizleyince yalnız görünen galaksi kalır. Oysa kütlenin %85'i o görünmeyen halede." },
+    ],
+    camera: [
+      { at: 0, pos: [0, 14, 46] },
+      { at: 10, pos: [0, 9, 30] },
+      { at: 22, pos: [12, 7, 16] },
+      { at: 32, pos: [0, 3.5, 11] },
+      { at: 38, pos: [0, 11, 4] },
+      { at: 44, pos: [2, 8, 8] },
+    ],
+    method: 'Barnes-Hut kütleçekimi + SPH gaz, ışınımla soğuma, yıldız oluşumu ve süpernova geri beslemesi; 12 000 karanlık madde + 10 000 gaz parçacığı. Zaman hızlandırılmış: 3 milyar yıl ≈ 36 s.',
+    lab: { tab: 'interaction', anchor: 'galaxy' },
+    build: async (stage, overlay) => (await import('./galaxyChapter')).buildGalaxy(stage, overlay),
+  },
+  {
     id: 'bullet',
     title: 'Mermi Kümesi',
     duration: 40,
