@@ -26,7 +26,7 @@ import { Navigator } from './core/Navigator';
 import { Input } from './core/Input';
 import { ScaleTransition } from './core/ScaleTransition';
 import { QualityManager } from './core/QualityManager';
-import { bindMainRender } from './ui/darkmatter/gate';
+import { bindMainRender, yieldMainRender } from './ui/darkmatter/gate';
 import { Hud } from './ui/Hud';
 import { LoadingScreen } from './ui/LoadingScreen';
 import { strings } from './i18n';
@@ -128,6 +128,13 @@ async function boot(): Promise<void> {
   quality.onChange(syncGalaxyQuality);
   syncGalaxyQuality();
   bindMainRender({ start: () => engine.start(), stop: () => engine.stop(), isRunning: () => engine.isRunning(), level: () => quality.level });
+  // A dark-matter scene may hold the engine stopped; any input aimed at the main view wakes it.
+  const wake = (e: Event) => {
+    // A full-screen film or stage covers the main view: input there is not for it.
+    if (document.querySelector('.dm-film, .dm-stage-full')) return;
+    if (!(e.target instanceof Element) || !e.target.closest('.lab')) yieldMainRender();
+  };
+  for (const type of ['pointerdown', 'wheel', 'keydown']) document.addEventListener(type, wake, { capture: true, passive: true });
   const scaleTransition = new ScaleTransition();
   // Before bodies move this frame, so positions use the new blend.
   engine.add(scaleTransition, -10);

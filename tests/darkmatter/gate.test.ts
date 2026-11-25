@@ -58,3 +58,27 @@ test('quality comes from the bound target', () => {
   bindMainRender(fake(true).t);
   assert.equal(mainQuality(), 'high');
 });
+
+test('yield restarts the engine at once and later releases do not touch it', async () => {
+  const { yieldMainRender } = await import('../../src/ui/darkmatter/gate.ts');
+  const f = fake(true);
+  bindMainRender(f.t);
+  const a = holdMainRender();
+  yieldMainRender();
+  assert.deepEqual(f.log, ['stop', 'start']);
+  const b = holdMainRender(); // while yielded: the viewer is using the main view
+  assert.deepEqual(f.log, ['stop', 'start']);
+  a();
+  b();
+  assert.deepEqual(f.log, ['stop', 'start']);
+  holdMainRender(); // a fresh hold after everything was released stops it again
+  assert.deepEqual(f.log, ['stop', 'start', 'stop']);
+});
+
+test('yield without holds does nothing', async () => {
+  const { yieldMainRender } = await import('../../src/ui/darkmatter/gate.ts');
+  const f = fake(true);
+  bindMainRender(f.t);
+  yieldMainRender();
+  assert.deepEqual(f.log, []);
+});

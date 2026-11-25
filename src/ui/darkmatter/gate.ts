@@ -15,16 +15,19 @@ export interface MainRender {
 let target: MainRender | null = null;
 let holds = 0;
 let stoppedByUs = false;
+/** The viewer turned to the main view: holds are ignored until they are all released. */
+let yielded = false;
 
 export function bindMainRender(t: MainRender): void {
   target = t;
   holds = 0;
   stoppedByUs = false;
+  yielded = false;
 }
 
 /** Stop the main engine until the returned release function is called (calling it twice is harmless). */
 export function holdMainRender(): () => void {
-  if (holds++ === 0 && target?.isRunning()) {
+  if (holds++ === 0 && !yielded && target?.isRunning()) {
     target.stop();
     stoppedByUs = true;
   }
@@ -32,11 +35,27 @@ export function holdMainRender(): () => void {
   return () => {
     if (released) return;
     released = true;
-    if (--holds === 0 && stoppedByUs) {
-      stoppedByUs = false;
-      target?.start();
+    if (--holds === 0) {
+      yielded = false;
+      if (stoppedByUs) {
+        stoppedByUs = false;
+        target?.start();
+      }
     }
   };
+}
+
+/**
+ * The viewer is using the main view (clicked or pressed a key outside the dark-matter scenes):
+ * restart the engine now; current holds stop nothing more until all are released.
+ */
+export function yieldMainRender(): void {
+  if (holds === 0) return;
+  yielded = true;
+  if (stoppedByUs) {
+    stoppedByUs = false;
+    target?.start();
+  }
 }
 
 /** The main app's quality level; 'medium' before the app has bound itself. */
