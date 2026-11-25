@@ -34,11 +34,15 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   float depth = max(-mv.z, 1e-3);
   float px = uSize * uScale / depth;
+  // Hot gas is thin and spread out (large SPH smoothing length): draw it as larger, fainter puffs.
+  float lt = mix(tA, tB, uMix);
+  float puff = uTemp > 0.5 ? 1.0 + 4.0 * clamp((lt - 4.5) / 1.5, 0.0, 1.0) : 1.0;
+  px *= puff;
   gl_PointSize = clamp(px, uMinPx, uMaxPx);
   // Sprites clamped below their true size would brighten when far: keep the energy constant.
   float shrink = px / gl_PointSize;
-  vBright = clamp(shrink * shrink, 0.0, 1.0);
+  vBright = clamp(shrink * shrink, 0.0, 1.0) / (puff * puff) * min(puff, 2.5);
   if (uRhoRef > 0.0) vBright *= min(mix(rhoA, rhoB, uMix) / uRhoRef, uRhoMax);
-  vTint = uTemp > 0.5 ? tempColour(mix(tA, tB, uMix)) : vec3(1.0);
+  vTint = uTemp > 0.5 ? tempColour(lt) : vec3(1.0);
   gl_Position = projectionMatrix * mv;
 }

@@ -11,12 +11,13 @@ import './galaxy.css';
 import { plot, type Axis, type Series } from '../plot';
 import { num, sci } from '../physics';
 import type { FromWorker, Stats, ToWorker } from './galaxy.worker';
-import { T_STOPS } from '../../darkmatter/render/temperature';
+import { GridHelper } from 'three';
+import { Stage } from '../../darkmatter/render/Stage';
+import { ParticleLayer } from '../../darkmatter/render/ParticleLayer';
+import { DM, STAR } from '../../darkmatter/render/palette';
 
 // ---------------------------------------------------------------- constants
 
-const VIEW = 60; // kpc, half width of both projections
-const CELLS = 50; // dark-matter map resolution
 const RS_KPC = 20.6; // r_s of the halo for the analytic NFW reference (kpc), r200/c
 const M200 = 1e12;
 const FBAR = 0.15;
@@ -29,17 +30,7 @@ const RESOLUTIONS: Record<string, { nDm: number; nGas: number; label: string }> 
 };
 const DEFAULT_RES = 'fast';
 
-const T_BUCKETS = 28;
-const T_COLOURS: string[] = Array.from({ length: T_BUCKETS }, (_, k) => {
-  const lt = 4 + (k / (T_BUCKETS - 1)) * 3;
-  let j = 0;
-  while (j < T_STOPS.length - 2 && T_STOPS[j + 1][0] < lt) j++;
-  const [a, ca] = T_STOPS[j];
-  const [b, cb] = T_STOPS[j + 1];
-  const w = Math.min(1, Math.max(0, (lt - a) / (b - a)));
-  const c = ca.map((v, i) => Math.round(v + (cb[i] - v) * w));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
-});
+
 
 const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const fmtMass = (m: number): string => {
@@ -52,6 +43,12 @@ const fmtTime = (gyr: number): string => (gyr < 1 ? `${num(gyr * 1000, 0)} milyo
 
 const mNFW = (x: number): number => Math.log(1 + x) - x / (1 + x);
 
+/** Worker snapshots arrive about this often (ms): the GPU blends across the gap. */
+const SNAP_MS = 150;
+const DM_OPACITY = 0.012;
+const GAS_OPACITY = 0.22;
+const STAR_OPACITY = 1.4;
+
 // ---------------------------------------------------------------- mount
 
 export function mountGalaxyFormation(container: HTMLElement): void {
@@ -59,12 +56,12 @@ export function mountGalaxyFormation(container: HTMLElement): void {
   root.className = 'gal';
   root.innerHTML = `
     <p class="note gal-intro">Dönen, sıcak gaz dolu bir karanlık madde halesi ile başla. Gaz ışınım yapıp enerji kaybeder, basıncı düşer ve çöker; açısal momentumunu koruduğu için bir diske oturur ve yıldız doğurur. Karanlık madde ışınım yapamaz: geniş, yaklaşık küresel bir hale olarak kalır. Aşağıdaki her şey çekim, gaz dinamiği ve soğuma denklemleriyle gerçekten hesaplanıyor (düşük çözünürlükte).</p>
-    <div class="gal-views">
-      <figure><canvas data-face aria-label="Yüzü bize dönük görünüm"></canvas><figcaption>Yüzü bize dönük (x–y), ±${VIEW} kpc</figcaption></figure>
-      <figure><canvas data-edge aria-label="Kenardan görünüm"></canvas><figcaption>Kenardan (x–z), ±${VIEW} kpc</figcaption></figure>
+    <div class="gal-stage3d" role="img" aria-label="Halede oluşan galaksi, üç boyutlu: karanlık madde, sıcaklığa göre renkli gaz ve yıldızlar. Sürükleyerek döndür, tekerlekle yaklaş.">
+      <div class="dm-overlay"><span data-clock></span><span class="dm-scale">Izgara karesi 20 kpc · sürükle: döndür</span></div>
+      <button type="button" class="pill dm-full" data-full>Büyüt</button>
     </div>
     <div class="gal-layers" role="group" aria-label="Katmanlar">
-      <label class="lab-check"><input type="checkbox" data-layer="dm" checked><i class="gal-sw gal-sw-dm"></i>Karanlık madde</label>
+      <label class="lab-check"><input type="checkbox" data-layer="dm" checked><i class="gal-sw gal-sw-dm"></i>Karanlık madde (gerçekte görünmez)</label>
       <label class="lab-check"><input type="checkbox" data-layer="gas" checked><i class="gal-sw gal-sw-gas"></i>Gaz (renk: sıcaklık)</label>
       <label class="lab-check"><input type="checkbox" data-layer="star" checked><i class="gal-sw gal-sw-star"></i>Yıldızlar</label>
     </div>
@@ -100,8 +97,9 @@ export function mountGalaxyFormation(container: HTMLElement): void {
   container.replaceChildren(root);
 
   const q = <T extends HTMLElement>(sel: string): T => root.querySelector<T>(sel) as T;
-  const faceCv = q<HTMLCanvasElement>('[data-face]');
-  const edgeCv = q<HTMLCanvasElement>('[data-edge]');
+  const stageHost = q<HTMLElement>('.gal-stage3d');
+  const clock = q<HTMLElement>('[data-clock]');
+  const fullBtn = q<HTMLButtonElement>('[data-full]');
   const stageEl = q<HTMLElement>('[data-stage]');
   const statsEl = q<HTMLElement>('[data-stats]');
   const rotEl = q<HTMLElement>('[data-rot]');
@@ -123,128 +121,82 @@ export function mountGalaxyFormation(container: HTMLElement): void {
   let timer = 0;
   let dead = false;
   let failed = false;
+  let lastT = 0;
 
-  // ---- canvases
+  // ---- 3D view (1 scene unit = 10 kpc)
 
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const size = 225;
-  for (const cv of [faceCv, edgeCv]) {
-    cv.width = Math.round(size * dpr);
-    cv.height = Math.round(size * dpr);
-    cv.style.width = '100%';
-    cv.style.aspectRatio = '1 / 1';
-    cv.className = 'gal-cv';
-  }
-  const mapCv = document.createElement('canvas');
-  mapCv.width = CELLS;
-  mapCv.height = CELLS;
-  const mapCtx = mapCv.getContext('2d')!;
-  const mapImg = mapCtx.createImageData(CELLS, CELLS);
+  const stage = new Stage(stageHost);
+  stage.camera.position.set(0, 6, 14);
+  stage.controls.maxDistance = 40;
+  const grid = new GridHelper(24, 12, 0x2a3350, 0x161c2e);
+  grid.position.y = -6;
+  stage.scene.add(grid);
+  type Snap = { pos: Float32Array; dm: Float32Array; gas: Float32Array; star: Float32Array; logT: Float32Array };
+  let layers3d: { n: number; dm: ParticleLayer; gas: ParticleLayer; star: ParticleLayer } | null = null;
+  let prev: Snap | null = null;
+  let cur: Snap | null = null;
+  let arrived = 0;
+  let intersecting = true;
 
   const layer = (k: string): boolean => layerBoxes.find((b) => b.dataset.layer === k)!.checked;
 
-  function dmMap(snap: FromWorker, axisB: 'py' | 'pz'): void {
-    const g = new Float32Array(CELLS * CELLS);
-    const { px, kind } = snap;
-    const pb = axisB === 'py' ? snap.py : snap.pz;
-    for (let i = 0; i < kind.length; i++) {
-      if (kind[i] !== 0) continue;
-      const cx = Math.floor(((px[i] + VIEW) / (2 * VIEW)) * CELLS);
-      const cy = Math.floor(((VIEW - pb[i]) / (2 * VIEW)) * CELLS);
-      if (cx >= 0 && cx < CELLS && cy >= 0 && cy < CELLS) g[cy * CELLS + cx]++;
+  function buildLayers(n: number): void {
+    if (layers3d) {
+      stage.scene.remove(layers3d.dm.points, layers3d.gas.points, layers3d.star.points);
+      layers3d.dm.dispose();
+      layers3d.gas.dispose();
+      layers3d.star.dispose();
     }
-    // two 3x3 box blurs ~ a Gaussian of about one cell
-    const tmp = new Float32Array(CELLS * CELLS);
-    for (let pass = 0; pass < 2; pass++) {
-      const src = pass === 0 ? g : tmp;
-      const dst = pass === 0 ? tmp : g;
-      for (let y = 0; y < CELLS; y++) {
-        for (let x = 0; x < CELLS; x++) {
-          let s = 0;
-          let n = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const xx = x + dx;
-              const yy = y + dy;
-              if (xx < 0 || yy < 0 || xx >= CELLS || yy >= CELLS) continue;
-              s += src[yy * CELLS + xx];
-              n++;
-            }
-          }
-          dst[y * CELLS + x] = s / n;
-        }
-      }
-    }
-    const cell = (2 * VIEW) / CELLS;
-    const d = mapImg.data;
-    for (let k = 0; k < CELLS * CELLS; k++) {
-      const sigma = (g[k] * mDm) / (cell * cell); // M_sun / kpc^2
-      const a = sigma > 0 ? Math.min(1, Math.max(0, (Math.log10(sigma) - 6.6) / 2.3)) : 0;
-      d[k * 4] = 61;
-      d[k * 4 + 1] = 123;
-      d[k * 4 + 2] = 255;
-      d[k * 4 + 3] = Math.round(a * 215);
-    }
-    mapCtx.putImageData(mapImg, 0, 0);
+    layers3d = {
+      n,
+      dm: new ParticleLayer({ count: n, color: DM, size: 0.9, opacity: DM_OPACITY, kind: 'dm', scale: 0.1 }),
+      gas: new ParticleLayer({ count: n, color: '#ffffff', size: 0.14, opacity: GAS_OPACITY, kind: 'gas', scale: 0.1 }),
+      star: new ParticleLayer({ count: n, color: STAR, size: 0.05, opacity: STAR_OPACITY, kind: 'star', scale: 0.1 }),
+    };
+    stage.scene.add(layers3d.dm.points, layers3d.gas.points, layers3d.star.points);
+    prev = cur = null;
+    applyLayers();
   }
 
-  function drawView(cv: HTMLCanvasElement, snap: FromWorker, edge: boolean): void {
-    const ctx = cv.getContext('2d')!;
-    const W = cv.width;
-    const H = cv.height;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#05070d';
-    ctx.fillRect(0, 0, W, H);
-    const { px, py, pz, kind, logT } = snap;
-    const pb = edge ? pz : py;
-    const sc = W / (2 * VIEW);
-    if (layer('dm')) {
-      dmMap(snap, edge ? 'pz' : 'py');
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(mapCv, 0, 0, W, H);
-    }
-    const dot = Math.max(1.4, 1.5 * dpr);
-    if (layer('gas')) {
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.5;
-      const buckets: number[][] = Array.from({ length: T_BUCKETS }, () => []);
-      for (let i = 0; i < kind.length; i++) {
-        if (kind[i] !== 1) continue;
-        const b = Math.min(T_BUCKETS - 1, Math.max(0, Math.round(((logT[i] - 4) / 3) * (T_BUCKETS - 1))));
-        buckets[b].push(i);
-      }
-      for (let b = 0; b < T_BUCKETS; b++) {
-        ctx.fillStyle = T_COLOURS[b];
-        for (const i of buckets[b]) {
-          const x = (px[i] + VIEW) * sc;
-          const y = (VIEW - pb[i]) * sc;
-          if (x < 0 || y < 0 || x > W || y > H) continue;
-          ctx.fillRect(x - dot / 2, y - dot / 2, dot, dot);
-        }
-      }
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'source-over';
-    }
-    if (layer('star')) {
-      ctx.fillStyle = '#ffe6bd';
-      ctx.globalAlpha = 0.85;
-      const s = Math.max(1.3, 1.4 * dpr);
-      for (let i = 0; i < kind.length; i++) {
-        if (kind[i] !== 2) continue;
-        const x = (px[i] + VIEW) * sc;
-        const y = (VIEW - pb[i]) * sc;
-        if (x < 0 || y < 0 || x > W || y > H) continue;
-        ctx.fillRect(x - s / 2, y - s / 2, s, s);
-      }
-      ctx.globalAlpha = 1;
-    }
-    // scale bar: 20 kpc
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    const barW = 20 * sc;
-    ctx.fillRect(10 * dpr, H - 14 * dpr, barW, 2 * dpr);
-    ctx.font = `${10 * dpr}px monospace`;
-    ctx.fillText('20 kpc', 10 * dpr, H - 18 * dpr);
+  function applyLayers(): void {
+    if (!layers3d) return;
+    layers3d.dm.setOpacity(layer('dm') ? DM_OPACITY : 0);
+    layers3d.gas.setOpacity(layer('gas') ? GAS_OPACITY : 0);
+    layers3d.star.setOpacity(layer('star') ? STAR_OPACITY : 0);
   }
+
+  /** A worker snapshot as GPU-ready arrays: xyz, per-kind visibility masks and log T. */
+  function toSnap(m: FromWorker): Snap {
+    const n = m.kind.length;
+    const pos = new Float32Array(3 * n);
+    const dm = new Float32Array(n);
+    const gas = new Float32Array(n);
+    const star = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      pos[3 * i] = m.px[i];
+      pos[3 * i + 1] = m.pz[i]; // the disc forms in the sim's x-y plane: draw it lying flat
+      pos[3 * i + 2] = m.py[i];
+      dm[i] = m.kind[i] === 0 ? 1 : 0;
+      gas[i] = m.kind[i] === 1 ? 1 : 0;
+      star[i] = m.kind[i] === 2 ? 1 : 0;
+    }
+    return { pos, dm, gas, star, logT: m.logT };
+  }
+
+  stage.onUpdate(() => {
+    if (!layers3d || !prev || !cur) return;
+    const mix = Math.min(1, (performance.now() - arrived) / SNAP_MS);
+    for (const [l, k] of [[layers3d.dm, 'dm'], [layers3d.gas, 'gas'], [layers3d.star, 'star']] as const) {
+      l.setFrames(prev.pos, cur.pos, mix);
+      l.setVisibility(prev[k], cur[k]);
+    }
+    layers3d.gas.setTemperature(prev.logT, cur.logT);
+  });
+
+  const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((e) => (intersecting = e[e.length - 1].isIntersecting)) : null;
+  io?.observe(stageHost);
+  stage.onFullscreen = (on) => (fullBtn.textContent = on ? 'Küçült' : 'Büyüt');
+  fullBtn.addEventListener('click', () => stage.setFullscreen(!stage.fullscreen));
 
   // ---- plots
 
@@ -400,14 +352,21 @@ export function mountGalaxyFormation(container: HTMLElement): void {
       methodBody.innerHTML = methodText(m);
     }
     sentRun = m.running;
+    if (!layers3d || layers3d.n !== m.kind.length) buildLayers(m.kind.length);
+    const next = toSnap(m);
+    // A restart (time going back) must not blend across.
+    prev = cur && last && cur !== next && m.stats.t >= lastT - 1e-9 ? cur : next;
+    cur = next;
+    lastT = m.stats.t;
+    arrived = performance.now();
+    clock.textContent = `t = ${fmtTime(m.stats.t)}`;
     redraw();
     if (!m.running && wantRun && !sentRun && visible()) syncRun();
   }
 
   function redraw(): void {
     if (!last) return;
-    drawView(faceCv, last, false);
-    drawView(edgeCv, last, true);
+    applyLayers();
     readouts(last);
     drawPlots(last.stats);
   }
@@ -415,6 +374,8 @@ export function mountGalaxyFormation(container: HTMLElement): void {
   /** On screen: attached, not display:none (offsetParent), not visibility:hidden / opacity:0 (a closed drawer), tab in front. */
   const visible = (): boolean => {
     if (!container.isConnected || container.offsetParent === null || document.hidden) return false;
+    // A closed lab drawer stays in the DOM (data-open="false").
+    if (container.closest<HTMLElement>('[data-open]')?.dataset.open === 'false') return false;
     const el = container as HTMLElement & { checkVisibility?: (o: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean };
     return el.checkVisibility ? el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) : true;
   };
@@ -439,6 +400,9 @@ export function mountGalaxyFormation(container: HTMLElement): void {
     }
     if (!worker && visible()) startWorker();
     syncRun();
+    // The 3D view (and its hold on the main engine) runs only while it is on screen.
+    if (visible() && intersecting) stage.start();
+    else stage.stop();
   }
 
   function dispose(): void {
@@ -446,6 +410,9 @@ export function mountGalaxyFormation(container: HTMLElement): void {
     window.clearInterval(timer);
     worker?.terminate();
     worker = null;
+    io?.disconnect();
+    stage.dispose();
+    if (layers3d) for (const l of [layers3d.dm, layers3d.gas, layers3d.star]) l.dispose();
   }
 
   // ---- events
