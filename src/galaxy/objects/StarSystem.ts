@@ -48,10 +48,14 @@ import { habitableZone, luminosity } from '../../physics/habitable';
 import { science } from '../../core/Science';
 import { Matrix4 as M4 } from 'three';
 import { PulsarBeams } from './PulsarBeams';
-import { PLANET_TYPE_NAME, equilibriumK, planetType, type PlanetType } from './exoplanetType';
+import { PLANET_TYPE_NAME, type PlanetType } from './exoplanetType';
+import { planetLook, type PlanetLook } from './planetLook';
 import { AnimatedStar, starKind } from './AnimatedStar';
 
 const SPHERE = new SphereGeometry(1, 96, 64);
+const PV1 = new Vector3();
+const PV2 = new Vector3();
+const PV3 = new Vector3();
 
 /** Surface detail for exoplanet classes: real Solar System maps, recoloured in the shader. */
 const PLANET_TEX: Record<PlanetType, string> = {
@@ -65,17 +69,6 @@ const PLANET_TEX: Record<PlanetType, string> = {
   hotJupiter: 'jupiter/2k_jupiter.jpg',
 };
 const PLANET_TYPE_INDEX: Record<PlanetType, number> = { lava: 0, barren: 1, temperate: 2, eyeball: 3, icy: 4, subNeptune: 5, giant: 6, hotJupiter: 7 };
-/** Tint choices per class (picked by a per-planet seed); dots far away use the first. */
-const PLANET_TINTS: Record<PlanetType, readonly (readonly [number, number, number])[]> = {
-  lava: [[0.9, 0.4, 0.2]],
-  barren: [[0.95, 0.72, 0.5], [0.85, 0.62, 0.48], [0.9, 0.8, 0.62]],
-  temperate: [[0.45, 0.6, 0.85]],
-  eyeball: [[0.6, 0.72, 0.9]],
-  icy: [[0.85, 0.9, 1]],
-  subNeptune: [[0.55, 0.75, 0.95], [0.6, 0.85, 0.85], [0.7, 0.72, 0.95]],
-  giant: [[1, 0.85, 0.65], [0.9, 0.78, 0.6], [0.8, 0.85, 1]],
-  hotJupiter: [[0.55, 0.35, 0.3]],
-};
 const textureCache = new Map<string, Texture>();
 function planetTexture(path: string): Texture {
   let t = textureCache.get(path);
@@ -153,7 +146,7 @@ export class StarSystem implements DeepObject {
   readonly frame: Matrix4;
   private readonly frameRot: Matrix3;
   private readonly bodies: Body[] = [];
-  private readonly planetTypes = new Map<string, PlanetType>();
+  private readonly planetLooks = new Map<string, PlanetLook>();
   private readonly planets: { mesh: Mesh<SphereGeometry, ShaderMaterial>; def: NonNullable<SystemDef['planets']>[number]; phase: number }[] = [];
   private planetPoints: StarPoints | null = null;
   private readonly planetFrame = new Matrix3();
@@ -364,12 +357,8 @@ export class StarSystem implements DeepObject {
     const size: number[] = [];
     (this.def.planets ?? []).forEach((p, i) => {
       const R = p.radiusEarth * EARTH_RADIUS_AU;
-      const type = planetType(p, star);
-      const seed = ((this.def.id.length * 37 + i * 101) % 97) / 97;
-      const tints = PLANET_TINTS[type];
-      const tint = tints[Math.floor(seed * tints.length) % tints.length];
-      const teq = equilibriumK(star.tempK, star.radiusSun, p.aAu);
-      const glow = type === 'lava' ? 1 : type === 'hotJupiter' ? Math.min(1, Math.max(0.2, (teq - 900) / 1000)) : 0;
+      const look = planetLook(p, star, this.def.id);
+      const { type, tint, seed, glow } = look;
       const mesh = new Mesh(
         SPHERE,
         new ShaderMaterial({
@@ -381,12 +370,17 @@ export class StarSystem implements DeepObject {
             uTint: { value: new Color(tint[0], tint[1], tint[2]) },
             uSeed: { value: seed },
             uGlow: { value: glow },
-            uLightColor: { value: light.clone().multiplyScalar(1.4) },
+            uIce: { value: look.ice },
+            uOcean: { value: look.ocean },
+            uCloud: { value: look.cloud },
+            uAtm: { value: look.atm },
+            // Half way to white: the eye adapts to its star's light, so surfaces keep their colours.
+            uLightColor: { value: light.clone().lerp(new Color(1, 1, 1), 0.5).multiplyScalar(1.4) },
             uLightPosV: { value: new Vector3() },
           },
         }),
       );
-      this.planetTypes.set(p.name, type);
+      this.planetLooks.set(p.name, look);
       mesh.scale.setScalar(R);
       mesh.frustumCulled = false;
       this.group.add(mesh);
@@ -574,15 +568,34 @@ export class StarSystem implements DeepObject {
         ['Yıldız ışığının varışı', lightMin < 1 ? `${num(lightMin * 60, 0)} s` : `${num(lightMin, 1)} dk`],
       ];
       if (zone) stats.push(['Yaşanabilir bölge', zone]);
+      const look = this.planetLooks.get(p.name);
+      if (p.massEarth) stats.push(['Kütle', `${num(p.massEarth, p.massEarth < 10 ? 2 : 0)}× Dünya${p.measured?.startsWith('En az') ? ' (en az)' : ''}`]);
+      if (look?.density !== undefined) stats.push(['Yoğunluk', `${num(look.density, 2)}× Dünya`]);
+      const known = p.measured ? ` Bilinen: ${p.measured}.` : '';
+      const guess = !look
+        ? ''
+        : look.atm === 0
+          ? 'atmosferi yok; çıplak, güneşte kavrulan kaya.'
+          : look.type === 'temperate' || look.type === 'eyeball'
+            ? `${look.waterRich ? 'düşük yoğunluğu su ya da buz zengini olabileceğini gösteriyor; ' : ''}yüzeyin yaklaşık %${Math.round(look.ocean * 100)}'i su, buz payı %${Math.round(look.ice * 100)} varsayıldı${look.type === 'eyeball' ? '; yıldızına kilitli, karanlık yüzü donmuş' : ''}.`
+            : look.type === 'icy'
+              ? 'yıldızından az ışık alıyor; yüzeyi buzla kaplı olmalı.'
+              : look.type === 'lava'
+                ? 'yüzeyi erimiş kaya olacak kadar sıcak.'
+                : look.type === 'subNeptune'
+                  ? 'kalın hidrojen ya da su buharı atmosferi, puslu görünüm.'
+                  : look.type === 'giant' || look.type === 'hotJupiter'
+                    ? 'gaz devi; renk sıcaklığına göre seçildi.'
+                    : 'sıcak, kuru kayalık yüzey.';
       const note = p.note ? ` ${p.note.charAt(0).toLocaleUpperCase('tr-TR')}${p.note.slice(1)}.` : '';
       this.members.push({
         targetId: `${def.id}-planet-${p.name}`,
         name: def.id === 'trappist1' ? `TRAPPIST-1${p.name}` : p.name,
         swatch: hex(new Color(p.color[0], p.color[1], p.color[2])),
         facts: {
-          type: `${PLANET_TYPE_NAME[this.planetTypes.get(p.name) ?? 'barren']} (tahmini tür)`,
+          type: `${PLANET_TYPE_NAME[look?.type ?? 'barren']} (tahmini tür)`,
           stats,
-          text: `${host.name} çevresinde dolanıyor.${note} Denge sıcaklığı, ışığın %30'unu yansıtan ve sera etkisi olmayan bir yüzey için hesaplandı. Görünüm temsilidir: hiçbir ötegezegenin yüzeyi henüz görüntülenemedi; tür, yarıçapından ve aldığı ışıktan tahmin edildi.`,
+          text: `${host.name} çevresinde dolanıyor.${note}${known} Denge sıcaklığı, ışığın %30'unu yansıtan ve sera etkisi olmayan bir yüzey için hesaplandı. Tahmin: ${guess} Görünüm temsilidir; hiçbir ötegezegenin yüzeyi henüz görüntülenemedi.`,
         },
       });
     }
@@ -626,7 +639,16 @@ export class StarSystem implements DeepObject {
       const a = p.phase + ((this.year * 365.25) / p.def.periodDays) * Math.PI * 2;
       p.mesh.position.set(Math.cos(a) * p.def.aAu, Math.sin(a) * p.def.aAu, 0).applyMatrix3(this.planetFrame);
       const t = this.targets.find((x) => x.id === `${this.def.id}-planet-${p.def.name}`);
-      if (t) t.position.copy(p.mesh.position).applyMatrix4(this.frame);
+      if (t) {
+        t.position.copy(p.mesh.position).applyMatrix4(this.frame);
+        // Arrive on the day side: from the star's direction, turned ~40° along the orbit and a
+        // little above it, so the lit face and the terminator both show.
+        const toStar = PV1.copy(p.mesh.position).negate().transformDirection(this.frame);
+        const normal = PV2.set(0, 0, 1).applyMatrix3(this.planetFrame).transformDirection(this.frame);
+        const along = PV3.crossVectors(normal, toStar).normalize();
+        (t.viewDir ??= new Vector3()).copy(toStar).multiplyScalar(0.75).addScaledVector(along, 0.6).addScaledVector(normal, 0.3).normalize();
+        t.up ??= normal.clone();
+      }
     });
 
     // Drawn only within a few thousand system sizes (the label guides you in).

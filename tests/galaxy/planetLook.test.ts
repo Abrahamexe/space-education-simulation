@@ -54,3 +54,8 @@ test('the seed differs between planets of one system and is stable', () => {
   assert.notEqual(a, b);
   assert.equal(a, planetLook({ name: 'f', aAu: 0.038, radiusEarth: 1 }, t1, 'trappist1').seed);
 });
+
+test('a temperate planet measured with thin or no air is drawn dry (no ocean)', () => {
+  const c = planetLook({ name: 'c', aAu: 0.0158, radiusEarth: 1.097, massEarth: 1.308, atmosphere: 'thin' }, t1, 'trappist1');
+  assert.equal(c.type, 'barren');
+});

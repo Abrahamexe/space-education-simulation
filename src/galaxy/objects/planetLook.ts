@@ -47,7 +47,9 @@ function hash01(s: string): number {
 }
 
 export function planetLook(p: LookInput, star: { tempK: number; radiusSun: number }, systemId: string): PlanetLook {
-  const type = planetType(p, star);
+  let type = planetType(p, star);
+  // No liquid water without air: a temperate rock measured with thin or no atmosphere is a dry world.
+  if ((type === 'temperate' || type === 'eyeball') && (p.atmosphere === 'none' || p.atmosphere === 'thin')) type = 'barren';
   const teq = equilibriumK(star.tempK, star.radiusSun, p.aAu);
   const seed = hash01(`${systemId}/${p.name}`);
   const jitter = (k: number) => (hash01(`${systemId}/${p.name}/${k}`) - 0.5) * 2; // −1..1

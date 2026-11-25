@@ -12,6 +12,10 @@ uniform float uType;
 uniform vec3 uTint;
 uniform float uSeed;
 uniform float uGlow;
+uniform float uIce;    // 0..1, planetLook.ts
+uniform float uOcean;
+uniform float uCloud;
+uniform float uAtm;
 uniform vec3 uLightColor;
 uniform vec3 uLightPosV;
 
@@ -39,24 +43,31 @@ void main() {
 
   if (isType(0.0)) {
     // Lava world: dark crust, glowing cracks, brighter on the night side.
-    base = h * vec3(0.2, 0.16, 0.14);
+    base = h * uTint * 0.5;
     float cr = smoothstep(0.62, 0.82, abs(snoise(p * 5.0 + uSeed * 7.0))) + 0.6 * pow(1.0 - h, 5.0);
     emit = vec3(1.0, 0.33, 0.07) * cr * uGlow * (0.35 + 0.65 * (1.0 - diff));
   } else if (isType(1.0)) {
     base = h * uTint * 1.4;
+    // A faint veil of air, if any, over hot rock.
+    atm = vec3(0.9, 0.7, 0.5);
   } else if (isType(2.0) || isType(3.0)) {
     // Continents from several noise scales plus the map's detail; sharp coasts, lighter shelves.
     float cont = 0.55 * snoise(p * 1.3 + uSeed * 5.0) + 0.3 * snoise(p * 3.1 + uSeed * 2.0) + 0.15 * snoise(p * 7.5 - uSeed) + 0.3 * (h - 0.45);
-    float land = smoothstep(0.02, 0.05, cont);
-    vec3 lowland = mix(vec3(0.16, 0.24, 0.1), vec3(0.42, 0.36, 0.22), smoothstep(-0.3, 0.6, snoise(p * 2.2 + uSeed * 9.0)));
+    float sea = mix(-0.3, 0.32, uOcean);
+    float land = smoothstep(sea, sea + 0.03, cont);
+    // Mineral colours only (no green: nothing says these worlds have plants).
+    vec3 lowland = mix(vec3(0.36, 0.3, 0.24), vec3(0.5, 0.36, 0.26), smoothstep(-0.3, 0.6, snoise(p * 2.2 + uSeed * 9.0)));
     vec3 ground = mix(lowland, vec3(0.5, 0.46, 0.4), smoothstep(0.25, 0.5, cont)) * (0.75 + 0.5 * h);
-    vec3 ocean = mix(vec3(0.008, 0.035, 0.11), vec3(0.03, 0.12, 0.22), smoothstep(-0.18, 0.02, cont));
+    vec3 ocean = mix(vec3(0.008, 0.035, 0.11), vec3(0.03, 0.12, 0.22), smoothstep(sea - 0.2, sea, cont));
+    // Cold worlds freeze their seas first.
+    ocean = mix(ocean, vec3(0.7, 0.78, 0.86), smoothstep(0.55, 0.95, uIce));
     base = mix(ocean, ground, land);
     // Clouds: domain-warped, layered, thin streaks rather than blobs.
     vec3 q = p * 2.0 + 0.7 * vec3(snoise(p * 1.4 + uSeed), snoise(p * 1.4 + 3.1), snoise(p * 1.4 - 2.2));
-    float cl = 0.5 * snoise(q * vec3(1.6, 3.2, 1.6)) + 0.3 * snoise(q * 4.6) + 0.2 * snoise(q * 10.0);
-    float cloud = smoothstep(0.18, 0.62, cl) * 0.9;
-    float ice = smoothstep(0.82, 0.93, abs(p.y) + 0.05 * snoise(p * 6.0 + uSeed));
+    float cl = 0.6 * snoise(q * vec3(1.2, 2.2, 1.2)) + 0.3 * snoise(q * 2.8) + 0.1 * snoise(q * 6.0);
+    float cloud = smoothstep(0.62 - 0.55 * uCloud, 0.85 - 0.45 * uCloud, cl) * min(1.0, uCloud * 1.6);
+    float capStart = mix(0.95, 0.25, uIce);
+    float ice = smoothstep(capStart, capStart + 0.1, abs(p.y) + 0.05 * snoise(p * 6.0 + uSeed));
     if (isType(3.0)) {
       // Tidally locked: open water only near the point under the star, ice elsewhere.
       ice = 1.0 - smoothstep(0.25, 0.55, ndl + 0.08 * snoise(p * 5.0));
@@ -69,7 +80,8 @@ void main() {
     base = mix(base, vec3(0.93), cloud);
     atm = vec3(0.35, 0.55, 1.0);
   } else if (isType(4.0)) {
-    base = mix(vec3(0.62, 0.72, 0.82), vec3(0.95, 0.97, 1.0), h);
+    base = mix(uTint * 0.75, vec3(0.97), h * 0.8);
+    atm = uTint * 0.5;
   } else if (isType(5.0)) {
     base = mix(tex * uTint * 1.1, uTint * 0.55, 0.35);
     atm = uTint;
@@ -86,6 +98,6 @@ void main() {
 
   vec3 c = base * uLightColor * (diff + 0.02) + emit;
   float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0);
-  c += atm * rim * (0.15 + diff) * uLightColor * 0.8;
+  c += atm * uAtm * rim * (0.15 + diff) * uLightColor * 0.8;
   gl_FragColor = vec4(c, 1.0);
 }
