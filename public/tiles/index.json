@@ -176,5 +176,54 @@
     "h": 7400
    }
   ]
+ },
+ "rosette": {
+  "tile": 1024,
+  "ext": "webp",
+  "levels": [
+   {
+    "level": 13,
+    "w": 8192,
+    "h": 6970
+   },
+   {
+    "level": 14,
+    "w": 16384,
+    "h": 13939
+   }
+  ]
+ },
+ "crescent": {
+  "tile": 1024,
+  "ext": "webp",
+  "levels": [
+   {
+    "level": 14,
+    "w": 8578,
+    "h": 8205
+   }
+  ]
+ },
+ "bubble": {
+  "tile": 1024,
+  "ext": "webp",
+  "levels": [
+   {
+    "level": 13,
+    "w": 7857,
+    "h": 7462
+   }
+  ]
+ },
+ "heart": {
+  "tile": 1024,
+  "ext": "webp",
+  "levels": [
+   {
+    "level": 13,
+    "w": 6068,
+    "h": 4095
+   }
+  ]
  }
 }

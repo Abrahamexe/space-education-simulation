@@ -27,6 +27,22 @@ const FILES = {
   lagoon: 'File:Lagoon Nebula (Visible-light View) (2018-21-4150).png',
   veil: 'File:Ultraviolet image of the Cygnus Loop Nebula crop.jpg',
   trifid: 'File:The Day of the Trifid Nebula.png',
+  // 2026-11-25 additions (public domain or CC BY 4.0; see docs/CREDITS.md).
+  rosette: 'File:Rosette Nebula Captured with DECam (noirlab2424a).jpg',
+  crescent: 'File:Crescent, NGC 6888 (noao-04494).jpg',
+  bubble: 'File:The Bubble Nebula - NGC 7635 - Heic1608a.jpg',
+  dumbbell: 'File:M27, NGC 6853, Dumbbell Nebula (noao-02674).jpg',
+  eskimo: 'File:Ngc2392.jpg',
+  hourglass: 'File:Planetary Nebula MyCn18- An Hourglass Pattern Around a Dying Star (1996-07-397).jpg',
+  heart: 'File:Heart Nebula -IC 1805, Sh2-190.jpg',
+  northamerica: 'File:NGC 7000- The North America Nebula and the Pelican Nebula (noao-n7000mosblock).jpg',
+  tycho: 'File:Tycho-supernova-xray.jpg',
+  kepler: "File:Kepler's Supernova Remnant- A Star's Death Comes to Life (2007-kepler - kepler).tiff",
+};
+
+/** Source crops [left, top, width, height] in source pixels: drop captions and frames. */
+const CROP = {
+  hourglass: [30, 10, 1993, 2012],
 };
 
 async function info(title) {
@@ -48,13 +64,19 @@ const sizes = {};
 for (const [id, title] of Object.entries(FILES)) {
   const src = `${SRC}/${id}_src.jpg`;
   if (!existsSync(src)) {
+    await new Promise((r) => setTimeout(r, 2500)); // Commons API rate limit
     const { width, height } = await info(title);
     // Long side 4096 (or the original if smaller).
     const long = Math.max(width, height);
     const w = Math.round((Math.min(4096, long) * width) / long);
     const url = await thumb(title, w);
     const buf = Buffer.from(await (await fetch(url, { headers: UA })).arrayBuffer());
-    await sharp(buf, { limitInputPixels: false }).jpeg({ quality: 95 }).toFile(src);
+    let img = sharp(buf, { limitInputPixels: false });
+    if (CROP[id]) {
+      const [left, top, width, height] = CROP[id];
+      img = img.extract({ left, top, width, height });
+    }
+    await img.jpeg({ quality: 95 }).toFile(src);
   }
   const meta = await sharp(src).metadata();
   const long = Math.max(meta.width, meta.height);

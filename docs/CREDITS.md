@@ -100,6 +100,12 @@ Güneş yüzeyi, korona, fışkırmalar, nebula tonu ve parçacık yıldızları
 | Küresel küme sayısı ve dağılımı | Harris 1996 (2010 sürümü) | — |
 | Uzak gökada arka planı | Prosedürel (gerçek bir katalog değil, temsili) | — |
 | Derin uzay görselleri (`public/textures/deepsky/*_4k.jpg`, `*_1k.jpg`; `scripts/fetch-deepsky.mjs`) | NASA, ESA, CSA, STScI — Hubble ve Webb yayınları, Wikimedia Commons: Yengeç (J. Hester, A. Loll), Orion (M. Robberto, Hubble Orion Treasury), Yaratılış Sütunları (Webb NIRCam), Halka ve Güney Halka (Webb), Kozmik Uçurumlar (Webb), Sarmal (C.R. O'Dell), Kedi Gözü (J.P. Harrington, K.J. Borkowski), Kelebek (Hubble SM4 ERO), Atbaşı (Hubble Heritage), Cassiopeia A (Webb MIRI, D. Milisavljevic), Eta Karina (J. Morse), Westerlund 2 (Hubble Heritage, A. Nota), Lagün (NASA/ESA/STScI), Trifid (J. DePasquale), Kuğu İlmeği (NASA/JPL-Caltech, GALEX) | Kamu malı |
+| Derin uzay görselleri, 2026-11 eklemeleri (`public/textures/deepsky/`, `scripts/fetch-deepsky.mjs`; 16K karolar `scripts/build-hires.mjs`) — Wikimedia Commons | Kabarcık NGC 7635 (NASA, ESA, Hubble Heritage Team), Eskimo NGC 2392 (NASA, ESA, A. Fruchter, ERO Team), Kum Saati MyCn 18 (R. Sahai, J. Trauger, WFPC2 Science Team, NASA; altyazı paneli kırpıldı), Tycho SN 1572 (NASA/CXC/Rutgers/J. Warren & J. Hughes), Kepler SN 1604 (NASA/CXC/NCSU/S. Reynolds ve ark.) | Kamu malı |
+| Rozet NGC 2237 (`rosette`) | CTIO/NOIRLab/DOE/NSF/AURA, DECam (noirlab2424a) | CC BY 4.0 |
+| Hilal NGC 6888 (`crescent`) | T.A. Rector (NRAO/AUI/NSF ve NOIRLab/NSF/AURA) | CC BY 4.0 |
+| Halter M27 (`dumbbell`) | Bill Schoening/NOIRLab/NSF/AURA | CC BY 4.0 |
+| Kalp IC 1805 (`heart`) | J. Pedro Bento | CC BY 4.0 |
+| Kuzey Amerika ve Pelikan NGC 7000 (`northamerica`) | KPNO/NOIRLab/NSF/AURA/Adam Block | CC BY 4.0 |
 | Galaksi dışı görseller (`public/textures/extragalactic/*_4k.jpg`, `*_1k.jpg`; `scripts/fetch-extragalactic.mjs`) — Wikimedia Commons | NASA, ESA, CSA, STScI ve Hubble Heritage Team (STScI/AURA): Girdap M51, Sombrero M104, M87 jeti, NGC 1300, Antenler, Puro M82, Hoag Nesnesi, Araba Tekerleği (Webb), Stephan Beşlisi (Webb), Webb'in İlk Derin Alanı (SMACS 0723) | Kamu malı |
 | Fırıldak M101 (`m101`) | ESA & NASA; K.D. Kuntz, F. Bresolin, J. Trauger, J. Mould, Y.-H. Chu; CFHT/NOAO | CC BY 4.0 |
 | Erboğa A (`cena`, eso0903a) | ESO/WFI (optik); MPIfR/ESO/APEX/A. Weiss ve ark. (milimetre altı); NASA/CXC/CfA/R. Kraft ve ark. (X ışını) | CC BY 4.0 |
