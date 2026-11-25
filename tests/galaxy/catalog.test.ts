@@ -49,3 +49,13 @@ test('deep-sky ids do not collide with the neighbourhood and satellite markers',
   const clash = [...NEIGHBOURHOOD, ...SATELLITES].map((m) => m.id).filter((id) => deep.has(id));
   assert.deepEqual(clash, []);
 });
+
+test('measured planet masses are positive and atmospheres valid', () => {
+  for (const d of DEEP_SKY) {
+    if (d.kind !== 'system') continue;
+    for (const p of d.planets ?? []) {
+      if (p.massEarth !== undefined) assert.ok(p.massEarth > 0, `${d.id} ${p.name} mass`);
+      if (p.atmosphere !== undefined) assert.ok(['none', 'thin', 'thick'].includes(p.atmosphere), `${d.id} ${p.name} atm`);
+    }
+  }
+});

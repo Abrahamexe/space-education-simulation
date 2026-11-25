@@ -142,6 +142,12 @@ export interface PlanetDef {
   radiusEarth: number;
   color: readonly [number, number, number];
   note?: string;
+  /** Measured mass (or minimum mass from radial velocities), Earth masses. */
+  massEarth?: number;
+  /** Only when measured (e.g. JWST thermal emission); otherwise left to the size. */
+  atmosphere?: 'none' | 'thin' | 'thick';
+  /** What has been measured, with source, for the card's "Bilinen" line. */
+  measured?: string;
 }
 
 export interface SystemDef extends Base {
@@ -825,8 +831,8 @@ export const DEEP_SKY: readonly DeepDef[] = [
     framePc: 0.14 * AU,
     stars: [{ name: 'Proxima Centauri', radiusSun: 0.1542, tempK: 3042, massSun: 0.1221 }],
     planets: [
-      { name: 'Proxima d', aAu: 0.02885, periodDays: 5.122, radiusEarth: 0.81, color: [0.55, 0.45, 0.4] },
-      { name: 'Proxima b', aAu: 0.04857, periodDays: 11.186, radiusEarth: 1.07, color: [0.62, 0.48, 0.38], note: 'yaşanabilir bölgede' },
+      { name: 'Proxima d', aAu: 0.02885, periodDays: 5.122, radiusEarth: 0.81, massEarth: 0.26, measured: 'En az kütle 0,26 M⊕ (ESPRESSO, 2022)', color: [0.55, 0.45, 0.4] },
+      { name: 'Proxima b', aAu: 0.04857, periodDays: 11.186, radiusEarth: 1.07, massEarth: 1.07, measured: 'En az kütle 1,07 M⊕ (ESPRESSO, 2020)', color: [0.62, 0.48, 0.38], note: 'yaşanabilir bölgede' },
     ],
     planetInclinationDeg: 60,
     facts: {
@@ -878,13 +884,13 @@ export const DEEP_SKY: readonly DeepDef[] = [
     stars: [{ name: 'TRAPPIST-1', radiusSun: 0.1192, tempK: 2566, massSun: 0.0898 }],
     // Agol et al. 2021.
     planets: [
-      { name: 'b', aAu: 0.01154, periodDays: 1.511, radiusEarth: 1.116, color: [0.6, 0.45, 0.35] },
-      { name: 'c', aAu: 0.0158, periodDays: 2.422, radiusEarth: 1.097, color: [0.65, 0.55, 0.45] },
-      { name: 'd', aAu: 0.02227, periodDays: 4.05, radiusEarth: 0.788, color: [0.55, 0.6, 0.7] },
-      { name: 'e', aAu: 0.02925, periodDays: 6.1, radiusEarth: 0.92, color: [0.4, 0.55, 0.75], note: 'yaşanabilir bölgede' },
-      { name: 'f', aAu: 0.03849, periodDays: 9.207, radiusEarth: 1.045, color: [0.55, 0.7, 0.8], note: 'yaşanabilir bölgede' },
-      { name: 'g', aAu: 0.04683, periodDays: 12.353, radiusEarth: 1.129, color: [0.7, 0.75, 0.85], note: 'yaşanabilir bölgede' },
-      { name: 'h', aAu: 0.06189, periodDays: 18.767, radiusEarth: 0.755, color: [0.8, 0.82, 0.88] },
+      { name: 'b', aAu: 0.01154, periodDays: 1.511, radiusEarth: 1.116, massEarth: 1.374, atmosphere: 'none', measured: 'JWST 15 µm (Greene ve ark. 2023): gündüz yüzü ~500 K, ısıyı dağıtacak kalın atmosfer yok', color: [0.6, 0.45, 0.35] },
+      { name: 'c', aAu: 0.0158, periodDays: 2.422, radiusEarth: 1.097, massEarth: 1.308, atmosphere: 'thin', measured: 'JWST (Zieba ve ark. 2023): kalın CO₂ atmosferi yok; ince ya da hiç atmosfer', color: [0.65, 0.55, 0.45] },
+      { name: 'd', aAu: 0.02227, periodDays: 4.05, radiusEarth: 0.788, massEarth: 0.388, measured: 'TRAPPIST-1 kütlesi: Agol ve ark. 2021 (geçiş zamanlaması)', color: [0.55, 0.6, 0.7] },
+      { name: 'e', aAu: 0.02925, periodDays: 6.1, radiusEarth: 0.92, massEarth: 0.692, measured: 'TRAPPIST-1 kütlesi: Agol ve ark. 2021 (geçiş zamanlaması)', color: [0.4, 0.55, 0.75], note: 'yaşanabilir bölgede' },
+      { name: 'f', aAu: 0.03849, periodDays: 9.207, radiusEarth: 1.045, massEarth: 1.039, measured: 'TRAPPIST-1 kütlesi: Agol ve ark. 2021 (geçiş zamanlaması)', color: [0.55, 0.7, 0.8], note: 'yaşanabilir bölgede' },
+      { name: 'g', aAu: 0.04683, periodDays: 12.353, radiusEarth: 1.129, massEarth: 1.321, measured: 'TRAPPIST-1 kütlesi: Agol ve ark. 2021 (geçiş zamanlaması)', color: [0.7, 0.75, 0.85], note: 'yaşanabilir bölgede' },
+      { name: 'h', aAu: 0.06189, periodDays: 18.767, radiusEarth: 0.755, massEarth: 0.326, measured: 'TRAPPIST-1 kütlesi: Agol ve ark. 2021 (geçiş zamanlaması)', color: [0.8, 0.82, 0.88] },
     ],
     planetInclinationDeg: 80,
     facts: {
@@ -1271,10 +1277,10 @@ export const DEEP_SKY: readonly DeepDef[] = [
     stars: [{ name: 'Barnard Yıldızı', radiusSun: 0.187, tempK: 3195, massSun: 0.162 }],
     // González Hernández et al. 2024 (b), Basant et al. 2025 (c, d, e); radii estimated from the masses.
     planets: [
-      { name: 'd', aAu: 0.0188, periodDays: 2.34, radiusEarth: 0.6, color: [0.62, 0.48, 0.38] },
-      { name: 'b', aAu: 0.0229, periodDays: 3.154, radiusEarth: 0.7, color: [0.66, 0.52, 0.42] },
-      { name: 'c', aAu: 0.0274, periodDays: 4.124, radiusEarth: 0.75, color: [0.6, 0.5, 0.45] },
-      { name: 'e', aAu: 0.0381, periodDays: 6.739, radiusEarth: 0.55, color: [0.55, 0.5, 0.48] },
+      { name: 'd', aAu: 0.0188, periodDays: 2.34, radiusEarth: 0.6, massEarth: 0.26, measured: 'En az kütle, ESPRESSO + MAROON-X dikine hız (2024–2025)', color: [0.62, 0.48, 0.38] },
+      { name: 'b', aAu: 0.0229, periodDays: 3.154, radiusEarth: 0.7, massEarth: 0.37, measured: 'En az kütle, ESPRESSO + MAROON-X dikine hız (2024–2025)', color: [0.66, 0.52, 0.42] },
+      { name: 'c', aAu: 0.0274, periodDays: 4.124, radiusEarth: 0.75, massEarth: 0.34, measured: 'En az kütle, ESPRESSO + MAROON-X dikine hız (2024–2025)', color: [0.6, 0.5, 0.45] },
+      { name: 'e', aAu: 0.0381, periodDays: 6.739, radiusEarth: 0.55, massEarth: 0.19, measured: 'En az kütle, ESPRESSO + MAROON-X dikine hız (2024–2025)', color: [0.55, 0.5, 0.48] },
     ],
     planetInclinationDeg: 60,
     facts: {
@@ -1297,7 +1303,7 @@ export const DEEP_SKY: readonly DeepDef[] = [
     distPc: 15.47,
     framePc: 0.14 * AU,
     stars: [{ name: '51 Pegasi', radiusSun: 1.27, tempK: 5768, massSun: 1.11 }],
-    planets: [{ name: 'b (Dimidium)', aAu: 0.0527, periodDays: 4.2308, radiusEarth: 13, color: [0.78, 0.62, 0.45], note: 'sıcak Jüpiter' }],
+    planets: [{ name: 'b (Dimidium)', aAu: 0.0527, periodDays: 4.2308, radiusEarth: 13, massEarth: 146, measured: 'En az kütle 0,46 Jüpiter (Mayor ve Queloz 1995)', color: [0.78, 0.62, 0.45], note: 'sıcak Jüpiter' }],
     planetInclinationDeg: 80,
     facts: {
       type: 'Güneş benzeri yıldız + sıcak Jüpiter',
