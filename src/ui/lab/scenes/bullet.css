@@ -2,7 +2,7 @@
 .bullet .bullet-stage { width: 100%; aspect-ratio: 16 / 9; margin: var(--s-2) 0; }
 .bullet .bullet-layers { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .bullet .bullet-layers .lab-check { display: inline-block; margin: 4px 0; }
-.bullet .bullet-sw { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }
+.bullet .bullet-sw { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 0; vertical-align: -1px; }
 .bullet .bullet-sw-ring { border: 1px solid #fff; border-radius: 50%; background: none; }
 /* The label is long: put it on its own line above the slider. */
 .bullet .bullet-slider { flex-wrap: wrap; white-space: normal; }

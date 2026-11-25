@@ -17,8 +17,6 @@
   border: 1px solid var(--c-hairline);
   border-radius: var(--r-pill);
   background: rgba(8, 10, 14, 0.42);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
   color: var(--c-ink-2);
   font: var(--t-cap-xs);
   letter-spacing: var(--track-caps);
@@ -46,8 +44,6 @@
   border: 1px solid var(--c-hairline);
   border-radius: var(--r-surface);
   background: var(--c-glass);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
   color: var(--c-ink);
   overflow: hidden;
@@ -88,8 +84,8 @@
 .dev-badge {
   padding: 2px 6px;
   border-radius: var(--r-pill);
-  background: rgba(242, 179, 94, 0.14);
-  color: var(--c-accent);
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
   font: var(--t-cap-xs);
   letter-spacing: var(--track-caps);
 }
@@ -175,7 +171,7 @@
 .dev-foot kbd {
   padding: 1px 5px;
   border: 1px solid var(--c-hairline-strong);
-  border-radius: 4px;
+  border-radius: 0;
   font: var(--t-num);
   font-size: 11px;
 }
@@ -218,7 +214,7 @@
   --color-input-min-width: 52px;
   --folder-indent: 10px;
   --widget-padding: 0 0 0 6px;
-  --widget-border-radius: 6px;
+  --widget-border-radius: 0;
   --checkbox-size: 16px;
   --scrollbar-width: 6px;
   width: 100% !important;
@@ -228,7 +224,7 @@
 .dev-panel .lil-gui.lil-root > .lil-children { overflow: visible; }
 
 .dev-panel .lil-gui .lil-title {
-  border-radius: 8px;
+  border-radius: 0;
   font: var(--t-cap-sm);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
@@ -247,16 +243,16 @@
 .dev-panel .lil-gui .lil-gui > .lil-children { border-left: 1px solid var(--c-hairline); margin-left: 8px; }
 .dev-panel .lil-gui.lil-root > .lil-children > .lil-gui > .lil-children { border-left: 0; margin-left: 0; }
 
-.dev-panel .lil-gui .lil-controller { border-radius: 6px; }
+.dev-panel .lil-gui .lil-controller { border-radius: 0; }
 .dev-panel .lil-gui .lil-controller:hover { background: rgba(236, 238, 242, 0.035); }
 .dev-panel .lil-gui .lil-controller .lil-name { color: var(--c-ink-2); }
 .dev-panel .lil-gui .lil-controller.lil-disabled { opacity: 0.85; }
 .dev-panel .lil-gui .lil-controller.lil-disabled .lil-name { color: var(--c-ink-3); }
 .dev-panel .lil-gui input,
 .dev-panel .lil-gui select,
-.dev-panel .lil-gui button { border-radius: 6px; }
-.dev-panel .lil-gui .lil-slider { border-radius: 6px; }
-.dev-panel .lil-gui .lil-slider .lil-fill { background: rgba(242, 179, 94, 0.35); border-right-color: var(--c-accent); }
+.dev-panel .lil-gui button { border-radius: 0; }
+.dev-panel .lil-gui .lil-slider { border-radius: 0; }
+.dev-panel .lil-gui .lil-slider .lil-fill { background: rgba(255, 255, 255, 0.35); border-right-color: var(--c-accent); }
 .dev-panel .lil-gui input[type='checkbox']:checked:before { color: var(--c-accent); }
 .dev-panel .lil-gui .lil-controller.lil-function button {
   border: 1px solid var(--c-hairline-strong);

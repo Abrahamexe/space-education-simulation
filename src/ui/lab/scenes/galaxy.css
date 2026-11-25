@@ -5,21 +5,21 @@
 .gal .gal-layers .lab-check { margin: 3px 0; padding-left: 0; text-indent: 0; }
 .gal .gal-sw { display: inline-block; width: 10px; height: 10px; margin: 0 6px 0 -2px; border-radius: 50%; vertical-align: -1px; }
 .gal .gal-sw-dm { background: #7a5cff; }
-.gal .gal-sw-gas { background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); border-radius: 3px; width: 16px; }
+.gal .gal-sw-gas { background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); border-radius: 0; width: 16px; }
 .gal .gal-sw-star { background: #ffe6bd; }
 .gal .gal-tbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; color: var(--c-ink-3); font-size: 11px; }
-.gal .gal-tbar i { flex: 1; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); }
+.gal .gal-tbar i { flex: 1; height: 5px; border-radius: 0; background: linear-gradient(90deg, #e2f4ff, #69beff, #ac8cff, #ff6fc8); }
 .gal .gal-stage { min-height: 3.4em; }
 .gal .gal-res { display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink-2); font-size: 12px; }
-.gal .gal-res select { padding: 4px 6px; border: 1px solid var(--c-hairline-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; background: var(--c-chip, rgba(255, 255, 255, 0.06)); color: var(--c-ink); font: inherit; }
+.gal .gal-res select { padding: 4px 6px; border: 1px solid var(--c-hairline-strong, rgba(255, 255, 255, 0.2)); border-radius: 0; background: var(--c-chip, rgba(255, 255, 255, 0.06)); color: var(--c-ink); font: inherit; }
 .gal .gal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin: 8px 0; }
-.gal .gal-stats div { display: flex; flex-direction: column; gap: 1px; padding: 5px 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.035); min-width: 0; }
+.gal .gal-stats div { display: flex; flex-direction: column; gap: 1px; padding: 5px 8px; border-radius: 0; background: rgba(255, 255, 255, 0.035); min-width: 0; }
 .gal .gal-stats span { color: var(--c-ink-3); font-size: 10.5px; line-height: 1.25; }
 .gal .gal-stats b { color: var(--c-ink); font: var(--t-num); font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
 .gal .gal-h { margin: 12px 0 0; color: var(--c-ink); font: var(--t-cap-xs); letter-spacing: var(--track-caps); text-transform: uppercase; }
 .gal .gal-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 4px; color: var(--c-ink-2); font-size: 11px; }
 .gal .gal-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.gal .gal-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.gal .gal-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 0; }
 .gal .gal-legend i.gal-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
 .gal .gal-legend i.gal-dash { height: 0; border-top: 2px dashed rgba(255, 255, 255, 0.55); border-radius: 0; }
 .gal .gal-legend i.gal-dot2 { height: 0; border-top: 2px dotted #8fb8ff; border-radius: 0; }

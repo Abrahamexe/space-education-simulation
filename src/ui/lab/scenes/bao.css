@@ -13,7 +13,7 @@
 .bao .bao-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; margin: 4px 0; }
 .bao .bao-leg { display: flex; align-items: center; gap: 6px; padding: 0; text-indent: 0; margin: 4px 0; }
 .bao .bao-leg input { margin: 0; }
-.bao .bao-sw { flex: none; width: 14px; height: 3px; border-radius: 2px; }
+.bao .bao-sw { flex: none; width: 14px; height: 3px; border-radius: 0; }
 .bao .bao-sw-dm { background: #5d8dff; }
 .bao .bao-sw-baryon { background: #ff6fc8; }
 .bao .bao-sw-photon { background: #ffe27a; }

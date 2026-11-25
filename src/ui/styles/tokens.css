@@ -6,11 +6,11 @@
  * Theme is locked dark: the scene is space.
  */
 
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow-condensed/500.css';
-@import '@fontsource/barlow-condensed/600.css';
-@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/geist/300.css';
+@import '@fontsource/geist/400.css';
+@import '@fontsource/geist/500.css';
+@import '@fontsource/geist-mono/300.css';
+@import '@fontsource/geist-mono/400.css';
 
 :root {
   color-scheme: dark;
@@ -22,29 +22,32 @@
   --c-ink-3: rgba(236, 238, 242, 0.56); /* muted labels, ~5.7:1 on the glass (AA for small caps) */
   --c-hairline: rgba(236, 238, 242, 0.14);
   --c-hairline-strong: rgba(236, 238, 242, 0.28);
-  --c-accent: #f2b35e;           /* sun gold */
-  --c-accent-ink: #1a1206;       /* text on accent fills */
-  --c-glass: rgba(14, 16, 22, 0.58);
-  --c-glass-solid: rgba(12, 14, 19, 0.96);
-  --c-chip: rgba(236, 238, 242, 0.06);
-  --c-chip-hover: rgba(236, 238, 242, 0.12);
-  --c-focus: #f2b35e;
+  --c-accent: #ffffff;           /* active state: white fill, black ink */
+  --c-accent-ink: #000000;       /* text on accent fills */
+  --c-live: #8ff0c4;             /* live data only */
+  --c-pop: rgba(6, 7, 10, 0.94); /* opaque popovers */
+  --c-glass: transparent;
+  --c-glass-solid: rgba(6, 7, 10, 0.94);
+  --c-chip: transparent;
+  --c-chip-hover: rgba(236, 238, 242, 0.08);
+  --c-focus: #ffffff;
 
   /* ---- Type ---------------------------------------------------------------- */
-  --f-display: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
-  --f-ui: 'Barlow', system-ui, sans-serif;
-  --f-num: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --f-display: 'Geist', system-ui, sans-serif;
+  --f-ui: 'Geist', system-ui, sans-serif;
+  --f-num: 'Geist Mono', ui-monospace, Consolas, monospace;
+  --f-label: 'Geist Mono', ui-monospace, Consolas, monospace;
 
-  --t-cap-xs: 500 11px/1.2 var(--f-display);   /* micro caps */
-  --t-cap-sm: 600 12px/1.2 var(--f-display);   /* buttons, nav */
-  --t-cap-md: 600 14px/1.2 var(--f-display);
-  --t-title: 600 44px/0.95 var(--f-display);   /* panel title */
+  --t-cap-xs: 400 10px/1.2 var(--f-label);     /* micro caps */
+  --t-cap-sm: 400 11px/1.2 var(--f-label);     /* buttons, nav */
+  --t-cap-md: 400 12px/1.2 var(--f-label);
+  --t-title: 300 56px/1 var(--f-display);      /* panel title */
   --t-body: 400 15px/1.6 var(--f-ui);
   --t-body-sm: 400 13px/1.5 var(--f-ui);
-  --t-num: 400 13px/1.3 var(--f-num);
+  --t-num: 300 13px/1.3 var(--f-num);
 
-  --track-caps: 0.14em;
-  --track-title: 0.04em;
+  --track-caps: 0.16em;
+  --track-title: -0.02em;
 
   /* ---- Space & shape --------------------------------------------------------- */
   --s-1: 4px;
@@ -55,9 +58,9 @@
   --s-6: 32px;
   --s-7: 48px;
   --gutter: max(16px, env(safe-area-inset-left));
-  /* One radius rule: interactive controls are pills, surfaces 14px. */
-  --r-pill: 999px;
-  --r-surface: 14px;
+  /* One radius rule: square corners everywhere (mission-control language). */
+  --r-pill: 0;
+  --r-surface: 0;
   --hit: 40px;
 
   /* ---- Interface size (ui/UiScale.ts) ------------------------------------------------
