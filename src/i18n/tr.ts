@@ -1,10 +1,10 @@
 /** Turkish UI strings (PLAN §7.3). Other languages mirror this shape. */
 export const tr = {
   app: {
-    title: 'Güneş Sistemi',
+    title: 'Kosmos',
   },
   loading: {
-    title: 'Güneş Sistemi',
+    title: 'Kosmos',
     status: 'Gökyüzü hazırlanıyor',
     progressLabel: 'Yükleniyor',
   },

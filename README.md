@@ -1,4 +1,4 @@
-# Space Project
+# Kosmos
 
 Tarayıcıda çalışan, sinematik kalitede bir 3D evren keşif uygulaması. Güneş'in yüzeyinden başlayıp gezegenlere, Samanyolu'nun merkezindeki kara deliğe ve milyarlarca ışık yılı uzaktaki kuasarlara kadar kesintisiz gezinebilirsiniz. Güneş Sistemi'ne kara delik, pulsar ya da yıldız ekleyip sonucu gerçek fizikle izleyebilirsiniz. Her şey gerçek verilere dayanır; görüntüler oyuncak gibi değil, belgesel gibi görünsün diye tasarlandı.
 
