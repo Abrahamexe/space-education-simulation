@@ -688,6 +688,8 @@ export function setupDevTools(
   const setOpen = (open: boolean) => {
     shell.panel.dataset.open = String(open);
     shell.toggle.setAttribute('aria-expanded', String(open));
+    // The panel takes the left column's place: the menus there step aside while it is open.
+    document.documentElement.dataset.dev = String(open);
     persist();
   };
   setOpen(state.open);

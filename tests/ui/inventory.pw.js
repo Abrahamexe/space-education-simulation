@@ -147,7 +147,7 @@ async (page) => {
   }
   await has(G, 'keşfet arama', ['.galaxy-explore .xp-search, .galaxy-explore input']);
   await has(G, 'keşfet sekmeleri', ['.galaxy-explore [role="tab"], .galaxy-explore .xp-order, .galaxy-explore .segmented button']);
-  await has(G, 'keşfet satırları', ['.galaxy-explore .xp-item']);
+  await has(G, 'keşfet satırları', ['.galaxy-explore .xp-item', '.galaxy-explore .xp-sec']); // categories open on click
   if (exploreOpen !== 'true') await esc();
   await click(['.galaxy-hud:not(.universe-hud) [data-info]']);
   await page.waitForTimeout(500);
@@ -159,7 +159,7 @@ async (page) => {
   await page.waitForTimeout(3500);
   const U = 'evren';
   await has(U, 'galaksiye dön', ['.universe-hud [data-back]', '[data-level="milkyWay"]']);
-  for (const id of ['local', 'laniakea', 'web', 'observable']) await has(U, `ölçek ${id}`, [`.universe-hud [data-scale="${id}"]`]);
+  for (const id of ['local', 'laniakea', 'web', 'observable']) await has(U, `ölçek ${id}`, [`.universe-hud [data-scale="${id}"]`, `.universe-hud [data-level="${id}"]`]);
   if (!mobile) await has(U, 'uzaklık', ['.universe-hud .galaxy-readout']);
   await has(U, 'sinematik/bilimsel', ['.universe-hud [data-look="cinematic"]']);
   await has(U, 'katmanlar', ['.universe-hud [data-layers]']);

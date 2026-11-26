@@ -206,7 +206,7 @@ export class GalaxyHud {
     };
     const section = (tab: 'in' | 'out', title: string, hint: string, rows: Row[]) =>
       rows.length
-        ? `<section data-tab="${tab}"><h3>${esc(title)}<span class="xp-n">${rows.length}</span><span class="xp-hint">${esc(hint)}</span></h3><div class="xp-grid">${[...rows]
+        ? `<section data-tab="${tab}" data-open="false"><h3><button type="button" class="xp-sec" data-sec aria-expanded="false">${esc(title)}<span class="xp-n">${rows.length}</span><span class="xp-hint">${esc(hint)}</span></button></h3><div class="xp-grid">${[...rows]
             .sort((x, y) => distOf(x) - distOf(y))
             .map(rowHtml)
             .join('')}</div></section>`
@@ -288,7 +288,14 @@ export class GalaxyHud {
     });
     this.explore.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('[data-go]') as HTMLElement | null;
-      if (b) {
+      const sec = (e.target as HTMLElement).closest('[data-sec]') as HTMLElement | null;
+      if (sec) {
+        // Categories open and close; a search shows every match whatever their state.
+        const box = sec.closest('section') as HTMLElement;
+        const open = box.dataset.open !== 'true';
+        box.dataset.open = String(open);
+        sec.setAttribute('aria-expanded', String(open));
+      } else if (b) {
         const t = view.targets.find((x) => x.id === b.dataset.go);
         if (t) {
           this.setExplore(false);

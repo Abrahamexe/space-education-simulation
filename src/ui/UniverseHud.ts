@@ -163,6 +163,9 @@ export class UniverseHud {
     const lookBtns = [...this.bar.querySelectorAll<HTMLButtonElement>('[data-look]')];
     lookBtns.forEach((b) => b.addEventListener('click', () => (view.science = b.dataset.look === 'science')));
     const lab = q<HTMLButtonElement>('[data-labels]');
+    // Desktop: Layers and Evidence open in place in the left menu (sub-lists, not pop-ups), so a
+    // click elsewhere leaves them open. Phones keep the pop-ups.
+    const inline = () => !document.documentElement.classList.contains('vw-760');
     const layersBtn = q<HTMLButtonElement>('[data-layers]');
     const layersPop = q<HTMLElement>('.universe-layers-pop');
     layersBtn.addEventListener('click', () => {
@@ -171,6 +174,7 @@ export class UniverseHud {
       layersBtn.setAttribute('aria-expanded', String(open));
     });
     document.addEventListener('pointerdown', (e) => {
+      if (inline()) return;
       if (layersPop.dataset.open === 'true' && !(e.target as HTMLElement).closest('.universe-layers')) {
         layersPop.dataset.open = 'false';
         layersBtn.setAttribute('aria-expanded', 'false');
@@ -199,6 +203,7 @@ export class UniverseHud {
       evBtn.setAttribute('aria-expanded', String(open));
     });
     document.addEventListener('pointerdown', (e) => {
+      if (inline()) return;
       if (evPop.dataset.open === 'true' && !(e.target as HTMLElement).closest('.universe-layers')) {
         evPop.dataset.open = 'false';
         evBtn.setAttribute('aria-expanded', 'false');
@@ -206,8 +211,10 @@ export class UniverseHud {
     });
     evPop.querySelectorAll<HTMLButtonElement>('[data-evidence]').forEach((b) =>
       b.addEventListener('click', () => {
-        evPop.dataset.open = 'false';
-        evBtn.setAttribute('aria-expanded', 'false');
+        if (!inline()) {
+          evPop.dataset.open = 'false';
+          evBtn.setAttribute('aria-expanded', 'false');
+        }
         const ev = EVIDENCE.find((x) => x.id === b.dataset.evidence)!;
         this.showEvidence(ev);
       }),
@@ -318,7 +325,8 @@ export class UniverseHud {
     rule.setAttribute('aria-hidden', 'true');
     top.append(this.readout, rule);
 
-    // Left menu: the old bottom bar, as it was (same order, same names), one item per line.
+    // Left menu. Desktop: what the map shows, then the doors to learn; the scales and the way
+    // back live in the bottom scale path only (CSS hides them here). Phones keep them in the strip.
     const left = document.createElement('div');
     left.className = 'ux-left';
     const worded = (el: HTMLElement, text: string) => {
@@ -328,18 +336,26 @@ export class UniverseHud {
       el.append(w);
       return el;
     };
+    const head = (text: string) => {
+      const h = document.createElement('p');
+      h.className = 'ux-head';
+      h.textContent = text;
+      return h;
+    };
     left.append(
       this.q('[data-back]'),
       this.q('.universe-scales'),
+      head('Görünüm'),
       this.q('[data-look]').parentElement as HTMLElement,
       this.q('[data-layers]').parentElement as HTMLElement,
-      this.q('[data-composition]'),
-      this.q('[data-sim]'),
-      this.q('[data-lab]'),
-      this.q('[data-film]'),
-      this.q('[data-evidence-btn]').parentElement as HTMLElement,
       worded(this.q('[data-labels]'), 'Etiketler'),
+      head('Öğren'),
       worded(this.q('[data-info]'), 'Bu harita nedir?'),
+      this.q('[data-composition]'),
+      this.q('[data-evidence-btn]').parentElement as HTMLElement,
+      this.q('[data-sim]'),
+      this.q('[data-film]'),
+      this.q('[data-lab]'),
     );
     this.path = new ScalePathBar((level) => onPath?.(level));
     this.path.el.classList.add('gx-path');

@@ -1443,3 +1443,197 @@ body.mode-universe .vignette {
   bottom: auto;
   overflow: visible;
 }
+
+/* ---- Universe left menu: two titled groups; scales and the way back only in the scale path ---------- */
+
+:root:not(.vw-760) .ux-left > :is([data-back], .universe-scales) {
+  display: none;
+}
+
+:root:not(.vw-760) .ux-left > .ux-head {
+  margin: 0 0 10px;
+  font: var(--t-cap-xs);
+  letter-spacing: var(--track-caps);
+}
+
+:root:not(.vw-760) .ux-left > .ux-head ~ .ux-head {
+  margin-top: 28px;
+}
+
+/* Formation time-lapse: its panel takes the left column's place. */
+:root:not(.vw-760) .universe-hud[data-sim='true'] .ux-left {
+  visibility: hidden;
+}
+
+/* Developer panel: same rule, in every view; and a ground of its own. */
+:root[data-dev='true'] :is(.hud-left, .ux-left, .galaxy-explore, .sim-panel, .pg-panel, .pg-reopen) {
+  visibility: hidden !important;
+}
+
+.dev-panel.dev-panel {
+  background: var(--c-pop);
+}
+
+/* ---- Galaxy explore: categories open and close (all closed at first; a search shows every match) ---- */
+
+.galaxy-explore .xp-sec {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.galaxy-explore .xp-sec::before {
+  content: '\25B8';
+  color: var(--c-ink-3);
+  transition: transform 140ms var(--ease-out);
+}
+
+.galaxy-explore .xp-sec[aria-expanded='true']::before {
+  transform: rotate(90deg);
+}
+
+.galaxy-explore .xp-sec:hover {
+  color: var(--c-accent);
+}
+
+.galaxy-explore .xp-sec .xp-n {
+  margin-left: auto;
+}
+
+.galaxy-explore section[data-open='false'] .xp-grid {
+  display: none;
+}
+
+.galaxy-explore[data-searching='true'] section .xp-grid {
+  display: grid;
+}
+
+.galaxy-explore[data-searching='true'] .xp-sec::before {
+  visibility: hidden;
+}
+
+:root:not(.vw-760) .galaxy-explore section h3 {
+  margin: 12px 0 4px;
+}
+
+/* Panels that take the left column's place line up with it. */
+:root:not(.vw-760) :is(.dev-panel, .universe-hud .sim-panel) {
+  left: max(44px, env(safe-area-inset-left));
+}
+
+/* ---- Open groups: indented under a hairline; the row under the pointer lights its stretch --------- */
+
+:root:not(.vw-760) .galaxy-explore section[data-open='true'] .xp-grid,
+:root:not(.vw-760) .ux-left > .universe-layers > .universe-layers-pop {
+  margin: 0 0 6px 3px;
+  padding: 0 0 0 12px;
+  border-left: 1px solid var(--c-hairline-strong);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item,
+:root:not(.vw-760) .ux-left .ul-row {
+  position: relative;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item::before,
+:root:not(.vw-760) .ux-left .ul-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -14px;
+  width: 3px;
+  background: transparent;
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item:is(:hover, :focus-visible)::before,
+:root:not(.vw-760) .ux-left .ul-row:is(:hover, :focus-visible)::before {
+  background: var(--c-accent);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-name {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .galaxy-explore .xp-item:is(:hover, :focus-visible) .xp-name {
+  color: var(--c-accent);
+}
+
+/* Universe: Layers and Evidence are sub-lists in place, like the galaxy's categories. */
+:root:not(.vw-760) .ux-left > .universe-layers > .universe-layers-pop {
+  position: static;
+  display: none;
+  min-width: 0;
+  gap: 0;
+  background: none;
+  box-shadow: none;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .universe-layers-pop[data-open='true'] {
+  display: grid;
+}
+
+:root:not(.vw-760) .ux-left .ul-row {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--c-hairline);
+  background: none;
+  color: var(--c-ink-2);
+  font-size: 13px;
+}
+
+:root:not(.vw-760) .ux-left .ul-row[aria-pressed='true'] {
+  color: var(--c-ink);
+}
+
+:root:not(.vw-760) .ux-left .ul-row:is(:hover, :focus-visible) {
+  background: none;
+  color: var(--c-accent);
+}
+
+:root:not(.vw-760) .ux-left .ul-row .ev-n {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: var(--c-ink-3);
+}
+
+/* Their heads read like the galaxy's: an arrow that turns when open. */
+:root:not(.vw-760) .ux-left > .universe-layers > .pill::after {
+  content: none;
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .pill::before {
+  content: '\25B8';
+  color: var(--c-ink-3);
+  transition: transform 140ms var(--ease-out);
+}
+
+:root:not(.vw-760) .ux-left > .universe-layers > .pill[aria-expanded='true']::before {
+  transform: rotate(90deg);
+}
+
+/* With sub-lists open in place the menu can outgrow the window: it scrolls above the bottom band. */
+:root:not(.vw-760) .ux-left {
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 70px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 6px;
+}
